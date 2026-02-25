@@ -175,6 +175,10 @@ export default function JackFlash() {
   const [streak, setStreak] = useState(0);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [controlsOpen, setControlsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showArrayButton, setShowArrayButton] = useState(true);
+  const [showSkipButton, setShowSkipButton] = useState(true);
+  const [controlsLocked, setControlsLocked] = useState(false);
   const inputRef = useRef(null);
 
   const currentTables = activeGroup === -1 ? ALL_TABLES : TABLE_GROUPS[activeGroup].tables;
@@ -297,23 +301,82 @@ export default function JackFlash() {
               bg={view === "about" ? COLORS.pink : "white"} color={view === "about" ? "white" : COLORS.black}>
               ?
             </BrutalButton>
+            <BrutalButton small onClick={() => setSettingsOpen(!settingsOpen)}
+              bg={settingsOpen ? COLORS.yellow : "white"} style={{ fontSize: "28px", lineHeight: 1, padding: "4px 10px" }}>
+              {"⚙"}
+            </BrutalButton>
           </div>
         </div>
       </div>
+
+      {/* Settings Panel */}
+      {settingsOpen && (
+        <div style={{
+          maxWidth: 540, margin: "0 auto", padding: "12px 20px",
+          animation: "fadeSlideUp 0.2s ease both",
+        }}>
+          <div style={{
+            backgroundColor: "white", borderRadius: "10px", padding: "16px",
+            border: BRUTAL_BORDER_SM, boxShadow: BRUTAL_SHADOW_SM,
+          }}>
+            <div style={{
+              fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400,
+              marginBottom: "12px", color: COLORS.black,
+            }}>
+              Settings
+            </div>
+            {[
+              { label: "Show \"Array\" button", value: showArrayButton, toggle: () => setShowArrayButton(!showArrayButton) },
+              { label: "Show \"Skip Count\" button", value: showSkipButton, toggle: () => setShowSkipButton(!showSkipButton) },
+              { label: "Lock controls bar", value: controlsLocked, toggle: () => { setControlsLocked(!controlsLocked); if (!controlsLocked) setControlsOpen(false); } },
+            ].map((setting) => (
+              <button key={setting.label} onClick={setting.toggle} style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                width: "100%", padding: "10px 12px", marginBottom: "6px",
+                borderRadius: "8px", border: BRUTAL_BORDER_SM,
+                backgroundColor: setting.value ? COLORS.cream : "white",
+                cursor: "pointer", fontFamily: "'Space Mono', monospace",
+                fontSize: "12px", fontWeight: 700, color: COLORS.black,
+                boxShadow: setting.value ? "none" : BRUTAL_SHADOW_SM,
+                transform: setting.value ? "translate(2px, 2px)" : "none",
+                transition: "all 0.1s ease",
+              }}>
+                <span>{setting.label}</span>
+                <span style={{
+                  width: "36px", height: "20px", borderRadius: "10px",
+                  backgroundColor: setting.value ? COLORS.green : "#DDD",
+                  border: `2px solid ${COLORS.black}`,
+                  position: "relative", display: "inline-block",
+                  transition: "background-color 0.2s ease",
+                }}>
+                  <span style={{
+                    position: "absolute", top: "2px",
+                    left: setting.value ? "16px" : "2px",
+                    width: "12px", height: "12px", borderRadius: "50%",
+                    backgroundColor: "white", border: `2px solid ${COLORS.black}`,
+                    transition: "left 0.2s ease",
+                  }} />
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={{ maxWidth: 540, margin: "0 auto", padding: "16px 20px 40px" }}>
         {/* Collapsible Controls */}
         {view === "practice" && (
           <>
             {/* Summary bar - always visible */}
-            <button onClick={() => setControlsOpen(!controlsOpen)} style={{
+            <button onClick={() => { if (!controlsLocked) setControlsOpen(!controlsOpen); }} style={{
               width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
               padding: "10px 14px", borderRadius: "10px",
               border: BRUTAL_BORDER_SM, backgroundColor: "white",
-              boxShadow: BRUTAL_SHADOW_SM, cursor: "pointer",
+              boxShadow: BRUTAL_SHADOW_SM, cursor: controlsLocked ? "default" : "pointer",
               marginBottom: controlsOpen ? "12px" : "20px",
               fontFamily: "'Space Mono', monospace", fontSize: "12px", fontWeight: 700,
               color: COLORS.black, transition: "margin-bottom 0.2s ease",
+              opacity: controlsLocked ? 0.7 : 1,
             }}>
               <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
                 <span style={{
@@ -336,11 +399,11 @@ export default function JackFlash() {
                 </span>
               </div>
               <span style={{
-                fontSize: "16px", transition: "transform 0.2s ease",
+                fontSize: controlsLocked ? "18px" : "16px", transition: "transform 0.2s ease",
                 transform: controlsOpen ? "rotate(180deg)" : "rotate(0deg)",
                 flexShrink: 0, marginLeft: "8px",
               }}>
-                ▾
+                {controlsLocked ? "🔒" : "▾"}
               </span>
             </button>
 
@@ -677,7 +740,7 @@ export default function JackFlash() {
               ) : feedback !== "correct" ? (
                 <>
                   <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
-                  {mode !== "concrete" && (
+                  {showArrayButton && mode !== "concrete" && (
                     <BrutalButton small onClick={() => {
                       if (showScaffold || (!userHidScaffold && scaffoldOpacity > 0)) {
                         setShowScaffold(false);
@@ -691,10 +754,12 @@ export default function JackFlash() {
                       {(showScaffold || (!userHidScaffold && scaffoldOpacity > 0)) ? "Hide" : "Show"} array
                     </BrutalButton>
                   )}
-                  <BrutalButton small onClick={() => setShowSkipCount(!showSkipCount)}
-                    bg={showSkipCount ? COLORS.blue : "white"}>
-                    Skip count
-                  </BrutalButton>
+                  {showSkipButton && (
+                    <BrutalButton small onClick={() => setShowSkipCount(!showSkipCount)}
+                      bg={showSkipCount ? COLORS.blue : "white"}>
+                      Skip count
+                    </BrutalButton>
+                  )}
                 </>
               ) : null}
             </div>
