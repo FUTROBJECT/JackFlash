@@ -179,9 +179,10 @@ export default function JackFlash() {
   const [showArrayButton, setShowArrayButton] = useState(true);
   const [showSkipButton, setShowSkipButton] = useState(true);
   const [controlsLocked, setControlsLocked] = useState(false);
+  const [focusNumber, setFocusNumber] = useState(null);
   const inputRef = useRef(null);
 
-  const currentTables = activeGroup === -1 ? ALL_TABLES : TABLE_GROUPS[activeGroup].tables;
+  const currentTables = focusNumber ? [focusNumber] : activeGroup === -1 ? ALL_TABLES : TABLE_GROUPS[activeGroup].tables;
   const facts = generateFacts(currentTables);
   const getMasteryKey = (a, b) => `${a}×${b}`;
   const getMasteryLevel = (a, b) => mastery[getMasteryKey(a, b)]?.correct || 0;
@@ -214,7 +215,7 @@ export default function JackFlash() {
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [facts, mastery, operation]);
 
-  useEffect(() => { pickNewFact(); }, [activeGroup, operation]);
+  useEffect(() => { pickNewFact(); }, [activeGroup, focusNumber, operation]);
 
   const handleSubmit = () => {
     if (!currentFact || userAnswer === "") return;
@@ -243,7 +244,7 @@ export default function JackFlash() {
   const scaffoldOpacity = mode === "concrete" ? 1 : mode === "pictorial" ? (currentFact ? Math.max(0.15, 1 - getMasteryLevel(currentFact.a, currentFact.b) * 0.3) : 1) : 0;
   const skipFactor = currentFact ? currentFact.a : 1;
   const skipCountVal = currentFact ? currentFact.b : 1;
-  const groupColor = activeGroup === -1 ? COLORS.blue : TABLE_GROUPS[activeGroup].color;
+  const groupColor = focusNumber ? COLORS.pink : activeGroup === -1 ? COLORS.blue : TABLE_GROUPS[activeGroup].color;
 
   const getGroupProgress = (tables) => {
     const gf = generateFacts(tables);
@@ -383,7 +384,7 @@ export default function JackFlash() {
                   backgroundColor: groupColor, padding: "3px 8px", borderRadius: "4px",
                   border: `2px solid ${COLORS.black}`, fontSize: "11px",
                 }}>
-                  {activeGroup === -1 ? "All" : TABLE_GROUPS[activeGroup].label}
+                  {focusNumber ? `${focusNumber}s` : activeGroup === -1 ? "All" : TABLE_GROUPS[activeGroup].label}
                 </span>
                 <span style={{
                   backgroundColor: COLORS.cream, padding: "3px 8px", borderRadius: "4px",
@@ -413,15 +414,41 @@ export default function JackFlash() {
                 {/* Table Group Selector */}
                 <div style={{ display: "flex", gap: "8px", marginBottom: "10px", flexWrap: "wrap" }}>
                   {TABLE_GROUPS.map((group, i) => (
-                    <BrutalButton key={i} small onClick={() => { setActiveGroup(i); setView("practice"); }}
-                      bg={activeGroup === i ? group.color : "white"} active={activeGroup === i} color={COLORS.black}>
+                    <BrutalButton key={i} small onClick={() => { setFocusNumber(null); setActiveGroup(i); setView("practice"); }}
+                      bg={!focusNumber && activeGroup === i ? group.color : "white"} active={!focusNumber && activeGroup === i} color={COLORS.black}>
                       {group.label}
                     </BrutalButton>
                   ))}
-                  <BrutalButton small onClick={() => { setActiveGroup(-1); setView("practice"); }}
-                    bg={activeGroup === -1 ? COLORS.blue : "white"} active={activeGroup === -1} color={COLORS.black}>
+                  <BrutalButton small onClick={() => { setFocusNumber(null); setActiveGroup(-1); setView("practice"); }}
+                    bg={!focusNumber && activeGroup === -1 ? COLORS.blue : "white"} active={!focusNumber && activeGroup === -1} color={COLORS.black}>
                     All
                   </BrutalButton>
+                </div>
+
+                {/* Single Number Focus */}
+                <div style={{ marginBottom: "10px" }}>
+                  <div style={{
+                    fontSize: "11px", fontFamily: "'Space Mono', monospace", fontWeight: 700,
+                    marginBottom: "6px", color: COLORS.black, opacity: 0.5,
+                  }}>
+                    Focus on a number:
+                  </div>
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                    {ALL_TABLES.map((n) => (
+                      <BrutalButton key={n} small onClick={() => {
+                        setFocusNumber(n);
+                        setActiveGroup(null);
+                        setOperation("mixed");
+                        setView("practice");
+                      }}
+                        bg={focusNumber === n ? COLORS.pink : "white"}
+                        active={focusNumber === n}
+                        color={focusNumber === n ? "white" : COLORS.black}
+                        style={{ minWidth: "40px", padding: "7px 10px" }}>
+                        {n}s
+                      </BrutalButton>
+                    ))}
+                  </div>
                 </div>
 
                 {/* CPA Mode Selector */}
