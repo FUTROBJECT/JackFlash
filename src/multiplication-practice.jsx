@@ -134,6 +134,29 @@ function MasteryDots({ level, max = 3 }) {
   );
 }
 
+function LightningBolt({ size = 32 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M38 4L14 36h14L22 60l28-32H36L38 4z"
+        fill="white"
+        stroke={COLORS.orange}
+        strokeWidth="4"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      <path
+        d="M38 4L14 36h14L22 60l28-32H36L38 4z"
+        fill="none"
+        stroke={COLORS.black}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function BrutalButton({ onClick, children, bg = "white", color = COLORS.black, small = false, active = false, style = {} }) {
   return (
     <button onClick={onClick} style={{
@@ -285,19 +308,24 @@ export default function JackFlash() {
 
       {/* Header */}
       <div style={{
-        background: COLORS.yellow, padding: "20px 20px 16px",
+        background: COLORS.yellow, padding: "18px 20px 14px",
         borderBottom: `4px solid ${COLORS.black}`,
       }}>
-        <div style={{ maxWidth: 540, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <h1 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "28px", fontWeight: 400, margin: 0, color: COLORS.black, letterSpacing: "0.5px" }}>
-              {"⚡"} JackFlash
-            </h1>
-            <p style={{ fontSize: "12px", margin: "2px 0 0", fontWeight: 600, fontFamily: "'Space Mono', monospace", color: COLORS.black, opacity: 0.6 }}>
-              multiplication & division practice
+        <div style={{ maxWidth: 540, margin: "0 auto" }}>
+          {/* Centered logo lockup */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <LightningBolt size={36} />
+              <h1 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "32px", fontWeight: 400, margin: 0, color: COLORS.black, letterSpacing: "0.5px" }}>
+                JackFlash
+              </h1>
+            </div>
+            <p style={{ fontSize: "12px", margin: "2px 0 0", fontWeight: 600, fontFamily: "'Space Mono', monospace", color: COLORS.black, opacity: 0.5, letterSpacing: "1.5px", textTransform: "uppercase" }}>
+              multiply & divide
             </p>
           </div>
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          {/* Controls row */}
+          <div style={{ display: "flex", justifyContent: "center", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
             {sessionStats.total > 0 && (
               <div style={{
                 fontFamily: "'Space Mono', monospace", fontSize: "14px", fontWeight: 700,
