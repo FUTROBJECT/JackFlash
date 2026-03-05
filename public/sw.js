@@ -4,7 +4,7 @@ const CACHE_NAME = "jackflash-v1";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
-      cache.addAll(["/", "/index.html"])
+      cache.addAll(["./", "./index.html"])
     )
   );
   self.skipWaiting();

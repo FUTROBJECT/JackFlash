@@ -7,9 +7,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="JackFlash" />
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="icon.svg" />
     <title>JackFlash</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -21,7 +21,7 @@
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
-          navigator.serviceWorker.register("/sw.js");
+          navigator.serviceWorker.register("sw.js");
         });
       }
     </script>
