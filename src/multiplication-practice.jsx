@@ -313,58 +313,96 @@ export default function JackFlash() {
       }}>
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
           {/* Centered logo lockup */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "12px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <LightningBolt size={36} />
-              <h1 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "32px", fontWeight: 400, margin: 0, color: COLORS.black, letterSpacing: "0.5px" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "14px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <LightningBolt size={48} />
+              <h1 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "44px", fontWeight: 400, margin: 0, color: COLORS.black, letterSpacing: "0.5px" }}>
                 JackFlash
               </h1>
             </div>
-            <p style={{ fontSize: "12px", margin: "2px 0 0", fontWeight: 600, fontFamily: "'Space Mono', monospace", color: COLORS.black, opacity: 0.5, letterSpacing: "1.5px", textTransform: "uppercase" }}>
+            <p style={{ fontSize: "13px", margin: "4px 0 0", fontWeight: 600, fontFamily: "'Space Mono', monospace", color: "white", letterSpacing: "2px", textTransform: "uppercase" }}>
               multiply & divide
             </p>
           </div>
           {/* Controls row */}
-          <div style={{ display: "flex", justifyContent: "center", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "6px", alignItems: "stretch" }}>
             {sessionStats.total > 0 && (
               <>
                 <div style={{
+                  flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
                   fontFamily: "'Space Mono', monospace", fontSize: "14px", fontWeight: 700,
-                  backgroundColor: "white", border: BRUTAL_BORDER_SM, borderRadius: "6px",
-                  padding: "6px 10px", boxShadow: BRUTAL_SHADOW_SM,
+                  backgroundColor: "white", border: BRUTAL_BORDER_SM, borderRadius: "8px",
+                  padding: "8px 6px", boxShadow: BRUTAL_SHADOW_SM,
                 }}>
                   {sessionStats.correct}/{sessionStats.total}
                 </div>
                 <div style={{
+                  flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
                   fontFamily: "'Space Mono', monospace", fontSize: "14px", fontWeight: 700,
                   backgroundColor: streak >= 3 ? COLORS.orange : "white",
                   color: streak >= 3 ? "white" : COLORS.black,
-                  border: BRUTAL_BORDER_SM, borderRadius: "6px",
-                  padding: "6px 10px", boxShadow: BRUTAL_SHADOW_SM,
+                  border: BRUTAL_BORDER_SM, borderRadius: "8px",
+                  padding: "8px 6px", boxShadow: BRUTAL_SHADOW_SM,
                   transition: "all 0.2s ease",
                 }}>
                   {"🔥"} {streak}
                 </div>
               </>
             )}
-            <BrutalButton small onClick={() => {
+            <button onClick={() => {
               if (resetConfirm) { setMastery({}); saveMastery({}); setSessionStats({ correct: 0, total: 0 }); setStreak(0); setFeedback(null); setResetConfirm(false); pickNewFact(); }
               else { setResetConfirm(true); setTimeout(() => setResetConfirm(false), 3000); }
-            }} bg={resetConfirm ? COLORS.red : "white"} color={resetConfirm ? "white" : COLORS.black}>
+            }} style={{
+              flex: 1, padding: "8px 6px", borderRadius: "8px",
+              border: BRUTAL_BORDER_SM,
+              backgroundColor: resetConfirm ? COLORS.red : "white",
+              color: resetConfirm ? "white" : COLORS.black,
+              boxShadow: BRUTAL_SHADOW_SM,
+              fontSize: "13px", fontWeight: 700, cursor: "pointer",
+              fontFamily: "'Space Mono', monospace",
+              transition: "all 0.1s ease",
+            }}>
               {resetConfirm ? "Sure?" : "Reset"}
-            </BrutalButton>
-            <BrutalButton small onClick={() => setView(view === "progress" ? "practice" : "progress")}
-              bg={view === "progress" ? COLORS.blue : "white"}>
+            </button>
+            <button onClick={() => setView(view === "progress" ? "practice" : "progress")} style={{
+              flex: 1, padding: "8px 6px", borderRadius: "8px",
+              border: BRUTAL_BORDER_SM,
+              backgroundColor: view === "progress" ? COLORS.blue : "white",
+              color: COLORS.black,
+              boxShadow: view === "progress" ? "none" : BRUTAL_SHADOW_SM,
+              transform: view === "progress" ? "translate(2px, 2px)" : "none",
+              fontSize: "13px", fontWeight: 700, cursor: "pointer",
+              fontFamily: "'Space Mono', monospace",
+              transition: "all 0.1s ease",
+            }}>
               {view === "progress" ? "Practice" : "Progress"}
-            </BrutalButton>
-            <BrutalButton small onClick={() => setView(view === "about" ? "practice" : "about")}
-              bg={view === "about" ? COLORS.pink : "white"} color={view === "about" ? "white" : COLORS.black}>
+            </button>
+            <button onClick={() => setView(view === "about" ? "practice" : "about")} style={{
+              flex: 1, padding: "8px 6px", borderRadius: "8px",
+              border: BRUTAL_BORDER_SM,
+              backgroundColor: view === "about" ? COLORS.pink : "white",
+              color: view === "about" ? "white" : COLORS.black,
+              boxShadow: view === "about" ? "none" : BRUTAL_SHADOW_SM,
+              transform: view === "about" ? "translate(2px, 2px)" : "none",
+              fontSize: "13px", fontWeight: 700, cursor: "pointer",
+              fontFamily: "'Space Mono', monospace",
+              transition: "all 0.1s ease",
+            }}>
               ?
-            </BrutalButton>
-            <BrutalButton small onClick={() => setSettingsOpen(!settingsOpen)}
-              bg={settingsOpen ? COLORS.yellow : "white"} style={{ fontSize: "28px", lineHeight: 1, padding: "4px 10px" }}>
+            </button>
+            <button onClick={() => setSettingsOpen(!settingsOpen)} style={{
+              flex: 1, padding: "8px 6px", borderRadius: "8px",
+              border: BRUTAL_BORDER_SM,
+              backgroundColor: settingsOpen ? COLORS.yellow : "white",
+              color: COLORS.black,
+              boxShadow: settingsOpen ? "none" : BRUTAL_SHADOW_SM,
+              transform: settingsOpen ? "translate(2px, 2px)" : "none",
+              fontSize: "22px", fontWeight: 700, cursor: "pointer",
+              fontFamily: "'Space Mono', monospace",
+              transition: "all 0.1s ease", lineHeight: 1,
+            }}>
               {"⚙"}
-            </BrutalButton>
+            </button>
           </div>
         </div>
       </div>
