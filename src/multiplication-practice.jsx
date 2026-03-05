@@ -157,9 +157,27 @@ function BrutalButton({ onClick, children, bg = "white", color = COLORS.black, s
 }
 
 const MASTERY_THRESHOLD = 3;
+const STORAGE_KEY = "jackflash_mastery";
+
+function loadMastery() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveMastery(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // storage full or unavailable — silently continue
+  }
+}
 
 export default function JackFlash() {
-  const [mastery, setMastery] = useState({});
+  const [mastery, setMastery] = useState(loadMastery);
   const [activeGroup, setActiveGroup] = useState(0);
   const [mode, setMode] = useState("pictorial");
   const [operation, setOperation] = useState("multiply");
@@ -181,6 +199,8 @@ export default function JackFlash() {
   const [controlsLocked, setControlsLocked] = useState(false);
   const [focusNumber, setFocusNumber] = useState(null);
   const inputRef = useRef(null);
+
+  useEffect(() => { saveMastery(mastery); }, [mastery]);
 
   const currentTables = focusNumber ? [focusNumber] : activeGroup === -1 ? ALL_TABLES : TABLE_GROUPS[activeGroup].tables;
   const facts = generateFacts(currentTables);
@@ -289,7 +309,7 @@ export default function JackFlash() {
               </div>
             )}
             <BrutalButton small onClick={() => {
-              if (resetConfirm) { setMastery({}); setSessionStats({ correct: 0, total: 0 }); setStreak(0); setFeedback(null); setResetConfirm(false); pickNewFact(); }
+              if (resetConfirm) { setMastery({}); saveMastery({}); setSessionStats({ correct: 0, total: 0 }); setStreak(0); setFeedback(null); setResetConfirm(false); pickNewFact(); }
               else { setResetConfirm(true); setTimeout(() => setResetConfirm(false), 3000); }
             }} bg={resetConfirm ? COLORS.red : "white"} color={resetConfirm ? "white" : COLORS.black}>
               {resetConfirm ? "Sure?" : "Reset"}
