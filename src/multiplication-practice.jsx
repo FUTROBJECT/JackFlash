@@ -460,17 +460,33 @@ export default function JackFlash() {
             {controlsOpen && (
               <div style={{ animation: "fadeSlideUp 0.2s ease both", marginBottom: "20px" }}>
                 {/* Table Group Selector */}
-                <div style={{ display: "flex", gap: "8px", marginBottom: "10px", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
                   {TABLE_GROUPS.map((group, i) => (
-                    <BrutalButton key={i} small onClick={() => { setFocusNumber(null); setActiveGroup(i); setView("practice"); }}
-                      bg={!focusNumber && activeGroup === i ? group.color : "white"} active={!focusNumber && activeGroup === i} color={COLORS.black}>
+                    <button key={i} onClick={() => { setFocusNumber(null); setActiveGroup(i); setView("practice"); }} style={{
+                      flex: 1, padding: "8px 6px", borderRadius: "8px",
+                      border: BRUTAL_BORDER_SM,
+                      backgroundColor: !focusNumber && activeGroup === i ? group.color : "white",
+                      boxShadow: !focusNumber && activeGroup === i ? "none" : BRUTAL_SHADOW_SM,
+                      transform: !focusNumber && activeGroup === i ? "translate(2px, 2px)" : "none",
+                      fontSize: "13px", fontWeight: 700, cursor: "pointer",
+                      fontFamily: "'Space Mono', monospace", color: COLORS.black,
+                      transition: "all 0.1s ease",
+                    }}>
                       {group.label}
-                    </BrutalButton>
+                    </button>
                   ))}
-                  <BrutalButton small onClick={() => { setFocusNumber(null); setActiveGroup(-1); setView("practice"); }}
-                    bg={!focusNumber && activeGroup === -1 ? COLORS.blue : "white"} active={!focusNumber && activeGroup === -1} color={COLORS.black}>
+                  <button onClick={() => { setFocusNumber(null); setActiveGroup(-1); setView("practice"); }} style={{
+                    flex: 1, padding: "8px 6px", borderRadius: "8px",
+                    border: BRUTAL_BORDER_SM,
+                    backgroundColor: !focusNumber && activeGroup === -1 ? COLORS.blue : "white",
+                    boxShadow: !focusNumber && activeGroup === -1 ? "none" : BRUTAL_SHADOW_SM,
+                    transform: !focusNumber && activeGroup === -1 ? "translate(2px, 2px)" : "none",
+                    fontSize: "13px", fontWeight: 700, cursor: "pointer",
+                    fontFamily: "'Space Mono', monospace", color: COLORS.black,
+                    transition: "all 0.1s ease",
+                  }}>
                     All
-                  </BrutalButton>
+                  </button>
                 </div>
 
                 {/* Single Number Focus */}
@@ -481,20 +497,26 @@ export default function JackFlash() {
                   }}>
                     Focus on a number:
                   </div>
-                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: "6px" }}>
                     {ALL_TABLES.map((n) => (
-                      <BrutalButton key={n} small onClick={() => {
+                      <button key={n} onClick={() => {
                         setFocusNumber(n);
                         setActiveGroup(null);
                         setOperation("mixed");
                         setView("practice");
-                      }}
-                        bg={focusNumber === n ? COLORS.pink : "white"}
-                        active={focusNumber === n}
-                        color={focusNumber === n ? "white" : COLORS.black}
-                        style={{ minWidth: "40px", padding: "7px 10px" }}>
+                      }} style={{
+                        flex: 1, padding: "8px 4px", borderRadius: "8px",
+                        border: BRUTAL_BORDER_SM,
+                        backgroundColor: focusNumber === n ? COLORS.pink : "white",
+                        boxShadow: focusNumber === n ? "none" : BRUTAL_SHADOW_SM,
+                        transform: focusNumber === n ? "translate(2px, 2px)" : "none",
+                        fontSize: "13px", fontWeight: 700, cursor: "pointer",
+                        fontFamily: "'Space Mono', monospace",
+                        color: focusNumber === n ? "white" : COLORS.black,
+                        transition: "all 0.1s ease",
+                      }}>
                         {n}s
-                      </BrutalButton>
+                      </button>
                     ))}
                   </div>
                 </div>
