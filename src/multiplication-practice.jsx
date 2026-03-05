@@ -327,14 +327,25 @@ export default function JackFlash() {
           {/* Controls row */}
           <div style={{ display: "flex", justifyContent: "center", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
             {sessionStats.total > 0 && (
-              <div style={{
-                fontFamily: "'Space Mono', monospace", fontSize: "14px", fontWeight: 700,
-                backgroundColor: "white", border: BRUTAL_BORDER_SM, borderRadius: "6px",
-                padding: "6px 10px", boxShadow: BRUTAL_SHADOW_SM,
-              }}>
-                {sessionStats.correct}/{sessionStats.total}
-                {streak >= 3 && <span style={{ display: "block", fontSize: "11px", color: COLORS.orange }}>{"🔥"} {streak}</span>}
-              </div>
+              <>
+                <div style={{
+                  fontFamily: "'Space Mono', monospace", fontSize: "14px", fontWeight: 700,
+                  backgroundColor: "white", border: BRUTAL_BORDER_SM, borderRadius: "6px",
+                  padding: "6px 10px", boxShadow: BRUTAL_SHADOW_SM,
+                }}>
+                  {sessionStats.correct}/{sessionStats.total}
+                </div>
+                <div style={{
+                  fontFamily: "'Space Mono', monospace", fontSize: "14px", fontWeight: 700,
+                  backgroundColor: streak >= 3 ? COLORS.orange : "white",
+                  color: streak >= 3 ? "white" : COLORS.black,
+                  border: BRUTAL_BORDER_SM, borderRadius: "6px",
+                  padding: "6px 10px", boxShadow: BRUTAL_SHADOW_SM,
+                  transition: "all 0.2s ease",
+                }}>
+                  {"🔥"} {streak}
+                </div>
+              </>
             )}
             <BrutalButton small onClick={() => {
               if (resetConfirm) { setMastery({}); saveMastery({}); setSessionStats({ correct: 0, total: 0 }); setStreak(0); setFeedback(null); setResetConfirm(false); pickNewFact(); }
