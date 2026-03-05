@@ -733,19 +733,19 @@ export default function JackFlash() {
               </div>
 
               <div style={{
-                fontFamily: "'Shrikhand', cursive", fontSize: "56px", fontWeight: 400,
+                fontFamily: "'Shrikhand', cursive", fontSize: "clamp(80px, 20vw, 120px)", fontWeight: 400,
                 color: COLORS.black, lineHeight: 1,
               }}>
                 {currentFact.op === "divide" ? (
                   <>
                     {currentFact.display.dividend}
-                    <span style={{ color: COLORS.pink, fontSize: "42px", margin: "0 4px" }}>{"÷"}</span>
+                    <span style={{ color: COLORS.pink, fontSize: "0.7em", margin: "0 6px" }}>{"÷"}</span>
                     {currentFact.display.divisor}
                   </>
                 ) : (
                   <>
                     {currentFact.a}
-                    <span style={{ color: COLORS.pink, fontSize: "42px", margin: "0 4px" }}>{"×"}</span>
+                    <span style={{ color: COLORS.pink, fontSize: "0.7em", margin: "0 6px" }}>{"×"}</span>
                     {currentFact.b}
                   </>
                 )}
@@ -767,19 +767,19 @@ export default function JackFlash() {
                 </div>
               )}
 
-              <div style={{ marginTop: "24px", display: "flex", justifyContent: "center", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: "36px", color: "#CCC" }}>=</span>
+              <div style={{ marginTop: "24px", display: "flex", justifyContent: "center", alignItems: "center", gap: "16px" }}>
+                <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: "clamp(40px, 10vw, 64px)", color: "#CCC" }}>=</span>
                 <input ref={inputRef} type="number" value={userAnswer}
                   onChange={(e) => setUserAnswer(e.target.value)}
                   onKeyDown={handleKeyDown}
                   disabled={feedback === "correct"}
                   placeholder="?"
                   style={{
-                    width: "110px", fontSize: "36px", fontFamily: "'Shrikhand', cursive",
+                    width: "clamp(110px, 30vw, 160px)", fontSize: "clamp(36px, 10vw, 64px)", fontFamily: "'Shrikhand', cursive",
                     fontWeight: 400, textAlign: "center",
-                    border: BRUTAL_BORDER_SM, borderRadius: "8px",
+                    border: BRUTAL_BORDER_SM, borderRadius: "10px",
                     backgroundColor: feedback === "correct" ? COLORS.green : feedback === "incorrect" ? "#FFF0F0" : COLORS.cream,
-                    color: COLORS.black, outline: "none", padding: "6px 8px",
+                    color: COLORS.black, outline: "none", padding: "8px 12px",
                     boxShadow: BRUTAL_SHADOW_SM,
                     transition: "background-color 0.3s ease",
                   }}
