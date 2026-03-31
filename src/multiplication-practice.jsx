@@ -709,6 +709,12 @@ export default function JackFlash() {
             <BrutalButton onClick={() => setView("practice")} bg={COLORS.yellow} style={{ width: "100%" }}>
               Start Practicing →
             </BrutalButton>
+            <div style={{
+              textAlign: "center", marginTop: "24px", fontSize: "11px",
+              fontFamily: "'Space Mono', monospace", color: "#BBB", lineHeight: 1.5,
+            }}>
+              © 2026 Laser Lab Studios LLC. All rights reserved.
+            </div>
           </div>
         )}
 
@@ -926,12 +932,18 @@ export default function JackFlash() {
             )}
 
             <div style={{ textAlign: "center", marginTop: "20px", fontSize: "11px", fontFamily: "'Space Mono', monospace", color: "#AAA", lineHeight: 1.5 }}>
-              {mode === "concrete" && "🧱 Concrete — arrays always visible so Jack can count the dots."}
-              {mode === "pictorial" && "✏️ Pictorial — arrays fade as Jack masters each fact."}
+              {mode === "concrete" && "🧱 Concrete — arrays always visible so your child can count the dots."}
+              {mode === "pictorial" && "✏️ Pictorial — arrays fade as your child masters each fact."}
               {mode === "abstract" && "🔢 Abstract — numbers only, like flashcards. Use buttons for help."}
             </div>
           </div>
         )}
+      </div>
+      <div style={{
+        textAlign: "center", padding: "16px 20px 24px",
+        fontSize: "10px", fontFamily: "'Space Mono', monospace", color: "#CCC",
+      }}>
+        © 2026 Laser Lab Studios LLC
       </div>
     </div>
   );
