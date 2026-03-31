@@ -203,7 +203,7 @@ export default function JackFlash() {
   const [mastery, setMastery] = useState(loadMastery);
   const [activeGroup, setActiveGroup] = useState(0);
   const [mode, setMode] = useState("pictorial");
-  const [operation, setOperation] = useState("multiply");
+  const [operation, setOperation] = useState("mixed");
   const [currentFact, setCurrentFact] = useState(null);
   const [userAnswer, setUserAnswer] = useState("");
   const [feedback, setFeedback] = useState(null);
@@ -629,11 +629,14 @@ export default function JackFlash() {
                 Why JackFlash Works
               </h2>
               <p style={{ fontSize: "12px", fontFamily: "'Space Mono', monospace", margin: "0 0 20px", opacity: 0.5, fontWeight: 700 }}>
-                Built on the CPA approach used in Singapore-style math
+                Grades 2–4 · Built on the CPA approach
               </p>
               <div style={{ fontSize: "14px", color: COLORS.black, lineHeight: 1.7 }}>
                 <p style={{ margin: "0 0 16px" }}>
-                  Most multiplication apps jump straight to memorization. JackFlash is different — it's built on the <strong>Concrete → Pictorial → Abstract</strong> progression used in Singapore-style math curricula worldwide. Kids <em>understand</em> multiplication before they <em>memorize</em> it.
+                  Most math apps separate multiplication and division into different exercises. JackFlash teaches them together as <strong>fact families</strong> — because if you know 6 × 4 = 24, you already know 24 ÷ 4 and 24 ÷ 6. That's how strong curricula teach it, and it's how kids actually build fluency.
+                </p>
+                <p style={{ margin: "0 0 16px" }}>
+                  Under the hood, JackFlash uses the <strong>Concrete → Pictorial → Abstract</strong> progression from Singapore-style math — the same approach used in classrooms worldwide. Kids <em>understand</em> multiplication before they <em>memorize</em> it.
                 </p>
 
                 {/* CPA Section */}
