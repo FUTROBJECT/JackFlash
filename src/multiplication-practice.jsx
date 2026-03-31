@@ -626,24 +626,24 @@ export default function JackFlash() {
               border: BRUTAL_BORDER, boxShadow: `6px 6px 0px ${COLORS.black}`, marginBottom: "16px",
             }}>
               <h2 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "22px", fontWeight: 400, color: COLORS.black, margin: "0 0 4px" }}>
-                Why this works for Jack
+                Why JackFlash Works
               </h2>
               <p style={{ fontSize: "12px", fontFamily: "'Space Mono', monospace", margin: "0 0 20px", opacity: 0.5, fontWeight: 700 }}>
-                Aligned with think! Mathematics at New City School
+                Built on the CPA approach used in Singapore-style math
               </p>
               <div style={{ fontSize: "14px", color: COLORS.black, lineHeight: 1.7 }}>
                 <p style={{ margin: "0 0 16px" }}>
-                  New City uses <strong>think! Mathematics</strong>, a Singapore Math curriculum built around one core idea: kids need to <em>understand</em> multiplication before they <em>memorize</em> it. Standard flashcard apps skip straight to memorization. This tool doesn't.
+                  Most multiplication apps jump straight to memorization. JackFlash is different — it's built on the <strong>Concrete → Pictorial → Abstract</strong> progression used in Singapore-style math curricula worldwide. Kids <em>understand</em> multiplication before they <em>memorize</em> it.
                 </p>
 
                 {/* CPA Section */}
                 <div style={{ backgroundColor: COLORS.cream, borderRadius: "10px", padding: "16px", marginBottom: "16px", border: BRUTAL_BORDER_SM }}>
                   <h3 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400, margin: "0 0 12px" }}>The CPA Progression</h3>
-                  <p style={{ margin: "0 0 12px", fontSize: "13px" }}>Singapore Math teaches every concept in three stages. The three modes match exactly:</p>
+                  <p style={{ margin: "0 0 12px", fontSize: "13px" }}>The CPA approach teaches every concept in three stages. JackFlash's three modes match exactly:</p>
                   {[
-                    { stage: "Concrete", icon: "🧱", color: COLORS.green, school: "In class, Jack uses physical counters and blocks arranged in groups.", app: "Dot arrays are always visible. Jack can count every dot — same strategy, on screen." },
-                    { stage: "Pictorial", icon: "✏️", color: COLORS.orange, school: "In class, Jack draws arrays on dot paper and uses bar models.", app: "Arrays start visible but fade as Jack masters each fact. Visual scaffold is there when needed." },
-                    { stage: "Abstract", icon: "🔢", color: COLORS.purple, school: "In class, Jack works with equations — symbols on a page.", app: "Pure flashcard mode. \"Show array\" and \"Skip count\" let Jack drop back a stage anytime." },
+                    { stage: "Concrete", icon: "🧱", color: COLORS.green, school: "In the classroom, kids use physical counters and blocks arranged in groups.", app: "Dot arrays are always visible. Your child can count every dot — same strategy, on screen." },
+                    { stage: "Pictorial", icon: "✏️", color: COLORS.orange, school: "In the classroom, kids draw arrays on dot paper and use bar models.", app: "Arrays start visible but fade with mastery. The visual scaffold is there when needed." },
+                    { stage: "Abstract", icon: "🔢", color: COLORS.purple, school: "In the classroom, kids work with equations — symbols on a page.", app: "Pure flashcard mode. \"Show array\" and \"Skip count\" let your child drop back a stage anytime." },
                   ].map((s) => (
                     <div key={s.stage} style={{
                       backgroundColor: "white", borderRadius: "8px", padding: "12px",
@@ -659,12 +659,12 @@ export default function JackFlash() {
 
                 {/* Tools Section */}
                 <div style={{ backgroundColor: COLORS.cream, borderRadius: "10px", padding: "16px", marginBottom: "16px", border: BRUTAL_BORDER_SM }}>
-                  <h3 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400, margin: "0 0 10px" }}>Same Tools, Same Language</h3>
+                  <h3 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400, margin: "0 0 10px" }}>Real Math Tools, Not Just Flashcards</h3>
                   {[
-                    { icon: "📐", label: "Dot arrays", desc: "Same rows-and-columns layout as Jack's workbook dot paper." },
+                    { icon: "📐", label: "Dot arrays", desc: "Rows-and-columns layout matching the dot paper used in classrooms." },
                     { icon: "🔗", label: "Number bonds", desc: "Part-whole relationships reinforce that × and ÷ are two views of the same fact." },
                     { icon: "🦘", label: "Skip counting", desc: "Each table introduced through skip counting — the app shows the sequence as a hint." },
-                    { icon: "↔️", label: "× ÷ Mixed", desc: "Division as \"thinking of the corresponding multiplication fact\" — exactly how Singapore Math teaches it." },
+                    { icon: "↔️", label: "× ÷ Mixed", desc: "Division as \"thinking of the corresponding multiplication fact\" — the way strong curricula teach it." },
                   ].map((t) => (
                     <div key={t.label} style={{ display: "flex", gap: "10px", marginBottom: "8px", fontSize: "13px" }}>
                       <span style={{ fontSize: "16px", flexShrink: 0 }}>{t.icon}</span>
@@ -675,7 +675,7 @@ export default function JackFlash() {
 
                 {/* Groups Section */}
                 <div style={{ backgroundColor: COLORS.cream, borderRadius: "10px", padding: "16px", marginBottom: "16px", border: BRUTAL_BORDER_SM }}>
-                  <h3 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400, margin: "0 0 10px" }}>Table Groups Follow the Curriculum</h3>
+                  <h3 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400, margin: "0 0 10px" }}>Table Groups Follow How Kids Learn</h3>
                   {[
                     { label: "2s, 5s & 10s", desc: "Introduced first — strong skip-counting patterns.", color: COLORS.green },
                     { label: "3s & 4s", desc: "Built on 2s — \"one more group\" reasoning.", color: COLORS.orange },
@@ -695,9 +695,9 @@ export default function JackFlash() {
                   <h3 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400, margin: "0 0 10px" }}>How to Use at Home</h3>
                   <div style={{ fontSize: "13px", lineHeight: 1.7 }}>
                     <p style={{ margin: "0 0 8px" }}><strong>Start in Pictorial mode</strong> — the sweet spot for third grade. Arrays fade with mastery.</p>
-                    <p style={{ margin: "0 0 8px" }}><strong>One table group at a time</strong> — match whichever group his class is on. Use "All" for review.</p>
+                    <p style={{ margin: "0 0 8px" }}><strong>One table group at a time</strong> — match whichever group your child's class is on. Use "All" for review.</p>
                     <p style={{ margin: "0 0 8px" }}><strong>5 minutes max</strong> — short and frequent beats long and grinding.</p>
-                    <p style={{ margin: "0 0 8px" }}><strong>Ask "how could you figure it out?"</strong> — think! Mathematics encourages multiple strategies.</p>
+                    <p style={{ margin: "0 0 8px" }}><strong>Ask "how could you figure it out?"</strong> — encourage multiple strategies, not just recall.</p>
                     <p style={{ margin: "0" }}><strong>Add division when × feels solid</strong> — mixed mode reinforces fact families.</p>
                   </div>
                 </div>
