@@ -3,7 +3,7 @@ import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_S
 import multiplyModule from "./modules/multiply.jsx";
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
 import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordSession, getProfile } from "./dataManager.js";
-import { checkAfterAnswer } from "./achievementEngine.js";
+import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
@@ -594,6 +594,52 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
         {/* =================== PROGRESS VIEW =================== */}
         {view === "progress" && (
           <div style={{ animation: "fadeSlideUp 0.3s ease both" }}>
+            {/* Achievement Gallery */}
+            {profileId && (() => {
+              const allAchievements = getAllAchievementsForProfile(profileId, mod);
+              const earned = allAchievements.filter(a => a.unlocked);
+              return (
+                <div style={{
+                  backgroundColor: "white", borderRadius: "12px", padding: "18px",
+                  marginBottom: "14px", border: BRUTAL_BORDER, boxShadow: `5px 5px 0px ${COLORS.yellow}`,
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+                    <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, fontFamily: "'Shrikhand', cursive" }}>
+                      Achievements
+                    </h3>
+                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "13px", fontWeight: 700 }}>
+                      {earned.length}/{allAchievements.length}
+                    </span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+                    {allAchievements.map((a) => (
+                      <div key={a.id} style={{
+                        display: "flex", flexDirection: "column", alignItems: "center",
+                        padding: "10px 4px 8px", borderRadius: "8px",
+                        backgroundColor: a.unlocked ? COLORS.cream : "#F5F5F5",
+                        border: a.unlocked ? BRUTAL_BORDER_SM : "2px solid #E0E0E0",
+                        boxShadow: a.unlocked ? "2px 2px 0px " + COLORS.black : "none",
+                        opacity: a.unlocked ? 1 : 0.45,
+                        transition: "all 0.2s ease",
+                      }}>
+                        <div style={{ fontSize: "24px", lineHeight: 1, marginBottom: "4px" }}>
+                          {a.unlocked ? a.icon : "🔒"}
+                        </div>
+                        <div style={{
+                          fontSize: "9px", fontFamily: "'Space Mono', monospace",
+                          fontWeight: 700, textAlign: "center", lineHeight: 1.2,
+                          color: COLORS.black,
+                        }}>
+                          {a.name}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Mastery Grids by Group */}
             {mod.groups.map((group) => {
               const prog = getGroupProgress(group.tables);
               return (

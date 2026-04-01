@@ -2,6 +2,7 @@ import { useState } from "react";
 import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, MODULE_COLORS, DEFAULT_CHILD_SETTINGS } from "./constants.js";
 import { getModuleList, getModule } from "./modules/moduleRegistry.js";
 import { PRODUCTS, purchaseProduct, restorePurchases, getProductsWithStatus, isModuleFullyUnlocked } from "./purchaseManager.js";
+import { getAllAchievementsForProfile } from "./achievementEngine.js";
 import LogoLockup from "./LogoLockup.jsx";
 import { PrivacyPolicy, TermsOfService, HelpFAQ } from "./LegalPages.jsx";
 
@@ -208,18 +209,19 @@ function ProgressReport({ profile }) {
     return { ...group, total: groupFacts.length, mastered: groupMastered };
   });
 
-  // Weakest facts (lowest mastery, non-zero attempts)
+  // Weakest facts — both attempted-but-not-mastered and never-attempted
   const weakFacts = allFacts
     .map(f => ({ ...f, level: mastery[f.factKey]?.correct || 0 }))
-    .filter(f => f.level > 0 && f.level < masteryThreshold)
+    .filter(f => f.level < masteryThreshold)
     .sort((a, b) => a.level - b.level)
     .slice(0, 10);
 
   // Session history
   const sessions = profile.sessionHistory || [];
 
-  // Achievements
-  const earned = profile.achievements || [];
+  // Achievements with full details
+  const allAchievements = getAllAchievementsForProfile(profile.id, mod);
+  const earnedAchievements = allAchievements.filter(a => a.unlocked);
 
   return (
     <div style={{ padding: "12px 0" }}>
@@ -267,30 +269,41 @@ function ProgressReport({ profile }) {
       {sessions.length > 0 && (
         <div style={{ marginBottom: "16px" }}>
           <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "13px", fontWeight: 600, marginBottom: "8px" }}>Recent Sessions</div>
-          {sessions.slice(0, 5).map((s, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "12px", fontFamily: "'Space Mono', monospace", borderBottom: "1px solid #eee" }}>
-              <span>{new Date(s.recordedAt).toLocaleDateString()}</span>
-              <span>{s.correct}/{s.total} correct</span>
-              <span>{Math.round((s.duration || 0) / 1000 / 60)}min</span>
-            </div>
-          ))}
+          {sessions.slice(0, 10).map((s, i) => {
+            const accuracy = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
+            const mins = Math.round((s.duration || 0) / 1000 / 60);
+            return (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: "12px", fontFamily: "'Space Mono', monospace", borderBottom: "1px solid #eee" }}>
+                <span>{new Date(s.recordedAt).toLocaleDateString()}</span>
+                <span>{s.correct}/{s.total} ({accuracy}%)</span>
+                <span>{mins > 0 ? `${mins}m` : "<1m"}</span>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Achievements earned */}
-      {earned.length > 0 && (
-        <div>
-          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "13px", fontWeight: 600, marginBottom: "8px" }}>Achievements ({earned.length})</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {earned.map(id => (
-              <span key={id} style={{
-                padding: "4px 8px", background: COLORS.yellow, border: BRUTAL_BORDER_SM,
-                borderRadius: "4px", fontSize: "12px", fontFamily: "'Space Mono', monospace",
-              }}>{id}</span>
-            ))}
-          </div>
+      {/* Achievements */}
+      <div>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "13px", fontWeight: 600, marginBottom: "8px" }}>
+          Achievements ({earnedAchievements.length}/{allAchievements.length})
         </div>
-      )}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+          {allAchievements.map(a => (
+            <span key={a.id} style={{
+              padding: "4px 8px",
+              background: a.unlocked ? COLORS.yellow : "#F0F0F0",
+              border: BRUTAL_BORDER_SM,
+              borderRadius: "4px", fontSize: "12px", fontFamily: "'Space Mono', monospace",
+              opacity: a.unlocked ? 1 : 0.4,
+              display: "inline-flex", alignItems: "center", gap: "4px",
+            }}>
+              <span style={{ fontSize: "14px" }}>{a.unlocked ? a.icon : "🔒"}</span>
+              {a.name}
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
