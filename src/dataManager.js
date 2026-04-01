@@ -414,7 +414,14 @@ export function saveData() {
   }
 
   try {
-    localStorage.setItem(DATA_KEY, JSON.stringify(_data));
+    const json = JSON.stringify(_data);
+    localStorage.setItem(DATA_KEY, json);
+    // Verify the write actually stuck
+    const verify = localStorage.getItem(DATA_KEY);
+    if (!verify) {
+      console.error("localStorage write failed silently — getItem returned null after setItem");
+      return false;
+    }
     return true;
   } catch (err) {
     console.error("Failed to save data to localStorage:", err);
