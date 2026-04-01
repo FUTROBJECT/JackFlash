@@ -3,6 +3,7 @@ import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_S
 import { getModuleList, getModule } from "./modules/moduleRegistry.js";
 import { PRODUCTS, purchaseProduct, restorePurchases, getProductsWithStatus, isModuleFullyUnlocked } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
+import { PrivacyPolicy, TermsOfService, HelpFAQ } from "./LegalPages.jsx";
 
 // Helper component: Brutal button used throughout
 function BrutalButton({ onClick, children, bg = "white", color = COLORS.black, small = false, active = false, style = {} }) {
@@ -312,6 +313,7 @@ export function ParentZone({
   const [confirmResetProfile, setConfirmResetProfile] = useState(null);
   const [confirmDeleteProfile, setConfirmDeleteProfile] = useState(null);
   const [purchaseMessage, setPurchaseMessage] = useState(null);
+  const [legalPage, setLegalPage] = useState(null); // "privacy" | "terms" | "help" | null
   const modules = getModuleList();
 
   const handleToggleSetting = (profileId, settingName, value) => {
@@ -417,8 +419,19 @@ export function ParentZone({
           ))}
         </div>
 
+        {/* Legal / Help pages */}
+        {legalPage === "privacy" && (
+          <PrivacyPolicy onBack={() => setLegalPage(null)} />
+        )}
+        {legalPage === "terms" && (
+          <TermsOfService onBack={() => setLegalPage(null)} />
+        )}
+        {legalPage === "help" && (
+          <HelpFAQ onBack={() => setLegalPage(null)} />
+        )}
+
         {/* TAB: Children */}
-        {activeTab === "children" && (
+        {!legalPage && activeTab === "children" && (
           <div>
             {profiles.length === 0 ? (
               <div style={{
@@ -721,7 +734,7 @@ export function ParentZone({
         )}
 
         {/* TAB: Module Store */}
-        {activeTab === "modules" && (
+        {!legalPage && activeTab === "modules" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {/* Purchase message feedback */}
             {purchaseMessage && (
@@ -946,7 +959,7 @@ export function ParentZone({
         )}
 
         {/* TAB: Settings */}
-        {activeTab === "settings" && (
+        {!legalPage && activeTab === "settings" && (
           <div style={{
             backgroundColor: "white",
             borderRadius: "12px",
@@ -1015,15 +1028,15 @@ export function ParentZone({
               flexDirection: "column",
               gap: "8px",
             }}>
-              <a href="#" onClick={(e) => { e.preventDefault(); }} style={{
+              <a href="#" onClick={(e) => { e.preventDefault(); setLegalPage("help"); }} style={{
                 fontSize: "13px",
                 color: COLORS.blue,
                 textDecoration: "none",
                 fontWeight: 600,
               }}>
-                About JackFlash
+                Help & FAQ
               </a>
-              <a href="#" onClick={(e) => { e.preventDefault(); }} style={{
+              <a href="#" onClick={(e) => { e.preventDefault(); setLegalPage("privacy"); }} style={{
                 fontSize: "13px",
                 color: COLORS.blue,
                 textDecoration: "none",
@@ -1031,13 +1044,13 @@ export function ParentZone({
               }}>
                 Privacy Policy
               </a>
-              <a href="#" onClick={(e) => { e.preventDefault(); }} style={{
+              <a href="#" onClick={(e) => { e.preventDefault(); setLegalPage("terms"); }} style={{
                 fontSize: "13px",
                 color: COLORS.blue,
                 textDecoration: "none",
                 fontWeight: 600,
               }}>
-                Help & Support
+                Terms of Service
               </a>
             </div>
           </div>

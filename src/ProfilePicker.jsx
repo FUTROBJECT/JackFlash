@@ -219,6 +219,25 @@ export function ProfilePicker({ profiles, onSelectProfile, onAddProfile, onOpenP
             </p>
           </button>
         </div>
+
+        {/* Footer links */}
+        <div style={{
+          textAlign: "center",
+          padding: "24px 0 8px",
+          fontSize: "10px",
+          fontFamily: "'Space Mono', monospace",
+          color: "#AAA",
+          display: "flex",
+          justifyContent: "center",
+          gap: "12px",
+          flexWrap: "wrap",
+        }}>
+          <a href="#" onClick={(e) => { e.preventDefault(); onOpenParentZone(); }} style={{ color: "#AAA", textDecoration: "none" }}>Privacy</a>
+          <span>·</span>
+          <a href="#" onClick={(e) => { e.preventDefault(); onOpenParentZone(); }} style={{ color: "#AAA", textDecoration: "none" }}>Terms</a>
+          <span>·</span>
+          <span>© 2026 Laser Lab Studios LLC</span>
+        </div>
       </div>
     </div>
   );
