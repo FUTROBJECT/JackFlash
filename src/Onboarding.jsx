@@ -128,17 +128,36 @@ function WelcomeScreen({ onNext, onSkip }) {
             lineHeight: 1.6,
           }}
         >
-          Math practice that builds understanding, not just memorization.
+          Math practice that builds understanding,<br />
+          not just memorization.
         </p>
 
         {/* CTA Button */}
         <BrutalButton onClick={onNext} bg={COLORS.yellow} style={{ fontSize: "18px", display: "inline-block" }}>
           Get Started
         </BrutalButton>
+
+        {/* Skip link — centered below Get Started */}
+        <div style={{ marginTop: "16px" }}>
+          <button
+            onClick={onSkip}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontFamily: "'Shrikhand', cursive",
+              fontSize: "14px",
+              color: "#999",
+              padding: 0,
+              letterSpacing: "0.5px",
+            }}
+          >
+            Skip
+          </button>
+        </div>
       </div>
 
       <ProgressDots current={0} total={3} />
-      <SkipLink onClick={onSkip} />
     </div>
   );
 }
