@@ -699,61 +699,56 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                 <MasteryDots level={Math.min(getMasteryLevel(currentFact.factKey), DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
               </div>
 
-              {/* Vertical equation — stacked like traditional math */}
+              {/* Vertical equation — stacked like traditional math, centered */}
               {(() => {
                 const opSymbol = currentFact.operation === "divide" ? "÷" : "×";
                 const numFont = "clamp(72px, 22vw, 150px)";
                 const opFont = "clamp(48px, 14vw, 100px)";
                 return (
-                  <div style={{ display: "inline-block" }}>
-                    {/* Two-column grid: operator | number, so numbers share the same right edge */}
+                  <>
+                    {/* First number — centered */}
                     <div style={{
-                      display: "grid",
-                      gridTemplateColumns: "auto auto",
-                      alignItems: "baseline",
-                      justifyItems: "end",
-                      rowGap: "0px",
+                      fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
+                      color: COLORS.black, lineHeight: 1,
                     }}>
-                      {/* Row 1: empty cell + first number */}
-                      <div />
-                      <div style={{
-                        fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
-                        color: COLORS.black, lineHeight: 1,
-                      }}>
-                        {currentFact.a}
-                      </div>
-                      {/* Row 2: operator + second number */}
-                      <div style={{
+                      {currentFact.a}
+                    </div>
+                    {/* Second number with operator positioned to its left */}
+                    <div style={{ position: "relative", display: "inline-block" }}>
+                      <span style={{
+                        position: "absolute",
+                        right: "100%",
+                        marginRight: "clamp(4px, 1.5vw, 12px)",
                         fontFamily: "'Shrikhand', cursive", fontSize: opFont, fontWeight: 400,
                         color: "#999", lineHeight: 1,
-                        paddingRight: "clamp(6px, 2vw, 14px)",
-                        alignSelf: "baseline",
+                        top: "50%",
+                        transform: "translateY(-50%)",
                       }}>
                         {opSymbol}
-                      </div>
-                      <div style={{
+                      </span>
+                      <span style={{
                         fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
                         color: COLORS.black, lineHeight: 1,
                       }}>
                         {currentFact.b}
-                      </div>
+                      </span>
                     </div>
-                    {/* Divider line — full width of the grid */}
+                    {/* Divider line */}
                     <div style={{
-                      width: "100%",
+                      width: "clamp(120px, 50vw, 280px)",
                       height: "5px", backgroundColor: COLORS.black,
                       borderRadius: "2px", marginTop: "10px",
                     }} />
-                    {/* Answer input — right-aligned to match numbers */}
+                    {/* Answer input — centered */}
                     <input ref={inputRef} type="number" value={userAnswer}
                       onChange={(e) => setUserAnswer(e.target.value)}
                       onKeyDown={handleKeyDown}
                       disabled={feedback === "correct"}
                       placeholder="?"
                       style={{
-                        width: "100%",
+                        width: "clamp(120px, 50vw, 280px)",
                         fontSize: numFont, fontFamily: "'Shrikhand', cursive",
-                        fontWeight: 400, textAlign: "right",
+                        fontWeight: 400, textAlign: "center",
                         border: "none", borderRadius: "0",
                         backgroundColor: feedback === "correct" ? COLORS.green : feedback === "incorrect" ? "#FFF0F0" : "transparent",
                         color: COLORS.black, outline: "none",
@@ -762,7 +757,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                         boxSizing: "border-box",
                       }}
                     />
-                  </div>
+                  </>
                 );
               })()}
 
