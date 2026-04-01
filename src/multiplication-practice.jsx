@@ -699,93 +699,68 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                 <MasteryDots level={Math.min(getMasteryLevel(currentFact.factKey), DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
               </div>
 
-              {/* Vertical equation — stacked like traditional math, centered */}
+              {/* Vertical equation — stacked, centered, operator floats left */}
               {(() => {
                 const opSymbol = currentFact.operation === "divide" ? "÷" : "×";
                 const numFont = "clamp(72px, 22vw, 150px)";
-                const opFont = "clamp(48px, 14vw, 100px)";
-                // Determine the widest number to size the layout
-                const aStr = String(currentFact.a);
-                const bStr = String(currentFact.b);
-                const maxDigits = Math.max(aStr.length, bStr.length);
+                const opFont = "clamp(44px, 12vw, 90px)";
                 return (
-                  <>
-                    {/*
-                      Use a table layout: 2 columns [operator | number]
-                      The whole table is centered in the card.
-                      Column 1 (operator) has fixed width, column 2 (numbers) is right-aligned.
-                      First row has empty operator cell so both numbers align in column 2.
-                    */}
-                    <table style={{
-                      margin: "0 auto",
-                      borderCollapse: "collapse",
-                      borderSpacing: 0,
+                  <div style={{
+                    display: "flex", flexDirection: "column", alignItems: "center",
+                  }}>
+                    {/* First number */}
+                    <div style={{
+                      fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
+                      color: COLORS.black, lineHeight: 1,
                     }}>
-                      <tbody>
-                        {/* Row 1: first number */}
-                        <tr>
-                          <td style={{ width: "1px", padding: 0 }} />
-                          <td style={{
-                            fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
-                            color: COLORS.black, lineHeight: 1,
-                            textAlign: "right", padding: 0,
-                          }}>
-                            {currentFact.a}
-                          </td>
-                        </tr>
-                        {/* Row 2: operator + second number */}
-                        <tr>
-                          <td style={{
-                            fontFamily: "'Shrikhand', cursive", fontSize: opFont, fontWeight: 400,
-                            color: "#999", lineHeight: 1,
-                            textAlign: "left", padding: "0 clamp(6px, 2vw, 14px) 0 0",
-                            verticalAlign: "baseline",
-                          }}>
-                            {opSymbol}
-                          </td>
-                          <td style={{
-                            fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
-                            color: COLORS.black, lineHeight: 1,
-                            textAlign: "right", padding: 0,
-                          }}>
-                            {currentFact.b}
-                          </td>
-                        </tr>
-                        {/* Row 3: divider line spanning both columns */}
-                        <tr>
-                          <td colSpan={2} style={{ padding: "10px 0 0" }}>
-                            <div style={{
-                              width: "100%", height: "5px",
-                              backgroundColor: COLORS.black, borderRadius: "2px",
-                            }} />
-                          </td>
-                        </tr>
-                        {/* Row 4: answer input spanning both columns */}
-                        <tr>
-                          <td colSpan={2} style={{ padding: "4px 0 0" }}>
-                            <input ref={inputRef} type="number" value={userAnswer}
-                              onChange={(e) => setUserAnswer(e.target.value)}
-                              onKeyDown={handleKeyDown}
-                              disabled={feedback === "correct"}
-                              placeholder="?"
-                              style={{
-                                width: "100%",
-                                fontSize: numFont, fontFamily: "'Shrikhand', cursive",
-                                fontWeight: 400, textAlign: "right",
-                                border: "none", borderRadius: "0",
-                                backgroundColor: feedback === "correct" ? COLORS.green : feedback === "incorrect" ? "#FFF0F0" : "transparent",
-                                color: COLORS.black, outline: "none",
-                                padding: 0, margin: 0,
-                                transition: "background-color 0.3s ease",
-                                boxSizing: "border-box",
-                                caretColor: "transparent",
-                              }}
-                            />
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </>
+                      {currentFact.a}
+                    </div>
+                    {/* Second number row — operator is absolute, doesn't shift the number */}
+                    <div style={{
+                      position: "relative",
+                      fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
+                      color: COLORS.black, lineHeight: 1,
+                    }}>
+                      {/* Operator floats to the left outside the number */}
+                      <span style={{
+                        position: "absolute",
+                        right: "calc(100% + clamp(4px, 1.5vw, 10px))",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        fontSize: opFont,
+                        color: "#999",
+                        whiteSpace: "nowrap",
+                      }}>
+                        {opSymbol}
+                      </span>
+                      {currentFact.b}
+                    </div>
+                    {/* Divider line */}
+                    <div style={{
+                      width: "clamp(140px, 55vw, 300px)",
+                      height: "5px", backgroundColor: COLORS.black,
+                      borderRadius: "2px", marginTop: "10px",
+                    }} />
+                    {/* Answer input */}
+                    <input ref={inputRef} type="number" value={userAnswer}
+                      onChange={(e) => setUserAnswer(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      disabled={feedback === "correct"}
+                      placeholder="?"
+                      style={{
+                        width: "clamp(140px, 55vw, 300px)",
+                        fontSize: numFont, fontFamily: "'Shrikhand', cursive",
+                        fontWeight: 400, textAlign: "center",
+                        border: "none", borderRadius: "0",
+                        backgroundColor: feedback === "correct" ? COLORS.green : feedback === "incorrect" ? "#FFF0F0" : "transparent",
+                        color: COLORS.black, outline: "none",
+                        padding: "4px 0", marginTop: "4px",
+                        transition: "background-color 0.3s ease",
+                        boxSizing: "border-box",
+                        caretColor: "transparent",
+                      }}
+                    />
+                  </div>
                 );
               })()}
 
