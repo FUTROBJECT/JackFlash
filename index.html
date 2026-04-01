@@ -27,12 +27,30 @@
       // Unregister any old service workers — they were caching stale JS and breaking persistence
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.getRegistrations().then((registrations) => {
-          registrations.forEach((r) => r.unregister());
+          if (registrations.length > 0) {
+            console.log("[JF] Found", registrations.length, "service worker(s) — unregistering...");
+            registrations.forEach((r) => r.unregister());
+          } else {
+            console.log("[JF] No service workers found (good)");
+          }
         });
-        // Also clear old caches
         if ("caches" in window) {
-          caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)));
+          caches.keys().then((keys) => {
+            if (keys.length > 0) {
+              console.log("[JF] Clearing", keys.length, "cache(s):", keys);
+              keys.forEach((k) => caches.delete(k));
+            }
+          });
         }
+      }
+      // Quick localStorage test
+      try {
+        localStorage.setItem("_jf_test", "1");
+        const t = localStorage.getItem("_jf_test");
+        localStorage.removeItem("_jf_test");
+        console.log("[JF] localStorage test:", t === "1" ? "WORKING" : "BROKEN");
+      } catch (e) {
+        console.error("[JF] localStorage BLOCKED:", e);
       }
     </script>
   </body>

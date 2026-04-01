@@ -13,14 +13,18 @@ export function initData() {
     return _data;
   }
 
+  console.log("[JF] initData: reading from localStorage...");
   try {
     const stored = localStorage.getItem(DATA_KEY);
     if (stored) {
       _data = JSON.parse(stored);
+      console.log("[JF] initData: loaded", _data.profiles?.length, "profiles, onboarding:", _data.onboardingComplete);
       return _data;
+    } else {
+      console.log("[JF] initData: no data found in localStorage for key:", DATA_KEY);
     }
   } catch (err) {
-    console.error("Failed to load data from localStorage:", err);
+    console.error("[JF] Failed to load data from localStorage:", err);
   }
 
   // Check for old format and migrate if needed
@@ -415,16 +419,18 @@ export function saveData() {
 
   try {
     const json = JSON.stringify(_data);
+    console.log("[JF] saveData: writing", (json.length / 1024).toFixed(1), "KB to localStorage");
     localStorage.setItem(DATA_KEY, json);
     // Verify the write actually stuck
     const verify = localStorage.getItem(DATA_KEY);
     if (!verify) {
-      console.error("localStorage write failed silently — getItem returned null after setItem");
+      console.error("[JF] saveData: FAILED — getItem returned null after setItem");
       return false;
     }
+    console.log("[JF] saveData: verified OK");
     return true;
   } catch (err) {
-    console.error("Failed to save data to localStorage:", err);
+    console.error("[JF] saveData FAILED:", err);
     return false;
   }
 }
