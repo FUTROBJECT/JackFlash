@@ -133,7 +133,7 @@ function WelcomeScreen({ onNext, onSkip }) {
         </p>
 
         {/* CTA Button */}
-        <BrutalButton onClick={onNext} bg={COLORS.yellow} style={{ fontSize: "36px", padding: "16px 40px", display: "inline-block" }}>
+        <BrutalButton onClick={onNext} bg={COLORS.yellow} style={{ fontSize: "22px", padding: "14px 32px", display: "inline-block" }}>
           Get Started
         </BrutalButton>
 
@@ -146,7 +146,7 @@ function WelcomeScreen({ onNext, onSkip }) {
               border: "none",
               cursor: "pointer",
               fontFamily: "'Shrikhand', cursive",
-              fontSize: "28px",
+              fontSize: "18px",
               color: COLORS.black,
               padding: 0,
               letterSpacing: "0.5px",
