@@ -866,8 +866,8 @@ export function ParentZone({
 
             {/* Bundle Card */}
             {(() => {
-              const bundleProduct = PRODUCTS["bundle_all_unlock"];
-              const isPurchased = bundleProduct && isModuleFullyUnlocked();
+              const bundleProduct = PRODUCTS["bundle.all"];
+              const isPurchased = bundleProduct && isModuleFullyUnlocked("multiply") && isModuleFullyUnlocked("add") && isModuleFullyUnlocked("fractions") && isModuleFullyUnlocked("placeValue");
               return (
                 <div
                   style={{
@@ -924,7 +924,7 @@ export function ParentZone({
                       </div>
                     ) : (
                       <button
-                        onClick={() => handlePurchase("bundle_all_unlock")}
+                        onClick={() => handlePurchase("bundle.all")}
                         style={{
                           width: "100%",
                           padding: "10px",

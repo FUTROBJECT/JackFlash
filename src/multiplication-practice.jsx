@@ -639,57 +639,99 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               );
             })()}
 
-            {/* Mastery Grids by Group */}
-            {mod.groups.map((group) => {
+            {/* Practice All button — shows when 2+ groups are accessible */}
+            {mod.groups.filter((g) => isContentAccessible(moduleId, g.id)).length >= 2 && (
+              <button
+                onClick={() => { setActiveGroup(-1); setFocusNumber(null); setView("practice"); }}
+                style={{
+                  width: "100%", padding: "14px", borderRadius: "12px",
+                  border: BRUTAL_BORDER, backgroundColor: COLORS.yellow, color: COLORS.black,
+                  fontWeight: 700, cursor: "pointer", fontFamily: "'Shrikhand', cursive",
+                  fontSize: "16px", boxShadow: BRUTAL_SHADOW, marginBottom: "14px",
+                }}
+              >
+                Practice All Tables
+              </button>
+            )}
+
+            {/* Mastery Grids by Group — tap to practice */}
+            {mod.groups.map((group, groupIndex) => {
               const prog = getGroupProgress(group.tables);
+              const accessible = isContentAccessible(moduleId, group.id);
               return (
                 <div key={group.id} style={{
                   backgroundColor: "white", borderRadius: "12px", padding: "18px",
-                  marginBottom: "14px", border: BRUTAL_BORDER, boxShadow: `5px 5px 0px ${group.color}`,
+                  marginBottom: "14px", border: BRUTAL_BORDER,
+                  boxShadow: accessible ? `5px 5px 0px ${group.color}` : `5px 5px 0px #CCC`,
+                  opacity: accessible ? 1 : 0.7,
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
                     <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, fontFamily: "'Shrikhand', cursive" }}>
-                      {group.label}
+                      {accessible ? "" : "🔒 "}{group.label}
                     </h3>
                     <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "13px", fontWeight: 700 }}>
                       {prog.mastered}/{prog.total}
                     </span>
                   </div>
-                  <div style={{
-                    height: 12, borderRadius: 6, backgroundColor: "#EEE",
-                    border: BRUTAL_BORDER_SM, overflow: "hidden", marginBottom: "14px",
-                  }}>
-                    <div style={{
-                      height: "100%", width: `${(prog.mastered / prog.total) * 100}%`,
-                      backgroundColor: group.color, transition: "width 0.5s ease",
-                    }} />
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "6px" }}>
-                    {group.tables.map((t) =>
-                      Array.from({ length: 10 }, (_, i) => i + 1).map((b) => {
-                        const factKey = `${t}x${b}`;
-                        const level = getMasteryLevel(factKey);
-                        const masteryThreshold = DEFAULT_MASTERY_THRESHOLD;
-                        const mastered = level >= masteryThreshold;
-                        return (
-                          <div key={factKey} style={{
-                            padding: "6px 4px", borderRadius: "6px",
-                            backgroundColor: mastered ? group.color : "#F8F8F8",
-                            border: mastered ? BRUTAL_BORDER_SM : "2px solid #E0E0E0",
-                            textAlign: "center", fontSize: "11px",
-                            fontFamily: "'Space Mono', monospace",
-                            fontWeight: mastered ? 700 : 400,
-                            boxShadow: mastered ? "2px 2px 0px " + COLORS.black : "none",
-                          }}>
-                            {t}×{b}
-                            <div style={{ marginTop: "3px", display: "flex", justifyContent: "center" }}>
-                              <MasteryDots level={Math.min(level, masteryThreshold)} max={masteryThreshold} />
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
+                  {accessible ? (
+                    <>
+                      <div style={{
+                        height: 12, borderRadius: 6, backgroundColor: "#EEE",
+                        border: BRUTAL_BORDER_SM, overflow: "hidden", marginBottom: "14px",
+                      }}>
+                        <div style={{
+                          height: "100%", width: `${(prog.mastered / prog.total) * 100}%`,
+                          backgroundColor: group.color, transition: "width 0.5s ease",
+                        }} />
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "6px", marginBottom: "14px" }}>
+                        {group.tables.map((t) =>
+                          Array.from({ length: 10 }, (_, i) => i + 1).map((b) => {
+                            const factKey = `${t}x${b}`;
+                            const level = getMasteryLevel(factKey);
+                            const masteryThreshold = DEFAULT_MASTERY_THRESHOLD;
+                            const mastered = level >= masteryThreshold;
+                            return (
+                              <div key={factKey} style={{
+                                padding: "6px 4px", borderRadius: "6px",
+                                backgroundColor: mastered ? group.color : "#F8F8F8",
+                                border: mastered ? BRUTAL_BORDER_SM : "2px solid #E0E0E0",
+                                textAlign: "center", fontSize: "11px",
+                                fontFamily: "'Space Mono', monospace",
+                                fontWeight: mastered ? 700 : 400,
+                                boxShadow: mastered ? "2px 2px 0px " + COLORS.black : "none",
+                              }}>
+                                {t}×{b}
+                                <div style={{ marginTop: "3px", display: "flex", justifyContent: "center" }}>
+                                  <MasteryDots level={Math.min(level, masteryThreshold)} max={masteryThreshold} />
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                      <button
+                        onClick={() => { setActiveGroup(groupIndex); setFocusNumber(null); setView("practice"); }}
+                        style={{
+                          width: "100%", padding: "10px", borderRadius: "8px",
+                          border: BRUTAL_BORDER_SM, backgroundColor: group.color, color: COLORS.black,
+                          fontWeight: 700, cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif",
+                          fontSize: "13px", boxShadow: BRUTAL_SHADOW_SM,
+                        }}
+                      >
+                        Practice {group.label}
+                      </button>
+                    </>
+                  ) : (
+                    <div style={{ textAlign: "center", padding: "12px 0" }}>
+                      <div style={{ fontSize: "13px", color: "#888", fontFamily: "'Space Grotesk', sans-serif", marginBottom: "8px" }}>
+                        Ask a parent to unlock this group!
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#AAA", fontFamily: "'Space Mono', monospace" }}>
+                        {group.tables.map(t => `${t}s`).join(", ")}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
