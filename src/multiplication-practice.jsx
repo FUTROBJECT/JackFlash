@@ -705,38 +705,55 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                 const numFont = "clamp(72px, 22vw, 150px)";
                 const opFont = "clamp(48px, 14vw, 100px)";
                 return (
-                  <>
-                    {/* First number */}
+                  <div style={{ display: "inline-block" }}>
+                    {/* Two-column grid: operator | number, so numbers share the same right edge */}
                     <div style={{
-                      fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
-                      color: COLORS.black, lineHeight: 1,
+                      display: "grid",
+                      gridTemplateColumns: "auto auto",
+                      alignItems: "baseline",
+                      justifyItems: "end",
+                      rowGap: "0px",
                     }}>
-                      {currentFact.a}
+                      {/* Row 1: empty cell + first number */}
+                      <div />
+                      <div style={{
+                        fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
+                        color: COLORS.black, lineHeight: 1,
+                      }}>
+                        {currentFact.a}
+                      </div>
+                      {/* Row 2: operator + second number */}
+                      <div style={{
+                        fontFamily: "'Shrikhand', cursive", fontSize: opFont, fontWeight: 400,
+                        color: "#999", lineHeight: 1,
+                        paddingRight: "clamp(6px, 2vw, 14px)",
+                        alignSelf: "baseline",
+                      }}>
+                        {opSymbol}
+                      </div>
+                      <div style={{
+                        fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
+                        color: COLORS.black, lineHeight: 1,
+                      }}>
+                        {currentFact.b}
+                      </div>
                     </div>
-                    {/* Operator + second number */}
+                    {/* Divider line — full width of the grid */}
                     <div style={{
-                      fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
-                      color: COLORS.black, lineHeight: 1,
-                    }}>
-                      <span style={{ fontSize: opFont, color: "#999", marginRight: "clamp(6px, 2vw, 14px)" }}>{opSymbol}</span>
-                      {currentFact.b}
-                    </div>
-                    {/* Divider line */}
-                    <div style={{
-                      width: "80%", maxWidth: "280px",
+                      width: "100%",
                       height: "5px", backgroundColor: COLORS.black,
-                      borderRadius: "2px", margin: "10px auto 0",
+                      borderRadius: "2px", marginTop: "10px",
                     }} />
-                    {/* Answer input */}
+                    {/* Answer input — right-aligned to match numbers */}
                     <input ref={inputRef} type="number" value={userAnswer}
                       onChange={(e) => setUserAnswer(e.target.value)}
                       onKeyDown={handleKeyDown}
                       disabled={feedback === "correct"}
                       placeholder="?"
                       style={{
-                        width: "clamp(120px, 40vw, 240px)",
+                        width: "100%",
                         fontSize: numFont, fontFamily: "'Shrikhand', cursive",
-                        fontWeight: 400, textAlign: "center",
+                        fontWeight: 400, textAlign: "right",
                         border: "none", borderRadius: "0",
                         backgroundColor: feedback === "correct" ? COLORS.green : feedback === "incorrect" ? "#FFF0F0" : "transparent",
                         color: COLORS.black, outline: "none",
@@ -745,7 +762,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                         boxSizing: "border-box",
                       }}
                     />
-                  </>
+                  </div>
                 );
               })()}
 
