@@ -699,41 +699,51 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                 <MasteryDots level={Math.min(getMasteryLevel(currentFact.factKey), DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
               </div>
 
-              {/* Vertical equation — stacked, centered, operator floats left */}
+              {/* Vertical equation — stacked, ones column aligned, centered as a group */}
               {(() => {
                 const opSymbol = currentFact.operation === "divide" ? "÷" : "×";
                 const numFont = "clamp(72px, 22vw, 150px)";
                 const opFont = "clamp(44px, 12vw, 90px)";
+                // Pad numbers so they have equal digit count — ones column aligns
+                const aStr = String(currentFact.a);
+                const bStr = String(currentFact.b);
+                const maxLen = Math.max(aStr.length, bStr.length);
+                // Pad with invisible but space-occupying characters
+                const padA = aStr.padStart(maxLen, '\u2007'); // figure space (same width as a digit)
+                const padB = bStr.padStart(maxLen, '\u2007');
                 return (
                   <div style={{
                     display: "flex", flexDirection: "column", alignItems: "center",
                   }}>
-                    {/* First number */}
-                    <div style={{
-                      fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
-                      color: COLORS.black, lineHeight: 1,
-                    }}>
-                      {currentFact.a}
-                    </div>
-                    {/* Second number row — operator is absolute, doesn't shift the number */}
-                    <div style={{
-                      position: "relative",
-                      fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
-                      color: COLORS.black, lineHeight: 1,
-                    }}>
-                      {/* Operator floats to the left outside the number */}
-                      <span style={{
-                        position: "absolute",
-                        right: "calc(100% + clamp(4px, 1.5vw, 10px))",
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        fontSize: opFont,
-                        color: "#999",
-                        whiteSpace: "nowrap",
+                    {/* Numbers container — right-aligned internally, centered as a block */}
+                    <div style={{ position: "relative", display: "inline-flex", flexDirection: "column", alignItems: "flex-end" }}>
+                      {/* First number */}
+                      <div style={{
+                        fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
+                        color: COLORS.black, lineHeight: 1, whiteSpace: "pre",
                       }}>
-                        {opSymbol}
-                      </span>
-                      {currentFact.b}
+                        {padA}
+                      </div>
+                      {/* Second number with operator */}
+                      <div style={{
+                        position: "relative",
+                        fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
+                        color: COLORS.black, lineHeight: 1, whiteSpace: "pre",
+                      }}>
+                        {/* Operator floats to the left */}
+                        <span style={{
+                          position: "absolute",
+                          right: "calc(100% + clamp(4px, 1.5vw, 10px))",
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          fontSize: opFont,
+                          color: "#999",
+                          whiteSpace: "nowrap",
+                        }}>
+                          {opSymbol}
+                        </span>
+                        {padB}
+                      </div>
                     </div>
                     {/* Divider line */}
                     <div style={{
