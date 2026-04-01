@@ -370,45 +370,70 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               </div>
             )}
           </div>
-          {/* Stats row */}
-          {sessionStats.total > 0 && (
-            <div style={{ display: "flex", gap: "6px", alignItems: "stretch", marginBottom: "6px" }}>
-              <div style={{
-                flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: "'Space Mono', monospace", fontSize: "13px", fontWeight: 700,
-                backgroundColor: "white", border: BRUTAL_BORDER_SM, borderRadius: "8px",
-                padding: "6px 4px", boxShadow: BRUTAL_SHADOW_SM,
-              }}>
-                {sessionStats.correct}/{sessionStats.total}
-              </div>
-              <div style={{
-                flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: "'Space Mono', monospace", fontSize: "13px", fontWeight: 700,
-                backgroundColor: streak >= 3 ? COLORS.orange : "white",
-                color: streak >= 3 ? "white" : COLORS.black,
-                border: BRUTAL_BORDER_SM, borderRadius: "8px",
-                padding: "6px 4px", boxShadow: BRUTAL_SHADOW_SM,
-                transition: "all 0.2s ease",
-              }}>
-                {"🔥"} {streak}
-              </div>
-              {dailyStreak && dailyStreak.current > 0 && (
+          {/* Stats row — always visible, shows cumulative + session progress */}
+          {(() => {
+            const masteryData = getMasteryData();
+            const totalFacts = facts.length;
+            const masteredFacts = totalFacts > 0 ? facts.filter(f => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length : 0;
+            const masteryPct = totalFacts > 0 ? Math.round((masteredFacts / totalFacts) * 100) : 0;
+            return (
+              <div style={{ display: "flex", gap: "6px", alignItems: "stretch", marginBottom: "6px" }}>
+                {/* Mastery progress — cumulative, persisted */}
                 <div style={{
-                  display: "flex", alignItems: "center", gap: "4px",
-                  padding: "4px 8px",
-                  background: dailyStreak.current >= 7 ? COLORS.orange : COLORS.cream,
-                  border: BRUTAL_BORDER_SM, borderRadius: "6px",
-                  fontSize: "12px", fontFamily: "'Space Mono', monospace", fontWeight: 700,
-                  color: dailyStreak.current >= 7 ? "white" : COLORS.black,
+                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  fontFamily: "'Space Mono', monospace", fontSize: "11px", fontWeight: 700,
+                  backgroundColor: masteryPct === 100 ? COLORS.green : "white",
+                  color: masteryPct === 100 ? "white" : COLORS.black,
+                  border: BRUTAL_BORDER_SM, borderRadius: "8px",
+                  padding: "5px 4px", boxShadow: BRUTAL_SHADOW_SM,
+                  transition: "all 0.3s ease",
                 }}>
-                  <span style={{ fontSize: dailyStreak.current >= 30 ? "18px" : dailyStreak.current >= 7 ? "16px" : "13px" }}>
-                    {dailyStreak.current >= 30 ? "👑" : "📅"}
-                  </span>
-                  {dailyStreak.current}d
+                  <span style={{ fontSize: "14px" }}>⭐ {masteredFacts}/{totalFacts}</span>
+                  <span style={{ fontSize: "9px", opacity: 0.6 }}>mastered</span>
                 </div>
-              )}
-            </div>
-          )}
+                {/* Session score */}
+                <div style={{
+                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  fontFamily: "'Space Mono', monospace", fontSize: "11px", fontWeight: 700,
+                  backgroundColor: "white", border: BRUTAL_BORDER_SM, borderRadius: "8px",
+                  padding: "5px 4px", boxShadow: BRUTAL_SHADOW_SM,
+                }}>
+                  <span style={{ fontSize: "14px" }}>{sessionStats.correct}/{sessionStats.total}</span>
+                  <span style={{ fontSize: "9px", opacity: 0.6 }}>session</span>
+                </div>
+                {/* Streak */}
+                <div style={{
+                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  fontFamily: "'Space Mono', monospace", fontSize: "11px", fontWeight: 700,
+                  backgroundColor: streak >= 3 ? COLORS.orange : "white",
+                  color: streak >= 3 ? "white" : COLORS.black,
+                  border: BRUTAL_BORDER_SM, borderRadius: "8px",
+                  padding: "5px 4px", boxShadow: BRUTAL_SHADOW_SM,
+                  transition: "all 0.2s ease",
+                }}>
+                  <span style={{ fontSize: "14px" }}>{"🔥"} {streak}</span>
+                  <span style={{ fontSize: "9px", opacity: 0.6 }}>streak</span>
+                </div>
+                {/* Daily streak */}
+                {dailyStreak && dailyStreak.current > 0 && (
+                  <div style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    padding: "5px 8px",
+                    background: dailyStreak.current >= 7 ? COLORS.orange : COLORS.cream,
+                    border: BRUTAL_BORDER_SM, borderRadius: "8px",
+                    fontSize: "11px", fontFamily: "'Space Mono', monospace", fontWeight: 700,
+                    color: dailyStreak.current >= 7 ? "white" : COLORS.black,
+                    boxShadow: BRUTAL_SHADOW_SM,
+                  }}>
+                    <span style={{ fontSize: "14px" }}>
+                      {dailyStreak.current >= 30 ? "👑" : "📅"} {dailyStreak.current}
+                    </span>
+                    <span style={{ fontSize: "9px", opacity: 0.6 }}>days</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           {/* Controls row */}
           <div style={{ display: "flex", gap: "6px", alignItems: "stretch" }}>
             <button onClick={() => {
