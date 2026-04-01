@@ -1,92 +1,15 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, DEFAULT_MASTERY_THRESHOLD, AVATARS } from "./constants.js";
+import multiplyModule from "./modules/multiply.jsx";
+import { registerModule, getModule } from "./modules/moduleRegistry.js";
+import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordSession, getProfile } from "./dataManager.js";
+import { checkAfterAnswer } from "./achievementEngine.js";
+import AchievementPopup from "./AchievementPopup.jsx";
+import { isContentAccessible } from "./purchaseManager.js";
+import LogoLockup from "./LogoLockup.jsx";
 
-const COLORS = {
-  bg: "#FFFBEB",
-  black: "#1A1A1A",
-  pink: "#FF6B9D",
-  yellow: "#FFD43B",
-  blue: "#4CC9F0",
-  green: "#06D6A0",
-  orange: "#FF9F1C",
-  purple: "#B388FF",
-  red: "#FF5252",
-  cream: "#FFF8E7",
-};
-
-const TABLE_GROUPS = [
-  { label: "2s, 5s & 10s", tables: [2, 5, 10], color: COLORS.green },
-  { label: "3s & 4s", tables: [3, 4], color: COLORS.orange },
-  { label: "6s, 7s, 8s & 9s", tables: [6, 7, 8, 9], color: COLORS.purple },
-];
-
-const ALL_TABLES = [2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-function generateFacts(tables) {
-  const facts = [];
-  tables.forEach((t) => {
-    for (let i = 1; i <= 10; i++) {
-      facts.push({ a: t, b: i, answer: t * i });
-    }
-  });
-  return facts;
-}
-
-const BRUTAL_SHADOW = `4px 4px 0px ${COLORS.black}`;
-const BRUTAL_SHADOW_SM = `3px 3px 0px ${COLORS.black}`;
-const BRUTAL_BORDER = `3px solid ${COLORS.black}`;
-const BRUTAL_BORDER_SM = `2.5px solid ${COLORS.black}`;
-
-function DotArray({ rows, cols, opacity = 1, animate = false }) {
-  const dotSize = rows * cols > 50 ? 8 : rows * cols > 30 ? 9 : 11;
-  const gap = rows * cols > 50 ? 4 : 5;
-  return (
-    <div
-      style={{
-        display: "inline-flex", flexDirection: "column", gap: `${gap}px`,
-        opacity, transition: "opacity 0.6s ease", maxWidth: "100%", overflow: "hidden",
-        background: COLORS.cream, border: BRUTAL_BORDER_SM, borderRadius: "6px",
-        padding: "10px",
-      }}
-    >
-      {Array.from({ length: rows }).map((_, r) => (
-        <div key={r} style={{ display: "flex", gap: `${gap}px` }}>
-          {Array.from({ length: cols }).map((_, c) => (
-            <div key={c} style={{
-              width: dotSize, height: dotSize, borderRadius: "50%",
-              backgroundColor: COLORS.pink, border: `2px solid ${COLORS.black}`,
-              animation: animate ? `dotPop 0.3s ease ${(r * cols + c) * 15}ms both` : "none",
-              flexShrink: 0,
-            }} />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function SkipCount({ factor, count, show }) {
-  if (!show) return null;
-  const steps = Array.from({ length: count }, (_, i) => factor * (i + 1));
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", justifyContent: "center", marginTop: "12px" }}>
-      {steps.map((val, i) => (
-        <span key={i} style={{
-          fontFamily: "'Space Mono', monospace", fontSize: "15px",
-          color: i === steps.length - 1 ? COLORS.black : "#888",
-          fontWeight: i === steps.length - 1 ? 700 : 400,
-          backgroundColor: i === steps.length - 1 ? COLORS.yellow : "transparent",
-          padding: i === steps.length - 1 ? "2px 6px" : "0",
-          border: i === steps.length - 1 ? BRUTAL_BORDER_SM : "none",
-          borderRadius: "4px",
-          animation: `fadeSlideUp 0.3s ease ${i * 60}ms both`,
-        }}>
-          {val}
-          {i < steps.length - 1 && <span style={{ color: "#CCC", margin: "0 2px" }}>{"→"}</span>}
-        </span>
-      ))}
-    </div>
-  );
-}
+// Register the multiply module on first load
+registerModule(multiplyModule);
 
 function NumberBond({ whole, partA, partB, show }) {
   if (!show) return null;
@@ -134,29 +57,6 @@ function MasteryDots({ level, max = 3 }) {
   );
 }
 
-function LightningBolt({ size = 32 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M38 4L14 36h14L22 60l28-32H36L38 4z"
-        fill="white"
-        stroke={COLORS.orange}
-        strokeWidth="4"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-      <path
-        d="M38 4L14 36h14L22 60l28-32H36L38 4z"
-        fill="none"
-        stroke={COLORS.black}
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 function BrutalButton({ onClick, children, bg = "white", color = COLORS.black, small = false, active = false, style = {} }) {
   return (
     <button onClick={onClick} style={{
@@ -179,31 +79,15 @@ function BrutalButton({ onClick, children, bg = "white", color = COLORS.black, s
   );
 }
 
-const MASTERY_THRESHOLD = 3;
-const STORAGE_KEY = "jackflash_mastery";
+export default function MultiplicationPractice({ moduleId = "multiply", profileId = null, profileName = "Practice", profileAvatar = null, onBack = null }) {
+  // Get the module definition (before hooks so we can use it in initial state)
+  const mod = getModule(moduleId);
 
-function loadMastery() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveMastery(data) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch {
-    // storage full or unavailable — silently continue
-  }
-}
-
-export default function JackFlash() {
-  const [mastery, setMastery] = useState(loadMastery);
+  // ALL state declarations first (React hooks must be called unconditionally)
+  const [localMastery, setLocalMastery] = useState({});
   const [activeGroup, setActiveGroup] = useState(0);
   const [mode, setMode] = useState("pictorial");
-  const [operation, setOperation] = useState("mixed");
+  const [operation, setOperation] = useState(mod?.defaultOperation || "mixed");
   const [currentFact, setCurrentFact] = useState(null);
   const [userAnswer, setUserAnswer] = useState("");
   const [feedback, setFeedback] = useState(null);
@@ -215,60 +99,168 @@ export default function JackFlash() {
   const [view, setView] = useState("practice");
   const [streak, setStreak] = useState(0);
   const [resetConfirm, setResetConfirm] = useState(false);
-  const [controlsOpen, setControlsOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  // controls removed from practice view — settings managed via Parent Zone
   const [showArrayButton, setShowArrayButton] = useState(true);
   const [showSkipButton, setShowSkipButton] = useState(true);
-  const [controlsLocked, setControlsLocked] = useState(false);
+  // controlsLocked state removed — no longer needed
   const [focusNumber, setFocusNumber] = useState(null);
+  const [dailyStreak, setDailyStreak] = useState(null);
+  const [achievementQueue, setAchievementQueue] = useState([]);
+  const [sessionStartTime] = useState(Date.now());
   const inputRef = useRef(null);
 
-  useEffect(() => { saveMastery(mastery); }, [mastery]);
+  // Initialize data manager
+  useEffect(() => {
+    initData();
+  }, []);
 
-  const currentTables = focusNumber ? [focusNumber] : activeGroup === -1 ? ALL_TABLES : TABLE_GROUPS[activeGroup].tables;
-  const facts = generateFacts(currentTables);
-  const getMasteryKey = (a, b) => `${a}×${b}`;
-  const getMasteryLevel = (a, b) => mastery[getMasteryKey(a, b)]?.correct || 0;
-
-  const pickNewFact = useCallback(() => {
-    const weighted = facts.flatMap((f) => {
-      const level = getMasteryLevel(f.a, f.b);
-      return Array(Math.max(1, MASTERY_THRESHOLD + 1 - level)).fill(f);
-    });
-    const baseFact = weighted[Math.floor(Math.random() * weighted.length)];
-    let op = operation === "divide" ? "divide" : operation === "mixed" ? (Math.random() < 0.5 ? "multiply" : "divide") : "multiply";
-    let fact;
-    if (op === "divide") {
-      const flip = Math.random() < 0.5;
-      fact = {
-        ...baseFact, op: "divide",
-        display: { dividend: baseFact.answer, divisor: flip ? baseFact.b : baseFact.a, quotient: flip ? baseFact.a : baseFact.b },
-        correctAnswer: flip ? baseFact.a : baseFact.b,
-        arrayRows: baseFact.a, arrayCols: baseFact.b,
-      };
-    } else {
-      fact = { ...baseFact, op: "multiply", correctAnswer: baseFact.answer, arrayRows: baseFact.a, arrayCols: baseFact.b };
+  // Initialize daily streak on mount
+  useEffect(() => {
+    if (profileId) {
+      const streak = checkStreakOnLaunch(profileId);
+      setDailyStreak(streak);
     }
-    setCurrentFact(fact);
+  }, [profileId]);
+
+  // Record session on unmount
+  useEffect(() => {
+    return () => {
+      if (profileId && sessionStats.total > 0) {
+        recordSession(profileId, {
+          moduleId,
+          correct: sessionStats.correct,
+          total: sessionStats.total,
+          duration: Date.now() - sessionStartTime,
+        });
+      }
+    };
+  }, [profileId, moduleId, sessionStats, sessionStartTime]);
+
+  // Get mastery data (either from profile via data manager, or local state)
+  const getMasteryData = useCallback(() => {
+    if (profileId) {
+      const profileMastery = getMastery(profileId, moduleId);
+      return profileMastery || {};
+    }
+    return localMastery;
+  }, [profileId, moduleId, localMastery]);
+
+  // Check if a specific table is accessible (must be defined before currentTables)
+  const isTableAccessible = useCallback((table) => {
+    if (!mod) return false;
+    return mod.groups.some(group =>
+      group.tables.includes(table) && isContentAccessible(moduleId, group.id)
+    );
+  }, [mod, moduleId]);
+
+  // Determine current tables based on focus or active group, filtering for accessibility
+  const currentTables = mod ? (focusNumber
+    ? (isTableAccessible(focusNumber) ? [focusNumber] : [])
+    : activeGroup === -1
+      ? mod.focusTables.filter(t => isTableAccessible(t))
+      : (activeGroup >= 0 && isContentAccessible(moduleId, mod.groups[activeGroup]?.id)
+          ? mod.groups[activeGroup]?.tables || []
+          : [])) : [];
+
+  // Generate facts using the module's generateFacts function (memoized to prevent infinite re-render loop)
+  const facts = useMemo(() => {
+    return mod ? mod.generateFacts({ tables: currentTables, operation }) : [];
+  }, [mod, JSON.stringify(currentTables), operation]);
+
+  // Get mastery level for a fact (read from structured format)
+  const getMasteryLevel = useCallback((factKey) => {
+    const masteryData = getMasteryData();
+    return masteryData[factKey]?.correct || 0;
+  }, [getMasteryData]);
+
+  // Pick a new fact weighted by mastery
+  const pickNewFact = useCallback(() => {
+    if (facts.length === 0) {
+      setCurrentFact(null);
+      return;
+    }
+
+    const masteryThreshold = DEFAULT_MASTERY_THRESHOLD;
+    const weighted = facts.flatMap((f) => {
+      const level = getMasteryLevel(f.factKey);
+      return Array(Math.max(1, masteryThreshold + 1 - level)).fill(f);
+    });
+
+    setCurrentFact(weighted[Math.floor(Math.random() * weighted.length)] || null);
     setUserAnswer("");
     setFeedback(null);
     setShowScaffold(false);
     setUserHidScaffold(false);
     setShowNumberBond(false);
     setTimeout(() => inputRef.current?.focus(), 100);
-  }, [facts, mastery, operation]);
+  }, [facts, getMasteryLevel]);
 
-  useEffect(() => { pickNewFact(); }, [activeGroup, focusNumber, operation]);
+  // Trigger pickNewFact when group, focus number, operation, or facts change
+  useEffect(() => {
+    pickNewFact();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeGroup, focusNumber, operation, facts]);
 
-  const handleSubmit = () => {
+  // Handle answer submission
+  const handleSubmit = useCallback(() => {
     if (!currentFact || userAnswer === "") return;
-    const isCorrect = parseInt(userAnswer) === currentFact.correctAnswer;
-    const key = getMasteryKey(currentFact.a, currentFact.b);
-    setMastery((prev) => ({
-      ...prev,
-      [key]: { correct: (prev[key]?.correct || 0) + (isCorrect ? 1 : 0), attempts: (prev[key]?.attempts || 0) + 1 },
-    }));
+
+    const isCorrect = parseInt(userAnswer) === currentFact.answer;
+    const masteryThreshold = DEFAULT_MASTERY_THRESHOLD;
+
+    // Update mastery via data manager if profileId exists, otherwise via local state
+    if (profileId) {
+      updateMastery(profileId, moduleId, currentFact.factKey, isCorrect);
+    } else {
+      setLocalMastery((prev) => ({
+        ...prev,
+        [currentFact.factKey]: {
+          correct: (prev[currentFact.factKey]?.correct || 0) + (isCorrect ? 1 : 0),
+          lastSeen: new Date().toISOString(),
+        },
+      }));
+    }
+
     setSessionStats((prev) => ({ correct: prev.correct + (isCorrect ? 1 : 0), total: prev.total + 1 }));
+
+    // Check achievements after each answer (one-time unlocks like table mastery)
+    if (profileId) {
+      const profile = getProfile(profileId);
+      const newStreak = isCorrect ? streak + 1 : 0;
+      const newAchievements = checkAfterAnswer({
+        profileId,
+        moduleId,
+        module: mod,
+        streak: newStreak,
+        sessionTotal: sessionStats.total + 1,
+        sessionStartTime,
+        mastery: profile?.mastery?.[moduleId] || {},
+        masteryThreshold: DEFAULT_MASTERY_THRESHOLD,
+      });
+      if (newAchievements.length > 0) {
+        setAchievementQueue(prev => [...prev, ...newAchievements]);
+      }
+
+      // Repeatable streak milestones — fire every session, not just once
+      const streakMilestones = [
+        { at: 3, name: "Getting Warm!", icon: "🔥", description: "3 in a row!" },
+        { at: 5, name: "On Fire!", icon: "🔥", description: "5 in a row!" },
+        { at: 10, name: "Unstoppable!", icon: "⚡", description: "10 in a row!" },
+        { at: 25, name: "LEGENDARY!", icon: "👑", description: "25 in a row!" },
+      ];
+      const milestone = streakMilestones.find(m => m.at === newStreak);
+      if (milestone) {
+        setAchievementQueue(prev => [...prev, milestone]);
+      }
+    }
+
+    // Update daily streak once we've hit the minimum problem count
+    const newTotal = sessionStats.total + 1;
+    if (profileId && newTotal >= 10 && !dailyStreak?.lastPracticeDate?.startsWith(new Date().toISOString().split("T")[0])) {
+      const updatedStreak = updateStreak(profileId, newTotal);
+      setDailyStreak(updatedStreak);
+    }
+
     if (isCorrect) {
       setStreak((s) => s + 1);
       setFeedback("correct");
@@ -278,26 +270,63 @@ export default function JackFlash() {
       setFeedback("incorrect");
       setShowScaffold(true);
     }
-  };
+  }, [currentFact, userAnswer, profileId, moduleId, pickNewFact, streak, sessionStats, sessionStartTime, mod]);
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") { feedback === "incorrect" ? pickNewFact() : handleSubmit(); }
+    if (e.key === "Enter") {
+      feedback === "incorrect" ? pickNewFact() : handleSubmit();
+    }
   };
 
-  const scaffoldOpacity = mode === "concrete" ? 1 : mode === "pictorial" ? (currentFact ? Math.max(0.15, 1 - getMasteryLevel(currentFact.a, currentFact.b) * 0.3) : 1) : 0;
-  const skipFactor = currentFact ? currentFact.a : 1;
-  const skipCountVal = currentFact ? currentFact.b : 1;
-  const groupColor = focusNumber ? COLORS.pink : activeGroup === -1 ? COLORS.blue : TABLE_GROUPS[activeGroup].color;
+  // Calculate scaffold opacity based on mastery
+  const scaffoldOpacity = mode === "concrete"
+    ? 1
+    : mode === "pictorial" && currentFact
+      ? Math.max(0.15, 1 - getMasteryLevel(currentFact.factKey) * 0.3)
+      : 0;
 
-  const getGroupProgress = (tables) => {
-    const gf = generateFacts(tables);
-    return { total: gf.length, mastered: gf.filter((f) => getMasteryLevel(f.a, f.b) >= MASTERY_THRESHOLD).length };
-  };
+  // For multiply: count by a, b times (e.g. 6×3 → 6, 12, 18)
+  // For divide: count by divisor, answer times (e.g. 30÷5=6 → 5, 10, 15, 20, 25, 30)
+  const skipFactor = currentFact
+    ? (currentFact.operation === "divide" ? currentFact.b : currentFact.a)
+    : 1;
+  const skipCountVal = currentFact
+    ? (currentFact.operation === "divide" ? currentFact.answer : currentFact.b)
+    : 1;
+
+  // Check if the current group/focus is locked
+  const isCurrentGroupLocked = mod ? ((focusNumber && !isTableAccessible(focusNumber))
+    || (activeGroup >= 0 && !isContentAccessible(moduleId, mod.groups[activeGroup]?.id))) : false;
+
+  // groupColor removed — controls bar no longer in practice view
+
+  // Calculate group progress
+  const getGroupProgress = useCallback((tables) => {
+    if (!mod) return { total: 0, mastered: 0 };
+    const gf = mod.generateFacts({ tables, operation });
+    const masteryThreshold = DEFAULT_MASTERY_THRESHOLD;
+    return {
+      total: gf.length,
+      mastered: gf.filter((f) => getMasteryLevel(f.factKey) >= masteryThreshold).length,
+    };
+  }, [mod, operation, getMasteryLevel]);
+
+  // Get the ScaffoldComponent and HintComponent from the module
+  // Use DivisionScaffoldComponent (bar model) for divide, DotArray for multiply
+  const MultiplyScaffold = mod?.ScaffoldComponent;
+  const DivisionScaffold = mod?.DivisionScaffoldComponent;
+  const HintComponent = mod?.HintComponent;
+
+  // Guard: if module somehow not found, show message (all hooks already called above)
+  if (!mod) {
+    return <div style={{ padding: "40px", textAlign: "center", fontFamily: "'Space Grotesk', sans-serif" }}>Module not found</div>;
+  }
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: COLORS.bg, fontFamily: "'Space Grotesk', sans-serif", padding: 0, overflow: "auto" }}>
+    <div style={{ minHeight: "100vh", background: `repeating-linear-gradient(0deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), repeating-linear-gradient(90deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), ${COLORS.bg}`, fontFamily: "'Space Grotesk', sans-serif", padding: 0, overflow: "auto" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Shrikhand&display=swap');
+        * { box-sizing: border-box; }
         @keyframes dotPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes fadeSlideUp { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes correctPulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
@@ -308,315 +337,138 @@ export default function JackFlash() {
 
       {/* Header */}
       <div style={{
-        background: COLORS.yellow, padding: "18px 20px 14px",
+        background: COLORS.yellow, padding: "14px clamp(12px, 4vw, 20px) 10px",
         borderBottom: `4px solid ${COLORS.black}`,
       }}>
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
-          {/* Centered logo lockup */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "14px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <LightningBolt size={48} />
-              <h1 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "44px", fontWeight: 400, margin: 0, color: COLORS.black, letterSpacing: "0.5px" }}>
-                JackFlash
-              </h1>
-            </div>
-            <p style={{ fontSize: "13px", margin: "4px 0 0", fontWeight: 600, fontFamily: "'Space Mono', monospace", color: "white", letterSpacing: "2px", textTransform: "uppercase" }}>
-              multiply & divide
-            </p>
+          {/* Back button, logo lockup, and player avatar */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+            {onBack && (
+              <button onClick={onBack} style={{
+                padding: "6px 10px", borderRadius: "6px", border: BRUTAL_BORDER_SM,
+                backgroundColor: "white", color: COLORS.black,
+                boxShadow: BRUTAL_SHADOW_SM, cursor: "pointer",
+                fontFamily: "'Space Mono', monospace", fontSize: "16px", fontWeight: 700,
+                transition: "all 0.1s ease", flexShrink: 0,
+              }}>
+                ←
+              </button>
+            )}
+            <LogoLockup size="medium" style={{ flex: 1 }} />
+            {profileAvatar && (
+              <div style={{
+                width: "44px", height: "44px",
+                borderRadius: "50%",
+                border: BRUTAL_BORDER_SM,
+                backgroundColor: "white",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "24px",
+                boxShadow: BRUTAL_SHADOW_SM,
+                flexShrink: 0,
+              }}>
+                {AVATARS.find(a => a.id === profileAvatar)?.emoji || profileAvatar}
+              </div>
+            )}
           </div>
+          {/* Stats row */}
+          {sessionStats.total > 0 && (
+            <div style={{ display: "flex", gap: "6px", alignItems: "stretch", marginBottom: "6px" }}>
+              <div style={{
+                flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: "'Space Mono', monospace", fontSize: "13px", fontWeight: 700,
+                backgroundColor: "white", border: BRUTAL_BORDER_SM, borderRadius: "8px",
+                padding: "6px 4px", boxShadow: BRUTAL_SHADOW_SM,
+              }}>
+                {sessionStats.correct}/{sessionStats.total}
+              </div>
+              <div style={{
+                flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: "'Space Mono', monospace", fontSize: "13px", fontWeight: 700,
+                backgroundColor: streak >= 3 ? COLORS.orange : "white",
+                color: streak >= 3 ? "white" : COLORS.black,
+                border: BRUTAL_BORDER_SM, borderRadius: "8px",
+                padding: "6px 4px", boxShadow: BRUTAL_SHADOW_SM,
+                transition: "all 0.2s ease",
+              }}>
+                {"🔥"} {streak}
+              </div>
+              {dailyStreak && dailyStreak.current > 0 && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: "4px",
+                  padding: "4px 8px",
+                  background: dailyStreak.current >= 7 ? COLORS.orange : COLORS.cream,
+                  border: BRUTAL_BORDER_SM, borderRadius: "6px",
+                  fontSize: "12px", fontFamily: "'Space Mono', monospace", fontWeight: 700,
+                  color: dailyStreak.current >= 7 ? "white" : COLORS.black,
+                }}>
+                  <span style={{ fontSize: dailyStreak.current >= 30 ? "18px" : dailyStreak.current >= 7 ? "16px" : "13px" }}>
+                    {dailyStreak.current >= 30 ? "👑" : "📅"}
+                  </span>
+                  {dailyStreak.current}d
+                </div>
+              )}
+            </div>
+          )}
           {/* Controls row */}
           <div style={{ display: "flex", gap: "6px", alignItems: "stretch" }}>
-            {sessionStats.total > 0 && (
-              <>
-                <div style={{
-                  flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Space Mono', monospace", fontSize: "14px", fontWeight: 700,
-                  backgroundColor: "white", border: BRUTAL_BORDER_SM, borderRadius: "8px",
-                  padding: "8px 6px", boxShadow: BRUTAL_SHADOW_SM,
-                }}>
-                  {sessionStats.correct}/{sessionStats.total}
-                </div>
-                <div style={{
-                  flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Space Mono', monospace", fontSize: "14px", fontWeight: 700,
-                  backgroundColor: streak >= 3 ? COLORS.orange : "white",
-                  color: streak >= 3 ? "white" : COLORS.black,
-                  border: BRUTAL_BORDER_SM, borderRadius: "8px",
-                  padding: "8px 6px", boxShadow: BRUTAL_SHADOW_SM,
-                  transition: "all 0.2s ease",
-                }}>
-                  {"🔥"} {streak}
-                </div>
-              </>
-            )}
             <button onClick={() => {
-              if (resetConfirm) { setMastery({}); saveMastery({}); setSessionStats({ correct: 0, total: 0 }); setStreak(0); setFeedback(null); setResetConfirm(false); pickNewFact(); }
-              else { setResetConfirm(true); setTimeout(() => setResetConfirm(false), 3000); }
+              if (resetConfirm) {
+                setLocalMastery({});
+                setSessionStats({ correct: 0, total: 0 });
+                setStreak(0);
+                setFeedback(null);
+                setResetConfirm(false);
+                pickNewFact();
+              } else {
+                setResetConfirm(true);
+                setTimeout(() => setResetConfirm(false), 3000);
+              }
             }} style={{
-              flex: 1, padding: "8px 6px", borderRadius: "8px",
+              flex: 1, padding: "6px 4px", borderRadius: "8px",
               border: BRUTAL_BORDER_SM,
               backgroundColor: resetConfirm ? COLORS.red : "white",
               color: resetConfirm ? "white" : COLORS.black,
               boxShadow: BRUTAL_SHADOW_SM,
-              fontSize: "13px", fontWeight: 700, cursor: "pointer",
+              fontSize: "12px", fontWeight: 700, cursor: "pointer",
               fontFamily: "'Space Mono', monospace",
               transition: "all 0.1s ease",
             }}>
               {resetConfirm ? "Sure?" : "Reset"}
             </button>
             <button onClick={() => setView(view === "progress" ? "practice" : "progress")} style={{
-              flex: 1, padding: "8px 6px", borderRadius: "8px",
+              flex: 1, padding: "6px 4px", borderRadius: "8px",
               border: BRUTAL_BORDER_SM,
               backgroundColor: view === "progress" ? COLORS.blue : "white",
               color: COLORS.black,
               boxShadow: view === "progress" ? "none" : BRUTAL_SHADOW_SM,
               transform: view === "progress" ? "translate(2px, 2px)" : "none",
-              fontSize: "13px", fontWeight: 700, cursor: "pointer",
+              fontSize: "12px", fontWeight: 700, cursor: "pointer",
               fontFamily: "'Space Mono', monospace",
               transition: "all 0.1s ease",
             }}>
               {view === "progress" ? "Practice" : "Progress"}
             </button>
             <button onClick={() => setView(view === "about" ? "practice" : "about")} style={{
-              flex: 1, padding: "8px 6px", borderRadius: "8px",
+              flex: 1, padding: "6px 4px", borderRadius: "8px",
               border: BRUTAL_BORDER_SM,
               backgroundColor: view === "about" ? COLORS.pink : "white",
               color: view === "about" ? "white" : COLORS.black,
               boxShadow: view === "about" ? "none" : BRUTAL_SHADOW_SM,
               transform: view === "about" ? "translate(2px, 2px)" : "none",
-              fontSize: "13px", fontWeight: 700, cursor: "pointer",
+              fontSize: "12px", fontWeight: 700, cursor: "pointer",
               fontFamily: "'Space Mono', monospace",
               transition: "all 0.1s ease",
             }}>
               ?
             </button>
-            <button onClick={() => setSettingsOpen(!settingsOpen)} style={{
-              flex: 1, padding: "8px 6px", borderRadius: "8px",
-              border: BRUTAL_BORDER_SM,
-              backgroundColor: settingsOpen ? COLORS.yellow : "white",
-              color: COLORS.black,
-              boxShadow: settingsOpen ? "none" : BRUTAL_SHADOW_SM,
-              transform: settingsOpen ? "translate(2px, 2px)" : "none",
-              fontSize: "22px", fontWeight: 700, cursor: "pointer",
-              fontFamily: "'Space Mono', monospace",
-              transition: "all 0.1s ease", lineHeight: 1,
-            }}>
-              {"⚙"}
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Settings Panel */}
-      {settingsOpen && (
-        <div style={{
-          maxWidth: 540, margin: "0 auto", padding: "12px 20px",
-          animation: "fadeSlideUp 0.2s ease both",
-        }}>
-          <div style={{
-            backgroundColor: "white", borderRadius: "10px", padding: "16px",
-            border: BRUTAL_BORDER_SM, boxShadow: BRUTAL_SHADOW_SM,
-          }}>
-            <div style={{
-              fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400,
-              marginBottom: "12px", color: COLORS.black,
-            }}>
-              Settings
-            </div>
-            {[
-              { label: "Show \"Array\" button", value: showArrayButton, toggle: () => setShowArrayButton(!showArrayButton) },
-              { label: "Show \"Skip Count\" button", value: showSkipButton, toggle: () => setShowSkipButton(!showSkipButton) },
-              { label: "Lock controls bar", value: controlsLocked, toggle: () => { setControlsLocked(!controlsLocked); if (!controlsLocked) setControlsOpen(false); } },
-            ].map((setting) => (
-              <button key={setting.label} onClick={setting.toggle} style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                width: "100%", padding: "10px 12px", marginBottom: "6px",
-                borderRadius: "8px", border: BRUTAL_BORDER_SM,
-                backgroundColor: setting.value ? COLORS.cream : "white",
-                cursor: "pointer", fontFamily: "'Space Mono', monospace",
-                fontSize: "12px", fontWeight: 700, color: COLORS.black,
-                boxShadow: setting.value ? "none" : BRUTAL_SHADOW_SM,
-                transform: setting.value ? "translate(2px, 2px)" : "none",
-                transition: "all 0.1s ease",
-              }}>
-                <span>{setting.label}</span>
-                <span style={{
-                  width: "36px", height: "20px", borderRadius: "10px",
-                  backgroundColor: setting.value ? COLORS.green : "#DDD",
-                  border: `2px solid ${COLORS.black}`,
-                  position: "relative", display: "inline-block",
-                  transition: "background-color 0.2s ease",
-                }}>
-                  <span style={{
-                    position: "absolute", top: "2px",
-                    left: setting.value ? "16px" : "2px",
-                    width: "12px", height: "12px", borderRadius: "50%",
-                    backgroundColor: "white", border: `2px solid ${COLORS.black}`,
-                    transition: "left 0.2s ease",
-                  }} />
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
-      <div style={{ maxWidth: 540, margin: "0 auto", padding: "16px 20px 40px" }}>
-        {/* Collapsible Controls */}
-        {view === "practice" && (
-          <>
-            {/* Summary bar - always visible */}
-            <button onClick={() => { if (!controlsLocked) setControlsOpen(!controlsOpen); }} style={{
-              width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "10px 14px", borderRadius: "10px",
-              border: BRUTAL_BORDER_SM, backgroundColor: "white",
-              boxShadow: BRUTAL_SHADOW_SM, cursor: controlsLocked ? "default" : "pointer",
-              marginBottom: controlsOpen ? "12px" : "20px",
-              fontFamily: "'Space Mono', monospace", fontSize: "12px", fontWeight: 700,
-              color: COLORS.black, transition: "margin-bottom 0.2s ease",
-              opacity: controlsLocked ? 0.7 : 1,
-            }}>
-              <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-                <span style={{
-                  backgroundColor: groupColor, padding: "3px 8px", borderRadius: "4px",
-                  border: `2px solid ${COLORS.black}`, fontSize: "11px",
-                }}>
-                  {focusNumber ? `${focusNumber}s` : activeGroup === -1 ? "All" : TABLE_GROUPS[activeGroup].label}
-                </span>
-                <span style={{
-                  backgroundColor: COLORS.cream, padding: "3px 8px", borderRadius: "4px",
-                  border: `2px solid ${COLORS.black}`, fontSize: "11px",
-                }}>
-                  {mode === "concrete" ? "🧱 Concrete" : mode === "pictorial" ? "✏️ Pictorial" : "🔢 Abstract"}
-                </span>
-                <span style={{
-                  backgroundColor: COLORS.cream, padding: "3px 8px", borderRadius: "4px",
-                  border: `2px solid ${COLORS.black}`, fontSize: "11px",
-                }}>
-                  {operation === "multiply" ? "× Multiply" : operation === "divide" ? "÷ Divide" : "×÷ Mixed"}
-                </span>
-              </div>
-              <span style={{
-                fontSize: controlsLocked ? "18px" : "16px", transition: "transform 0.2s ease",
-                transform: controlsOpen ? "rotate(180deg)" : "rotate(0deg)",
-                flexShrink: 0, marginLeft: "8px",
-              }}>
-                {controlsLocked ? "🔒" : "▾"}
-              </span>
-            </button>
-
-            {/* Expanded controls */}
-            {controlsOpen && (
-              <div style={{ animation: "fadeSlideUp 0.2s ease both", marginBottom: "20px" }}>
-                {/* Table Group Selector */}
-                <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
-                  {TABLE_GROUPS.map((group, i) => (
-                    <button key={i} onClick={() => { setFocusNumber(null); setActiveGroup(i); setView("practice"); }} style={{
-                      flex: 1, padding: "8px 6px", borderRadius: "8px",
-                      border: BRUTAL_BORDER_SM,
-                      backgroundColor: !focusNumber && activeGroup === i ? group.color : "white",
-                      boxShadow: !focusNumber && activeGroup === i ? "none" : BRUTAL_SHADOW_SM,
-                      transform: !focusNumber && activeGroup === i ? "translate(2px, 2px)" : "none",
-                      fontSize: "13px", fontWeight: 700, cursor: "pointer",
-                      fontFamily: "'Space Mono', monospace", color: COLORS.black,
-                      transition: "all 0.1s ease",
-                    }}>
-                      {group.label}
-                    </button>
-                  ))}
-                  <button onClick={() => { setFocusNumber(null); setActiveGroup(-1); setView("practice"); }} style={{
-                    flex: 1, padding: "8px 6px", borderRadius: "8px",
-                    border: BRUTAL_BORDER_SM,
-                    backgroundColor: !focusNumber && activeGroup === -1 ? COLORS.blue : "white",
-                    boxShadow: !focusNumber && activeGroup === -1 ? "none" : BRUTAL_SHADOW_SM,
-                    transform: !focusNumber && activeGroup === -1 ? "translate(2px, 2px)" : "none",
-                    fontSize: "13px", fontWeight: 700, cursor: "pointer",
-                    fontFamily: "'Space Mono', monospace", color: COLORS.black,
-                    transition: "all 0.1s ease",
-                  }}>
-                    All
-                  </button>
-                </div>
-
-                {/* Single Number Focus */}
-                <div style={{ marginBottom: "10px" }}>
-                  <div style={{
-                    fontSize: "11px", fontFamily: "'Space Mono', monospace", fontWeight: 700,
-                    marginBottom: "6px", color: COLORS.black, opacity: 0.5,
-                  }}>
-                    Focus on a number:
-                  </div>
-                  <div style={{ display: "flex", gap: "6px" }}>
-                    {ALL_TABLES.map((n) => (
-                      <button key={n} onClick={() => {
-                        setFocusNumber(n);
-                        setActiveGroup(null);
-                        setOperation("mixed");
-                        setView("practice");
-                      }} style={{
-                        flex: 1, padding: "8px 4px", borderRadius: "8px",
-                        border: BRUTAL_BORDER_SM,
-                        backgroundColor: focusNumber === n ? COLORS.pink : "white",
-                        boxShadow: focusNumber === n ? "none" : BRUTAL_SHADOW_SM,
-                        transform: focusNumber === n ? "translate(2px, 2px)" : "none",
-                        fontSize: "13px", fontWeight: 700, cursor: "pointer",
-                        fontFamily: "'Space Mono', monospace",
-                        color: focusNumber === n ? "white" : COLORS.black,
-                        transition: "all 0.1s ease",
-                      }}>
-                        {n}s
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* CPA Mode Selector */}
-                <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
-                  {[
-                    { key: "concrete", label: "🧱 Concrete", desc: "Arrays always" },
-                    { key: "pictorial", label: "✏️ Pictorial", desc: "Arrays fade" },
-                    { key: "abstract", label: "🔢 Abstract", desc: "Numbers only" },
-                  ].map((m) => (
-                    <button key={m.key} onClick={() => setMode(m.key)} style={{
-                      flex: 1, padding: "8px 6px 6px", borderRadius: "8px",
-                      border: BRUTAL_BORDER_SM,
-                      backgroundColor: mode === m.key ? COLORS.cream : "white",
-                      boxShadow: mode === m.key ? "none" : BRUTAL_SHADOW_SM,
-                      transform: mode === m.key ? "translate(2px, 2px)" : "none",
-                      cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif",
-                      transition: "all 0.1s ease",
-                    }}>
-                      <div style={{ fontSize: "14px", fontWeight: 700 }}>{m.label}</div>
-                      <div style={{ fontSize: "10px", fontWeight: 500, opacity: 0.5, marginTop: "1px" }}>{m.desc}</div>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Operation Toggle */}
-                <div style={{ display: "flex", gap: "6px" }}>
-                  {[
-                    { key: "multiply", label: "× Multiply" },
-                    { key: "divide", label: "÷ Divide" },
-                    { key: "mixed", label: "×÷ Mixed" },
-                  ].map((o) => (
-                    <button key={o.key} onClick={() => { setOperation(o.key); setFeedback(null); }} style={{
-                      flex: 1, padding: "8px 6px", borderRadius: "8px",
-                      border: BRUTAL_BORDER_SM,
-                      backgroundColor: operation === o.key ? COLORS.cream : "white",
-                      boxShadow: operation === o.key ? "none" : BRUTAL_SHADOW_SM,
-                      transform: operation === o.key ? "translate(2px, 2px)" : "none",
-                      fontSize: "13px", fontWeight: 700, cursor: "pointer",
-                      fontFamily: "'Space Mono', monospace",
-                      transition: "all 0.1s ease",
-                    }}>
-                      {o.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
+      <div style={{ padding: "clamp(24px, 6vw, 40px) clamp(12px, 4vw, 20px) 40px" }}>
+      <div style={{ maxWidth: 540, margin: "0 auto" }}>
+        {/* Controls removed — settings managed via Parent Zone */}
 
         {/* =================== ABOUT VIEW =================== */}
         {view === "about" && (
@@ -629,7 +481,7 @@ export default function JackFlash() {
                 Why JackFlash Works
               </h2>
               <p style={{ fontSize: "12px", fontFamily: "'Space Mono', monospace", margin: "0 0 20px", opacity: 0.5, fontWeight: 700 }}>
-                Grades 2–4 · Built on the CPA approach
+                {mod.grades} · Built on the CPA approach
               </p>
               <div style={{ fontSize: "14px", color: COLORS.black, lineHeight: 1.7 }}>
                 <p style={{ margin: "0 0 16px" }}>
@@ -679,16 +531,12 @@ export default function JackFlash() {
                 {/* Groups Section */}
                 <div style={{ backgroundColor: COLORS.cream, borderRadius: "10px", padding: "16px", marginBottom: "16px", border: BRUTAL_BORDER_SM }}>
                   <h3 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400, margin: "0 0 10px" }}>Table Groups Follow How Kids Learn</h3>
-                  {[
-                    { label: "2s, 5s & 10s", desc: "Introduced first — strong skip-counting patterns.", color: COLORS.green },
-                    { label: "3s & 4s", desc: "Built on 2s — \"one more group\" reasoning.", color: COLORS.orange },
-                    { label: "6s, 7s, 8s & 9s", desc: "Hardest facts, tackled last. Most are already known from earlier tables.", color: COLORS.purple },
-                  ].map((g) => (
-                    <div key={g.label} style={{
+                  {mod.groups.map((g) => (
+                    <div key={g.id} style={{
                       backgroundColor: g.color, borderRadius: "6px", padding: "8px 12px",
                       border: BRUTAL_BORDER_SM, marginBottom: "6px", fontSize: "12px", fontWeight: 600,
                     }}>
-                      <strong>{g.label}</strong> — {g.desc}
+                      <strong>{g.label}</strong> — {g.id === "easy" && "Introduced first — strong skip-counting patterns."}{g.id === "medium" && "Built on 2s — \"one more group\" reasoning."}{g.id === "hard" && "Hardest facts, tackled last. Most are already known from earlier tables."}
                     </div>
                   ))}
                 </div>
@@ -721,10 +569,10 @@ export default function JackFlash() {
         {/* =================== PROGRESS VIEW =================== */}
         {view === "progress" && (
           <div style={{ animation: "fadeSlideUp 0.3s ease both" }}>
-            {TABLE_GROUPS.map((group, gi) => {
+            {mod.groups.map((group) => {
               const prog = getGroupProgress(group.tables);
               return (
-                <div key={gi} style={{
+                <div key={group.id} style={{
                   backgroundColor: "white", borderRadius: "12px", padding: "18px",
                   marginBottom: "14px", border: BRUTAL_BORDER, boxShadow: `5px 5px 0px ${group.color}`,
                 }}>
@@ -748,10 +596,12 @@ export default function JackFlash() {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "6px" }}>
                     {group.tables.map((t) =>
                       Array.from({ length: 10 }, (_, i) => i + 1).map((b) => {
-                        const level = getMasteryLevel(t, b);
-                        const mastered = level >= MASTERY_THRESHOLD;
+                        const factKey = `${t}x${b}`;
+                        const level = getMasteryLevel(factKey);
+                        const masteryThreshold = DEFAULT_MASTERY_THRESHOLD;
+                        const mastered = level >= masteryThreshold;
                         return (
-                          <div key={`${t}×${b}`} style={{
+                          <div key={factKey} style={{
                             padding: "6px 4px", borderRadius: "6px",
                             backgroundColor: mastered ? group.color : "#F8F8F8",
                             border: mastered ? BRUTAL_BORDER_SM : "2px solid #E0E0E0",
@@ -762,7 +612,7 @@ export default function JackFlash() {
                           }}>
                             {t}×{b}
                             <div style={{ marginTop: "3px", display: "flex", justifyContent: "center" }}>
-                              <MasteryDots level={Math.min(level, MASTERY_THRESHOLD)} max={MASTERY_THRESHOLD} />
+                              <MasteryDots level={Math.min(level, masteryThreshold)} max={masteryThreshold} />
                             </div>
                           </div>
                         );
@@ -776,73 +626,133 @@ export default function JackFlash() {
         )}
 
         {/* =================== PRACTICE VIEW =================== */}
-        {view === "practice" && currentFact && (
+        {view === "practice" && (isCurrentGroupLocked ? (
+          <div style={{
+            textAlign: "center",
+            padding: "40px 20px",
+            animation: "fadeSlideUp 0.3s ease both",
+          }}>
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔒</div>
+            <div style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "20px",
+              fontWeight: 700,
+              color: COLORS.black,
+              marginBottom: "8px",
+            }}>
+              This content is locked
+            </div>
+            <div style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "14px",
+              color: "#666",
+              marginBottom: "20px",
+              maxWidth: "280px",
+              margin: "0 auto 20px",
+            }}>
+              Ask a parent to unlock all table groups in the Parent Zone!
+            </div>
+            <div style={{
+              fontFamily: "'Space Mono', monospace",
+              fontSize: "12px",
+              color: "#999",
+            }}>
+              Free practice: 2s, 5s & 10s
+            </div>
+          </div>
+        ) : currentFact && (
           <div style={{ animation: "fadeSlideUp 0.3s ease both" }}>
             <div style={{
-              backgroundColor: "white", borderRadius: "14px", padding: "32px 24px 28px",
+              backgroundColor: "white", borderRadius: "14px", padding: "clamp(16px, 4vw, 32px) clamp(12px, 3vw, 24px) clamp(14px, 3.5vw, 28px)",
               border: BRUTAL_BORDER,
-              boxShadow: feedback === "correct" ? `6px 6px 0px ${COLORS.green}` : feedback === "incorrect" ? `6px 6px 0px ${COLORS.red}` : `6px 6px 0px ${COLORS.black}`,
+              boxShadow: feedback === "correct" ? `4px 4px 0px ${COLORS.green}` : feedback === "incorrect" ? `4px 4px 0px ${COLORS.red}` : `4px 4px 0px ${COLORS.black}`,
               textAlign: "center",
               animation: feedback === "correct" ? "correctPulse 0.4s ease" : feedback === "incorrect" ? "shake 0.4s ease" : "none",
               transition: "box-shadow 0.3s ease",
             }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
-                <MasteryDots level={Math.min(getMasteryLevel(currentFact.a, currentFact.b), MASTERY_THRESHOLD)} max={MASTERY_THRESHOLD} />
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
+                <MasteryDots level={Math.min(getMasteryLevel(currentFact.factKey), DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
               </div>
 
-              <div style={{
-                fontFamily: "'Shrikhand', cursive", fontSize: "clamp(80px, 20vw, 120px)", fontWeight: 400,
-                color: COLORS.black, lineHeight: 1,
-              }}>
-                {currentFact.op === "divide" ? (
+              {/* Vertical equation — stacked like traditional math */}
+              {(() => {
+                const opSymbol = currentFact.operation === "divide" ? "÷" : "×";
+                const numFont = "clamp(72px, 22vw, 150px)";
+                const opFont = "clamp(48px, 14vw, 100px)";
+                return (
                   <>
-                    {currentFact.display.dividend}
-                    <span style={{ color: COLORS.pink, fontSize: "0.7em", margin: "0 6px" }}>{"÷"}</span>
-                    {currentFact.display.divisor}
+                    {/* First number */}
+                    <div style={{
+                      fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
+                      color: COLORS.black, lineHeight: 1,
+                    }}>
+                      {currentFact.a}
+                    </div>
+                    {/* Operator + second number */}
+                    <div style={{
+                      fontFamily: "'Shrikhand', cursive", fontSize: numFont, fontWeight: 400,
+                      color: COLORS.black, lineHeight: 1,
+                    }}>
+                      <span style={{ fontSize: opFont, color: "#999", marginRight: "clamp(6px, 2vw, 14px)" }}>{opSymbol}</span>
+                      {currentFact.b}
+                    </div>
+                    {/* Divider line */}
+                    <div style={{
+                      width: "80%", maxWidth: "280px",
+                      height: "5px", backgroundColor: COLORS.black,
+                      borderRadius: "2px", margin: "10px auto 0",
+                    }} />
+                    {/* Answer input */}
+                    <input ref={inputRef} type="number" value={userAnswer}
+                      onChange={(e) => setUserAnswer(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      disabled={feedback === "correct"}
+                      placeholder="?"
+                      style={{
+                        width: "clamp(120px, 40vw, 240px)",
+                        fontSize: numFont, fontFamily: "'Shrikhand', cursive",
+                        fontWeight: 400, textAlign: "center",
+                        border: "none", borderRadius: "0",
+                        backgroundColor: feedback === "correct" ? COLORS.green : feedback === "incorrect" ? "#FFF0F0" : "transparent",
+                        color: COLORS.black, outline: "none",
+                        padding: "4px 0", marginTop: "4px",
+                        transition: "background-color 0.3s ease",
+                        boxSizing: "border-box",
+                      }}
+                    />
                   </>
-                ) : (
-                  <>
-                    {currentFact.a}
-                    <span style={{ color: COLORS.pink, fontSize: "0.7em", margin: "0 6px" }}>{"×"}</span>
-                    {currentFact.b}
-                  </>
-                )}
-              </div>
+                );
+              })()}
 
+              {/* Scaffold (bar model / dot array) below the input */}
               {mode !== "abstract" && (
-                <div style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}>
+                <div style={{ marginTop: "16px", display: "flex", justifyContent: "center" }}>
                   {(showScaffold || (!userHidScaffold && scaffoldOpacity > 0)) && (
-                    <DotArray rows={currentFact.arrayRows} cols={currentFact.arrayCols}
-                      opacity={showScaffold ? 1 : scaffoldOpacity} animate={true} />
+                    currentFact.operation === "divide" && DivisionScaffold ? (
+                      <DivisionScaffold
+                        rows={currentFact.a}
+                        cols={currentFact.b}
+                        opacity={showScaffold ? 1 : scaffoldOpacity}
+                        animate={true}
+                      />
+                    ) : (
+                      <MultiplyScaffold
+                        rows={currentFact.a}
+                        cols={currentFact.b}
+                        opacity={showScaffold ? 1 : scaffoldOpacity}
+                        animate={true}
+                      />
+                    )
                   )}
                 </div>
               )}
               {mode !== "abstract" && !userHidScaffold && scaffoldOpacity > 0 && (
-                <div style={{ marginTop: "8px", fontSize: "12px", fontFamily: "'Space Mono', monospace", opacity: 0.5, fontWeight: 700 }}>
-                  {currentFact.op === "divide"
-                    ? `${currentFact.answer} dots → ${currentFact.arrayRows} rows × ${currentFact.arrayCols} cols`
+                <div style={{ marginTop: "6px", fontSize: "11px", fontFamily: "'Space Mono', monospace", opacity: 0.45, fontWeight: 700 }}>
+                  {currentFact.operation === "divide"
+                    ? `${currentFact.a} split into groups of ${currentFact.b}`
                     : `${currentFact.a} rows × ${currentFact.b} columns`}
                 </div>
               )}
-
-              <div style={{ marginTop: "24px", display: "flex", justifyContent: "center", alignItems: "center", gap: "16px" }}>
-                <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: "clamp(40px, 10vw, 64px)", color: "#CCC" }}>=</span>
-                <input ref={inputRef} type="number" value={userAnswer}
-                  onChange={(e) => setUserAnswer(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  disabled={feedback === "correct"}
-                  placeholder="?"
-                  style={{
-                    width: "clamp(110px, 30vw, 160px)", fontSize: "clamp(36px, 10vw, 64px)", fontFamily: "'Shrikhand', cursive",
-                    fontWeight: 400, textAlign: "center",
-                    border: BRUTAL_BORDER_SM, borderRadius: "10px",
-                    backgroundColor: feedback === "correct" ? COLORS.green : feedback === "incorrect" ? "#FFF0F0" : COLORS.cream,
-                    color: COLORS.black, outline: "none", padding: "8px 12px",
-                    boxShadow: BRUTAL_SHADOW_SM,
-                    transition: "background-color 0.3s ease",
-                  }}
-                />
-              </div>
 
               {feedback && (
                 <div style={{
@@ -858,7 +768,7 @@ export default function JackFlash() {
                       It's <span style={{
                         backgroundColor: COLORS.yellow, padding: "2px 8px",
                         border: BRUTAL_BORDER_SM, borderRadius: "4px", fontSize: "20px",
-                      }}>{currentFact.correctAnswer}</span>
+                      }}>{currentFact.answer}</span>
                     </span>
                   )}
                 </div>
@@ -876,9 +786,9 @@ export default function JackFlash() {
                     because {currentFact.a} × {currentFact.b} = {currentFact.answer}
                   </div>
 
-                  {/* Skip counting */}
+                  {/* Hint component */}
                   <div>
-                    <SkipCount factor={skipFactor} count={skipCountVal} show={true} />
+                    <HintComponent factor={skipFactor} count={skipCountVal} show={true} />
                   </div>
 
                   {/* Number bond */}
@@ -889,55 +799,18 @@ export default function JackFlash() {
               )}
             </div>
 
-            <div style={{ display: "flex", gap: "10px", marginTop: "16px", justifyContent: "center", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "8px", marginTop: "16px", justifyContent: "center", flexWrap: "wrap" }}>
               {feedback === "incorrect" ? (
                 <BrutalButton onClick={pickNewFact} bg={COLORS.yellow}>Next →</BrutalButton>
               ) : feedback !== "correct" ? (
-                <>
-                  <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
-                  {showArrayButton && mode !== "concrete" && (
-                    <BrutalButton small onClick={() => {
-                      if (showScaffold || (!userHidScaffold && scaffoldOpacity > 0)) {
-                        setShowScaffold(false);
-                        setUserHidScaffold(true);
-                      } else {
-                        setShowScaffold(true);
-                        setUserHidScaffold(false);
-                      }
-                    }}
-                      bg={(showScaffold || (!userHidScaffold && scaffoldOpacity > 0)) ? COLORS.blue : "white"}>
-                      {(showScaffold || (!userHidScaffold && scaffoldOpacity > 0)) ? "Hide" : "Show"} array
-                    </BrutalButton>
-                  )}
-                  {showSkipButton && (
-                    <BrutalButton small onClick={() => setShowSkipCount(!showSkipCount)}
-                      bg={showSkipCount ? COLORS.blue : "white"}>
-                      Skip count
-                    </BrutalButton>
-                  )}
-                </>
+                <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
               ) : null}
             </div>
 
-            {showSkipCount && feedback === null && (
-              <div style={{
-                backgroundColor: "white", borderRadius: "10px", padding: "14px",
-                marginTop: "12px", border: BRUTAL_BORDER_SM, boxShadow: BRUTAL_SHADOW_SM,
-              }}>
-                <div style={{ fontSize: "12px", fontFamily: "'Space Mono', monospace", fontWeight: 700, marginBottom: "6px" }}>
-                  Count by {skipFactor}s:
-                </div>
-                <SkipCount factor={skipFactor} count={skipCountVal} show={true} />
-              </div>
-            )}
-
-            <div style={{ textAlign: "center", marginTop: "20px", fontSize: "11px", fontFamily: "'Space Mono', monospace", color: "#AAA", lineHeight: 1.5 }}>
-              {mode === "concrete" && "🧱 Concrete — arrays always visible so your child can count the dots."}
-              {mode === "pictorial" && "✏️ Pictorial — arrays fade as your child masters each fact."}
-              {mode === "abstract" && "🔢 Abstract — numbers only, like flashcards. Use buttons for help."}
-            </div>
+            {/* Mode description removed — decluttered practice view */}
           </div>
-        )}
+        ))}
+      </div>
       </div>
       <div style={{
         textAlign: "center", padding: "16px 20px 24px",
@@ -945,6 +818,12 @@ export default function JackFlash() {
       }}>
         © 2026 Laser Lab Studios LLC
       </div>
+      {achievementQueue.length > 0 && (
+        <AchievementPopup
+          achievement={achievementQueue[0]}
+          onDismiss={() => setAchievementQueue(prev => prev.slice(1))}
+        />
+      )}
     </div>
   );
 }
