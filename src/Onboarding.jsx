@@ -138,7 +138,7 @@ function WelcomeScreen({ onNext, onSkip }) {
         </BrutalButton>
 
         {/* Skip link — centered below Get Started */}
-        <div style={{ marginTop: "16px" }}>
+        <div style={{ marginTop: "36px" }}>
           <button
             onClick={onSkip}
             style={{
@@ -146,8 +146,8 @@ function WelcomeScreen({ onNext, onSkip }) {
               border: "none",
               cursor: "pointer",
               fontFamily: "'Shrikhand', cursive",
-              fontSize: "14px",
-              color: "#999",
+              fontSize: "28px",
+              color: COLORS.black,
               padding: 0,
               letterSpacing: "0.5px",
             }}
