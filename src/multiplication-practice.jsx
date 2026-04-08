@@ -790,8 +790,9 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               {/* Vertical equation — stacked, ones column aligned, centered as a group */}
               {(() => {
                 const opSymbol = currentFact.operation === "divide" ? "÷" : "×";
+                const opColor = currentFact.operation === "divide" ? COLORS.green : COLORS.orange;
                 const numFont = "clamp(72px, 22vw, 150px)";
-                const opFont = "clamp(44px, 12vw, 90px)";
+                const opFont = "clamp(110px, 32vw, 220px)";
                 // Pad numbers so they have equal digit count — ones column aligns
                 const aStr = String(currentFact.a);
                 const bStr = String(currentFact.b);
@@ -821,11 +822,13 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                         {/* Operator floats to the left */}
                         <span style={{
                           position: "absolute",
-                          right: "calc(100% + clamp(4px, 1.5vw, 10px))",
+                          right: "calc(100% + clamp(8px, 2.5vw, 18px))",
                           top: "50%",
                           transform: "translateY(-50%)",
+                          fontFamily: "'Shrikhand', cursive",
                           fontSize: opFont,
-                          color: "#999",
+                          color: opColor,
+                          lineHeight: 1,
                           whiteSpace: "nowrap",
                         }}>
                           {opSymbol}
