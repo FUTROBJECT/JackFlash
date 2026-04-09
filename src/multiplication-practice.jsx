@@ -98,7 +98,6 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   const [sessionStats, setSessionStats] = useState({ correct: 0, total: 0 });
   const [view, setView] = useState("practice");
   const [streak, setStreak] = useState(0);
-  const [resetConfirm, setResetConfirm] = useState(false);
   // controls removed from practice view — settings managed via Parent Zone
   const [showArrayButton, setShowArrayButton] = useState(true);
   const [showSkipButton, setShowSkipButton] = useState(true);
@@ -434,32 +433,8 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               </div>
             );
           })()}
-          {/* Controls row */}
+          {/* Controls row — Reset moved to Parent Zone */}
           <div style={{ display: "flex", gap: "6px", alignItems: "stretch" }}>
-            <button onClick={() => {
-              if (resetConfirm) {
-                setLocalMastery({});
-                setSessionStats({ correct: 0, total: 0 });
-                setStreak(0);
-                setFeedback(null);
-                setResetConfirm(false);
-                pickNewFact();
-              } else {
-                setResetConfirm(true);
-                setTimeout(() => setResetConfirm(false), 3000);
-              }
-            }} style={{
-              flex: 1, padding: "6px 4px", borderRadius: "8px",
-              border: BRUTAL_BORDER_SM,
-              backgroundColor: resetConfirm ? COLORS.red : "white",
-              color: resetConfirm ? "white" : COLORS.black,
-              boxShadow: BRUTAL_SHADOW_SM,
-              fontSize: "12px", fontWeight: 700, cursor: "pointer",
-              fontFamily: "'Space Mono', monospace",
-              transition: "all 0.1s ease",
-            }}>
-              {resetConfirm ? "Sure?" : "Reset"}
-            </button>
             <button onClick={() => setView(view === "progress" ? "practice" : "progress")} style={{
               flex: 1, padding: "6px 4px", borderRadius: "8px",
               border: BRUTAL_BORDER_SM,
