@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, MODULE_COLORS, DEFAULT_CHILD_SETTINGS } from "./constants.js";
 import { getModuleList, getModule } from "./modules/moduleRegistry.js";
-import { PRODUCTS, purchaseProduct, restorePurchases, getProductsWithStatus, isModuleFullyUnlocked } from "./purchaseManager.js";
+import { PRODUCTS, purchaseProduct, restorePurchases, getProductsWithStatus } from "./purchaseManager.js";
 import { getAllAchievementsForProfile } from "./achievementEngine.js";
 import LogoLockup from "./LogoLockup.jsx";
 import { PrivacyPolicy, TermsOfService, HelpFAQ } from "./LegalPages.jsx";
@@ -626,37 +626,43 @@ export function ParentZone({
                           </select>
                         </div>
 
-                        {/* Lock Operation dropdown */}
-                        <div>
-                          <label style={{
-                            display: "block",
-                            fontSize: "12px",
-                            fontWeight: 700,
-                            marginBottom: "6px",
-                            color: COLORS.black,
-                          }}>
-                            Lock Operation
-                          </label>
-                          <select
-                            value={profile.settings.lockedOperation || ""}
-                            onChange={(e) => handleChangeDropdown(profile.id, "lockedOperation", e.target.value || null)}
-                            style={{
-                              width: "100%",
-                              padding: "8px",
-                              borderRadius: "8px",
-                              border: BRUTAL_BORDER_SM,
-                              fontFamily: "'Space Grotesk', sans-serif",
-                              fontSize: "14px",
-                              cursor: "pointer",
-                              boxSizing: "border-box",
-                            }}
-                          >
-                            <option value="">Any Operation</option>
-                            {/* Operations would come from module definition */}
-                            <option value="addition">Addition</option>
-                            <option value="subtraction">Subtraction</option>
-                          </select>
-                        </div>
+                        {/* Lock Operation dropdown — operations from active module */}
+                        {(() => {
+                          const profileMod = getModule(profile.activeModule);
+                          const operations = profileMod?.operations || [];
+                          return (
+                            <div>
+                              <label style={{
+                                display: "block",
+                                fontSize: "12px",
+                                fontWeight: 700,
+                                marginBottom: "6px",
+                                color: COLORS.black,
+                              }}>
+                                Lock Operation
+                              </label>
+                              <select
+                                value={profile.settings.lockedOperation || ""}
+                                onChange={(e) => handleChangeDropdown(profile.id, "lockedOperation", e.target.value || null)}
+                                style={{
+                                  width: "100%",
+                                  padding: "8px",
+                                  borderRadius: "8px",
+                                  border: BRUTAL_BORDER_SM,
+                                  fontFamily: "'Space Grotesk', sans-serif",
+                                  fontSize: "14px",
+                                  cursor: "pointer",
+                                  boxSizing: "border-box",
+                                }}
+                              >
+                                <option value="">Any Operation</option>
+                                {operations.map((op) => (
+                                  <option key={op.id} value={op.id}>{op.label}</option>
+                                ))}
+                              </select>
+                            </div>
+                          );
+                        })()}
 
                         {/* Progress Report */}
                         <div style={{ borderTop: "1px solid #eee", marginTop: "12px", paddingTop: "12px" }}>
@@ -867,7 +873,8 @@ export function ParentZone({
             {/* Bundle Card */}
             {(() => {
               const bundleProduct = PRODUCTS["bundle.all"];
-              const isPurchased = bundleProduct && isModuleFullyUnlocked("multiply") && isModuleFullyUnlocked("add") && isModuleFullyUnlocked("fractions") && isModuleFullyUnlocked("placeValue");
+              const { purchased: isPurchased } = getProductsWithStatus()
+                .find(p => p.id === "bundle.all") || {};
               return (
                 <div
                   style={{

@@ -18,6 +18,7 @@ export function initData() {
     const stored = localStorage.getItem(DATA_KEY);
     if (stored) {
       _data = JSON.parse(stored);
+      _migrateV2Purchases();
       console.log("[JF] initData: loaded", _data.profiles?.length, "profiles, onboarding:", _data.onboardingComplete);
       return _data;
     } else {
@@ -78,11 +79,35 @@ function _createFreshData() {
     onboardingComplete: false,
     activeProfileId: null,
     unlockedModules: ["multiply"],
+    purchases: [],
+    bundlePurchased: false,
     parentSettings: {
       masteryThreshold: DEFAULT_MASTERY_THRESHOLD,
     },
     profiles: [],
   };
+}
+
+// One-time migration from legacy localStorage purchase keys into _data
+function _migrateV2Purchases() {
+  // Already migrated
+  if (_data.purchases !== undefined) return;
+
+  _data.purchases = [];
+  _data.bundlePurchased = false;
+
+  // Pull from old separate keys
+  try {
+    const oldPurchases = JSON.parse(localStorage.getItem("jackflash_purchases") || "[]");
+    const oldBundle = localStorage.getItem("jackflash_bundle_purchased") === "true";
+    _data.purchases = oldPurchases;
+    _data.bundlePurchased = oldBundle;
+    localStorage.removeItem("jackflash_purchases");
+    localStorage.removeItem("jackflash_bundle_purchased");
+    saveData();
+  } catch (e) {
+    console.error("[JF] Purchase migration failed:", e);
+  }
 }
 
 // Convert old flat mastery format to new structured format
@@ -439,4 +464,29 @@ export function saveData() {
 export function debugGetAllData() {
   initData();
   return JSON.parse(JSON.stringify(_data));
+}
+
+// Purchase State Operations
+export function getPurchases() {
+  initData();
+  return { purchases: _data.purchases, bundlePurchased: _data.bundlePurchased };
+}
+
+export function addPurchase(productId) {
+  initData();
+  if (!_data.purchases.includes(productId)) {
+    _data.purchases.push(productId);
+    saveData();
+  }
+}
+
+export function setBundlePurchased() {
+  initData();
+  _data.bundlePurchased = true;
+  saveData();
+}
+
+export function isBundlePurchased() {
+  initData();
+  return _data.bundlePurchased === true;
 }

@@ -1,19 +1,6 @@
-/**
- * Purchase Manager for JackFlash
- *
- * Manages in-app purchase simulation and free tier content gating.
- * Currently uses localStorage to simulate purchases.
- * In production, this will be integrated with StoreKit (iOS) / Play Billing (Android)
- * via Capacitor.
- */
-
-import { isModuleUnlocked, unlockModule } from "./dataManager.js";
+import { isModuleUnlocked, unlockModule, getPurchases, addPurchase, setBundlePurchased, isBundlePurchased } from "./dataManager.js";
 import { getModule } from "./modules/moduleRegistry.js";
 
-/**
- * Product definitions for JackFlash purchases
- * Includes individual module unlocks and bundle options
- */
 export const PRODUCTS = {
   "module.multiply.full": {
     id: "module.multiply.full",
@@ -24,9 +11,10 @@ export const PRODUCTS = {
     priceValue: 3.99,
     type: "module_unlock",
     moduleId: "multiply",
+    available: true,
   },
-  "module.add": {
-    id: "module.add",
+  "module.add.full": {
+    id: "module.add.full",
     name: "Add & Subtract",
     description: "Addition & subtraction fact families, facts to 20",
     gradeRange: "Grades K–2",
@@ -34,9 +22,10 @@ export const PRODUCTS = {
     priceValue: 3.99,
     type: "module_unlock",
     moduleId: "add",
+    available: false,       // flip to true when module ships
   },
-  "module.fractions": {
-    id: "module.fractions",
+  "module.fractions.full": {
+    id: "module.fractions.full",
     name: "Fractions",
     description: "Equivalent fractions, comparing, fraction arithmetic",
     gradeRange: "Grades 3–5",
@@ -44,9 +33,10 @@ export const PRODUCTS = {
     priceValue: 3.99,
     type: "module_unlock",
     moduleId: "fractions",
+    available: false,
   },
-  "module.placevalue": {
-    id: "module.placevalue",
+  "module.placevalue.full": {
+    id: "module.placevalue.full",
     name: "Place Value",
     description: "Composing/decomposing numbers, place value discs",
     gradeRange: "Grades 1–3",
@@ -54,6 +44,7 @@ export const PRODUCTS = {
     priceValue: 3.99,
     type: "module_unlock",
     moduleId: "placeValue",
+    available: false,
   },
   "bundle.all": {
     id: "bundle.all",
@@ -62,152 +53,69 @@ export const PRODUCTS = {
     price: "$9.99",
     priceValue: 9.99,
     type: "bundle",
+    available: true,
   },
 };
 
-/**
- * Check if a specific content group is accessible
- * Applies free tier gating based on module's freeContent array
- *
- * @param {string} moduleId - The module ID (e.g., "multiply")
- * @param {string} groupId - The content group ID (e.g., "easy", "hard")
- * @returns {boolean} True if the content group is accessible
- */
-export function isContentAccessible(moduleId, groupId) {
-  // If bundle is purchased, all content is accessible
-  if (localStorage.getItem("jackflash_bundle_purchased") === "true") {
-    return true;
-  }
-
-  // If this module's full unlock product is purchased
-  const purchases = JSON.parse(localStorage.getItem("jackflash_purchases") || "[]");
-  const moduleUnlockProductId = `module.${moduleId}.full`;
-  if (purchases.includes(moduleUnlockProductId)) {
-    return true;
-  }
-
-  // For multiply, also check for the old "module.multiply.full" without full
-  if (moduleId === "multiply" && isModuleUnlocked("multiply")) {
-    // Check if this is actually the full unlock (not just free tier)
-    // The bundle and module-specific purchases bypass free content restrictions
-    if (purchases.includes("module.multiply.full")) {
-      return true;
-    }
-  }
-
-  // Check if this group is in the free content array
-  const module = getModule(moduleId);
-  if (module && module.freeContent && module.freeContent.includes(groupId)) {
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * Check if a module is fully unlocked (all content available)
- *
- * @param {string} moduleId - The module ID
- * @returns {boolean} True if the module is fully unlocked
- */
 export function isModuleFullyUnlocked(moduleId) {
-  // If bundle is purchased, all modules are fully unlocked
-  if (localStorage.getItem("jackflash_bundle_purchased") === "true") {
-    return true;
-  }
-
-  // Check if the specific module product is purchased
-  const purchases = JSON.parse(localStorage.getItem("jackflash_purchases") || "[]");
-  const moduleUnlockProductId = `module.${moduleId}.full`;
-  if (purchases.includes(moduleUnlockProductId)) {
-    return true;
-  }
-
-  return false;
+  if (isBundlePurchased()) return true;
+  const { purchases } = getPurchases();
+  return purchases.includes(`module.${moduleId}.full`);
 }
 
-/**
- * Simulate a purchase (development/testing)
- * In production, this would call StoreKit/Play Billing APIs
- *
- * @param {string} productId - The product ID to purchase
- * @returns {Object} Purchase result with success status and product details
- */
+export function isContentAccessible(moduleId, groupId) {
+  if (isModuleFullyUnlocked(moduleId)) return true;
+  const mod = getModule(moduleId);
+  return mod?.freeContent?.includes(groupId) ?? false;
+}
+
+export function getProductsWithStatus() {
+  const { purchases } = getPurchases();
+  const bundlePurchased = isBundlePurchased();
+  return Object.values(PRODUCTS).map(product => ({
+    ...product,
+    purchased: product.type === "bundle"
+      ? bundlePurchased
+      : purchases.includes(product.id),
+  }));
+}
+
+// Simulated purchase — this entire function gets replaced by StoreKit in Phase 5
 export function purchaseProduct(productId) {
   const product = PRODUCTS[productId];
-  if (!product) {
-    return { success: false, error: "Unknown product" };
-  }
+  if (!product) return { success: false, error: "Unknown product" };
 
   if (product.type === "bundle") {
-    // Unlock all modules
     unlockModule("multiply");
     unlockModule("add");
     unlockModule("fractions");
     unlockModule("placeValue");
-
-    // Store bundle purchase flag
-    localStorage.setItem("jackflash_bundle_purchased", "true");
+    setBundlePurchased();
+    addPurchase(productId);
     return { success: true, product };
   }
 
   if (product.type === "module_unlock") {
     unlockModule(product.moduleId);
-
-    // Store specific product purchase
-    const purchases = JSON.parse(localStorage.getItem("jackflash_purchases") || "[]");
-    if (!purchases.includes(productId)) {
-      purchases.push(productId);
-      localStorage.setItem("jackflash_purchases", JSON.stringify(purchases));
-    }
-
+    addPurchase(productId);
     return { success: true, product };
   }
 
   return { success: false, error: "Unknown product type" };
 }
 
-/**
- * Restore purchases from localStorage
- * Simulates checking purchase history on app launch
- *
- * @returns {Object} Restoration result with count of restored purchases
- */
+// Simulated restore — also gets replaced by StoreKit in Phase 5
 export function restorePurchases() {
-  const purchases = JSON.parse(localStorage.getItem("jackflash_purchases") || "[]");
-  const bundlePurchased = localStorage.getItem("jackflash_bundle_purchased") === "true";
-
-  // Restore bundle purchases
+  const { purchases, bundlePurchased } = getPurchases();
   if (bundlePurchased) {
     unlockModule("multiply");
     unlockModule("add");
     unlockModule("fractions");
     unlockModule("placeValue");
   }
-
-  // Restore individual module purchases
   purchases.forEach(productId => {
     const product = PRODUCTS[productId];
-    if (product?.moduleId) {
-      unlockModule(product.moduleId);
-    }
+    if (product?.moduleId) unlockModule(product.moduleId);
   });
-
   return { restored: purchases.length + (bundlePurchased ? 1 : 0) };
-}
-
-/**
- * Get all products with their current purchase status
- * Used for rendering the shop/products screen
- *
- * @returns {Array<Object>} Array of products with purchase and availability status
- */
-export function getProductsWithStatus() {
-  return Object.values(PRODUCTS).map(product => ({
-    ...product,
-    purchased: product.type === "bundle"
-      ? localStorage.getItem("jackflash_bundle_purchased") === "true"
-      : product.moduleId ? isModuleUnlocked(product.moduleId) : false,
-    available: product.type === "bundle" || product.moduleId === "multiply",
-  }));
 }
