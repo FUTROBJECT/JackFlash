@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { COLORS, BRUTAL_BORDER_SM, BRUTAL_SHADOW_SM } from "./constants.js";
 
 const linkStyle = {
@@ -170,71 +171,158 @@ export function TermsOfService({ onBack }) {
   );
 }
 
+// Collapsible accordion row — click header to expand/collapse
+function AccordionItem({ title, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={{
+      border: BRUTAL_BORDER_SM,
+      borderRadius: "8px",
+      marginBottom: "10px",
+      background: "white",
+      overflow: "hidden",
+    }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          width: "100%",
+          background: open ? COLORS.yellow : "white",
+          border: "none",
+          borderBottom: open ? BRUTAL_BORDER_SM : "none",
+          padding: "12px 14px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "10px",
+          cursor: "pointer",
+          fontFamily: "'Space Grotesk', sans-serif",
+          fontSize: "14px",
+          fontWeight: 700,
+          color: COLORS.black,
+          textAlign: "left",
+          transition: "background 0.15s",
+        }}
+      >
+        <span>{title}</span>
+        <span style={{
+          fontFamily: "'Space Mono', monospace",
+          fontSize: "18px",
+          fontWeight: 700,
+          lineHeight: 1,
+          transform: open ? "rotate(45deg)" : "rotate(0deg)",
+          transition: "transform 0.15s",
+        }}>
+          +
+        </span>
+      </button>
+      {open && (
+        <div style={{
+          padding: "14px 14px 16px",
+          fontFamily: "'Space Grotesk', sans-serif",
+          fontSize: "13.5px",
+          lineHeight: 1.65,
+          color: COLORS.black,
+        }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function HelpFAQ({ onBack }) {
   return (
-    <PageWrapper title="Help & FAQ" onBack={onBack}>
+    <PageWrapper title="How JackFlash Works" onBack={onBack}>
+      <p style={{ fontSize: "13px", marginBottom: "16px", opacity: 0.75 }}>
+        Tap any question to expand.
+      </p>
 
-      <div style={sectionStyle}>
-        <h3 style={headingStyle}>What is JackFlash?</h3>
-        <p>JackFlash is a math fact fluency app for kids in grades 2-5. It helps children master multiplication and division facts through an approach based on Singapore Math's Concrete-Pictorial-Abstract (CPA) framework — the same method used in top-performing math classrooms worldwide.</p>
-      </div>
+      <AccordionItem title="What is JackFlash?" defaultOpen>
+        <p style={{ margin: 0 }}>
+          A math fact fluency app for grades 2–5. It helps kids master multiplication and division using the Concrete-Pictorial-Abstract (CPA) approach from Singapore Math — the same method used in top-performing classrooms worldwide.
+        </p>
+      </AccordionItem>
 
-      <div style={sectionStyle}>
-        <h3 style={headingStyle}>What is the CPA approach?</h3>
-        <p style={{ marginBottom: "8px" }}><strong>Concrete:</strong> Visual arrays (dot grids) are always visible, so kids can count and see what multiplication means physically.</p>
-        <p style={{ marginBottom: "8px" }}><strong>Pictorial:</strong> Arrays start visible but fade as your child masters each fact. The visual scaffold is there when needed, then steps back.</p>
-        <p><strong>Abstract:</strong> Numbers only — like traditional flashcards. Your child has internalized the concept and is building speed.</p>
-      </div>
+      <AccordionItem title="What is the CPA approach?">
+        <p style={{ margin: "0 0 8px" }}><strong>Concrete:</strong> dot arrays show what multiplication actually means — groups of things.</p>
+        <p style={{ margin: "0 0 8px" }}><strong>Pictorial:</strong> bar models (for division) show the total being split into equal parts.</p>
+        <p style={{ margin: 0 }}><strong>Abstract:</strong> numbers alone — once the concept is owned, the scaffolds step back and speed builds.</p>
+      </AccordionItem>
 
-      <div style={sectionStyle}>
-        <h3 style={headingStyle}>Why does JackFlash teach multiplication and division together?</h3>
-        <p>Because they're inverse operations that share the same fact families. If you know 6 × 4 = 24, you already know 24 ÷ 4 = 6 and 24 ÷ 6 = 4. Teaching them together builds deeper understanding and faster recall than drilling them separately.</p>
-      </div>
+      <AccordionItem title="Why teach multiplication and division together?">
+        <p style={{ margin: 0 }}>
+          They're inverse operations sharing the same fact families. Knowing 6 × 4 = 24 means your child also knows 24 ÷ 4 = 6 and 24 ÷ 6 = 4. Teaching them together builds deeper understanding than drilling them separately.
+        </p>
+      </AccordionItem>
 
-      <div style={sectionStyle}>
-        <h3 style={headingStyle}>What do the bar diagrams mean?</h3>
-        <p>For division problems, JackFlash shows a bar model (tape diagram) — a key Singapore Math visualization. The bar represents the total being divided, split into equal groups. Each segment shows the size of one group, helping kids see what division means concretely.</p>
-      </div>
+      <AccordionItem title="How does JackFlash pick what to practice?">
+        <p style={{ margin: "0 0 10px" }}>
+          Not randomly. Every problem is chosen based on what your child knows and what they're ready for next. Facts are sorted into five groups:
+        </p>
+        <p style={{ margin: "0 0 6px" }}><strong>New</strong> — introduced just 2–3 at a time, so no one gets overwhelmed.</p>
+        <p style={{ margin: "0 0 6px" }}><strong>Learning</strong> — gotten right before but not yet mastered. Shows up often.</p>
+        <p style={{ margin: "0 0 6px" }}><strong>Struggling</strong> — repeatedly wrong. Gets the most attention.</p>
+        <p style={{ margin: "0 0 6px" }}><strong>Mastered</strong> — correct 3 times. Moves into long-term review.</p>
+        <p style={{ margin: 0 }}><strong>Review-due</strong> — mastered facts whose review interval has come up.</p>
+      </AccordionItem>
 
-      <div style={sectionStyle}>
-        <h3 style={headingStyle}>What does "mastered" mean?</h3>
-        <p>A fact is considered mastered when your child answers it correctly 3 times. The ⭐ counter in the header tracks how many facts have been mastered out of the total available. Mastered facts still appear occasionally to maintain recall, but the app prioritizes facts that need more practice.</p>
-      </div>
+      <AccordionItem title="What does &ldquo;mastered&rdquo; mean?">
+        <p style={{ margin: "0 0 8px" }}>
+          A fact is mastered after 3 correct answers. The ⭐ counter in the header tracks mastered facts out of the total.
+        </p>
+        <p style={{ margin: 0 }}>
+          Mastery isn't permanent — if your child misses a mastered fact during review, it drops back into the learning pool and needs to be re-mastered. This keeps the standard honest.
+        </p>
+      </AccordionItem>
 
-      <div style={sectionStyle}>
-        <h3 style={headingStyle}>How does the app choose which problems to show?</h3>
-        <p>JackFlash uses spaced repetition. Facts your child hasn't mastered yet appear more frequently. Facts that are already mastered come up less often but still cycle in to keep them fresh. This means practice time is always focused where it's needed most.</p>
-      </div>
+      <AccordionItem title="How does spaced repetition work?">
+        <p style={{ margin: "0 0 8px" }}>
+          Once a fact is mastered, it comes back on a schedule that stretches over time:
+        </p>
+        <p style={{ margin: "0 0 4px" }}>• Next day → 3 days → 7 days → 14 days → 30 days</p>
+        <p style={{ margin: 0 }}>
+          Each correct review pushes the interval out. A miss resets it. This is how facts move from short-term into long-term memory.
+        </p>
+      </AccordionItem>
 
-      <div style={sectionStyle}>
-        <h3 style={headingStyle}>Is my child's data saved?</h3>
-        <p>Yes — all progress is saved locally on your device in your browser's storage. It persists between sessions as long as you use the same browser and don't clear your site data. No data is ever sent to a server.</p>
-      </div>
+      <AccordionItem title="What happens when my child gets a problem wrong?">
+        <p style={{ margin: 0 }}>
+          The fact's mastery level drops by one, so it shows up more often. The visual scaffold (dot array or bar model) also appears automatically — helping your child see the math instead of guessing.
+        </p>
+      </AccordionItem>
 
-      <div style={sectionStyle}>
-        <h3 style={headingStyle}>How do I reset my child's progress?</h3>
-        <p>Go to the Parent Zone (tap the gear icon on the profile page). Under the Children tab, select a profile and use the "Reset Mastery" option to start fresh.</p>
-      </div>
+      <AccordionItem title="Can I see what my child is struggling with?">
+        <p style={{ margin: 0 }}>
+          Yes. During practice, tap the chart icon to see mastery dots for every fact. In the Parent Zone, the &ldquo;Needs Practice&rdquo; section lists the specific facts with the lowest mastery — including ones your child hasn't attempted yet.
+        </p>
+      </AccordionItem>
 
-      <div style={sectionStyle}>
-        <h3 style={headingStyle}>Can multiple kids use the app?</h3>
-        <p>Yes! JackFlash supports multiple player profiles. Each profile tracks its own mastery, achievements, and daily streak independently. Create new profiles from the profile picker screen.</p>
-      </div>
+      <AccordionItem title="Can multiple kids use the app?">
+        <p style={{ margin: 0 }}>
+          Yes — JackFlash supports multiple profiles. Each one tracks its own mastery, achievements, and daily streak independently. Add a new player from the profile picker.
+        </p>
+      </AccordionItem>
 
-      <div style={sectionStyle}>
-        <h3 style={headingStyle}>What grades is this for?</h3>
-        <p>JackFlash is designed for grades 2-5 (ages 7-11), covering multiplication and division facts through 12. It works well as a supplement to any math curriculum.</p>
-      </div>
+      <AccordionItem title="How do I reset my child's progress?">
+        <p style={{ margin: 0 }}>
+          Open the Parent Zone (gear icon on the profile page), go to the Children tab, select a profile, and use &ldquo;Reset Mastery.&rdquo;
+        </p>
+      </AccordionItem>
 
-      <div style={sectionStyle}>
-        <h3 style={headingStyle}>Something isn't working — what should I do?</h3>
-        <p>Try a hard refresh (Cmd+Shift+R on Mac, Ctrl+Shift+R on Windows). If issues persist, clearing your browser's site data for JackFlash will reset the app. Note that this will also clear all saved progress.</p>
-      </div>
+      <AccordionItem title="Is my child's data private?">
+        <p style={{ margin: 0 }}>
+          Yes. All progress is stored locally on your device. No accounts, no servers, no tracking, no personal information collected. See the Privacy Policy for the full details.
+        </p>
+      </AccordionItem>
 
-      <div style={sectionStyle}>
-        <h3 style={headingStyle}>Contact</h3>
-        <p>Need more help? Reach us at <strong>hello@laserlabstudios.com</strong>.</p>
-      </div>
+      <AccordionItem title="Something isn't working — what should I do?">
+        <p style={{ margin: "0 0 8px" }}>
+          Try a hard refresh (Cmd+Shift+R on Mac, Ctrl+Shift+R on Windows). If it still misbehaves, clearing your browser's site data will reset the app — but that also clears saved progress.
+        </p>
+        <p style={{ margin: 0 }}>
+          Still stuck? Email <strong>hello@laserlabstudios.com</strong>.
+        </p>
+      </AccordionItem>
     </PageWrapper>
   );
 }
