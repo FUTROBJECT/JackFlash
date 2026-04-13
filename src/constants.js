@@ -26,22 +26,22 @@ export const MODULE_COLORS = {
 
 // Avatar definitions for profile creation
 export const AVATARS = [
-  { id: "robot-blue", label: "Blue Robot", emoji: "🤖" },
-  { id: "robot-red", label: "Red Robot", emoji: "🤖" },
-  { id: "cat-orange", label: "Orange Cat", emoji: "🐱" },
-  { id: "dog-brown", label: "Brown Dog", emoji: "🐶" },
-  { id: "dragon-green", label: "Green Dragon", emoji: "🐉" },
-  { id: "unicorn-pink", label: "Pink Unicorn", emoji: "🦄" },
-  { id: "bear-brown", label: "Brown Bear", emoji: "🐻" },
-  { id: "fox-orange", label: "Orange Fox", emoji: "🦊" },
-  { id: "owl-purple", label: "Purple Owl", emoji: "🦉" },
-  { id: "penguin-blue", label: "Blue Penguin", emoji: "🐧" },
-  { id: "lion-yellow", label: "Yellow Lion", emoji: "🦁" },
-  { id: "lightning-yellow", label: "Lightning Bolt", emoji: "⚡" },
-  { id: "star-gold", label: "Gold Star", emoji: "⭐" },
-  { id: "rocket-red", label: "Red Rocket", emoji: "🚀" },
-  { id: "alien-green", label: "Green Alien", emoji: "👽" },
-  { id: "monster-purple", label: "Purple Monster", emoji: "👾" },
+  { id: "robot-blue", label: "Bolt", emoji: "🤖" },
+  { id: "robot-red", label: "Rusty", emoji: "🤖" },
+  { id: "cat-orange", label: "Marmalade", emoji: "🐱" },
+  { id: "dog-brown", label: "Biscuit", emoji: "🐶" },
+  { id: "dragon-green", label: "Jade", emoji: "🐉" },
+  { id: "unicorn-pink", label: "Glimmer", emoji: "🦄" },
+  { id: "bear-brown", label: "Cocoa", emoji: "🐻" },
+  { id: "fox-orange", label: "Ember", emoji: "🦊" },
+  { id: "owl-purple", label: "Professor", emoji: "🦉" },
+  { id: "penguin-blue", label: "Waddle", emoji: "🐧" },
+  { id: "lion-yellow", label: "Roary", emoji: "🦁" },
+  { id: "lightning-yellow", label: "Zap", emoji: "⚡" },
+  { id: "star-gold", label: "Twinkle", emoji: "⭐" },
+  { id: "rocket-red", label: "Blaze", emoji: "🚀" },
+  { id: "alien-green", label: "Blip", emoji: "👽" },
+  { id: "monster-purple", label: "Gus", emoji: "👾" },
 ];
 
 // Default settings for new child profiles
