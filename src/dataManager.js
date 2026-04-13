@@ -223,16 +223,29 @@ export function updateMastery(profileId, moduleId, factKey, isCorrect) {
   if (!profile.mastery[moduleId][factKey]) {
     profile.mastery[moduleId][factKey] = {
       correct: 0,
-      lastSeen: new Date().toISOString(),
+      attempts: 0,
+      lastSeen: null,
+      masteredAt: null,
     };
   }
 
   const fact = profile.mastery[moduleId][factKey];
 
+  // Track total presentations (backward compat: old records won't have this)
+  fact.attempts = (fact.attempts || 0) + 1;
+
   if (isCorrect) {
     fact.correct += 1;
+    // Record when mastery was first achieved
+    if (fact.correct >= DEFAULT_MASTERY_THRESHOLD && !fact.masteredAt) {
+      fact.masteredAt = new Date().toISOString();
+    }
   } else {
     fact.correct = Math.max(0, fact.correct - 1);
+    // Dropped below mastery — clear masteredAt so it resets when re-mastered
+    if (fact.correct < DEFAULT_MASTERY_THRESHOLD) {
+      fact.masteredAt = null;
+    }
   }
 
   fact.lastSeen = new Date().toISOString();

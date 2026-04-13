@@ -172,7 +172,11 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     return masteryData[factKey]?.correct || 0;
   }, [getMasteryData]);
 
-  // Pick a new fact weighted by mastery
+  // Spaced-repetition review intervals (days) — Leitner-inspired
+  // Index = number of correct answers beyond mastery threshold
+  const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
+
+  // Pick a new fact using spaced repetition + Singapore Math spiral review
   const pickNewFact = useCallback(() => {
     if (facts.length === 0) {
       setCurrentFact(null);
@@ -180,19 +184,72 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     }
 
     const masteryThreshold = DEFAULT_MASTERY_THRESHOLD;
-    const weighted = facts.flatMap((f) => {
-      const level = getMasteryLevel(f.factKey);
-      return Array(Math.max(1, masteryThreshold + 1 - level)).fill(f);
+    const now = Date.now();
+    const masteryData = getMasteryData();
+    const MAX_NEW_FACTS = 3; // Introduce at most 3 unseen facts at a time
+
+    // Categorize every fact in the current pool
+    const scored = facts.map((f) => {
+      const record = masteryData[f.factKey];
+      const level = record?.correct || 0;
+      const attempts = record?.attempts || 0;
+      const lastSeen = record?.lastSeen ? new Date(record.lastSeen).getTime() : 0;
+      const daysSince = lastSeen ? (now - lastSeen) / (1000 * 60 * 60 * 24) : Infinity;
+
+      if (level >= masteryThreshold) {
+        // MASTERED — check if review is due
+        const reviewsAfterMastery = level - masteryThreshold;
+        const intervalDays = REVIEW_INTERVALS[Math.min(reviewsAfterMastery, REVIEW_INTERVALS.length - 1)];
+        const reviewDue = daysSince >= intervalDays;
+        return { fact: f, weight: reviewDue ? 4 : 1, category: reviewDue ? "review" : "mastered" };
+      }
+
+      if (attempts === 0 && !record?.lastSeen) {
+        // NEVER SEEN — will be capped below
+        // (check lastSeen too for backward compat with old records that lack attempts)
+        return { fact: f, weight: 3, category: "new" };
+      }
+
+      if (level === 0) {
+        // STRUGGLING — seen but nothing sticking
+        return { fact: f, weight: 6, category: "struggling" };
+      }
+
+      // LEARNING — partially mastered, weight inversely proportional to progress
+      return { fact: f, weight: (masteryThreshold - level + 1) * 2, category: "learning" };
     });
 
-    setCurrentFact(weighted[Math.floor(Math.random() * weighted.length)] || null);
+    // Singapore Math principle: don't overwhelm — limit new-fact introductions
+    // Only allow MAX_NEW_FACTS unseen facts into the weighted pool at a time
+    let newCount = 0;
+    const pool = scored.filter((s) => {
+      if (s.category === "new") {
+        newCount++;
+        return newCount <= MAX_NEW_FACTS;
+      }
+      return true;
+    });
+
+    // Weighted random selection
+    const totalWeight = pool.reduce((sum, s) => sum + s.weight, 0);
+    let r = Math.random() * totalWeight;
+    let selected = pool[0]?.fact || null;
+    for (const entry of pool) {
+      r -= entry.weight;
+      if (r <= 0) {
+        selected = entry.fact;
+        break;
+      }
+    }
+
+    setCurrentFact(selected);
     setUserAnswer("");
     setFeedback(null);
     setShowScaffold(false);
     setUserHidScaffold(false);
     setShowNumberBond(false);
     setTimeout(() => inputRef.current?.focus(), 100);
-  }, [facts, getMasteryLevel]);
+  }, [facts, getMasteryData]);
 
   // Trigger pickNewFact when group, focus number, operation, or facts change
   useEffect(() => {
