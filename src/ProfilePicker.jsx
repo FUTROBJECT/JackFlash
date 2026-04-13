@@ -236,7 +236,7 @@ export function ProfilePicker({ profiles, onSelectProfile, onAddProfile, onOpenP
           <span>·</span>
           <a href="#" onClick={(e) => { e.preventDefault(); onOpenParentZone(); }} style={{ color: "#AAA", textDecoration: "none" }}>Terms</a>
           <span>·</span>
-          <span>© 2026 Laser Lab Studios LLC</span>
+          <span style={{ color: COLORS.black }}><span style={{ fontSize: "1.2em", verticalAlign: "-0.05em" }}>©</span> 2026 Laser Lab Studios LLC</span>
         </div>
       </div>
     </div>

@@ -626,9 +626,9 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
             </BrutalButton>
             <div style={{
               textAlign: "center", marginTop: "24px", fontSize: "11px",
-              fontFamily: "'Space Mono', monospace", color: "#BBB", lineHeight: 1.5,
+              fontFamily: "'Space Mono', monospace", color: COLORS.black, lineHeight: 1.5,
             }}>
-              © 2026 Laser Lab Studios LLC. All rights reserved.
+              <span style={{ fontSize: "1.2em", verticalAlign: "-0.05em" }}>©</span> 2026 Laser Lab Studios LLC. All rights reserved.
             </div>
           </div>
         )}
@@ -997,9 +997,9 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       </div>
       <div style={{
         textAlign: "center", padding: "16px 20px 24px",
-        fontSize: "10px", fontFamily: "'Space Mono', monospace", color: "#CCC",
+        fontSize: "10px", fontFamily: "'Space Mono', monospace", color: COLORS.black,
       }}>
-        © 2026 Laser Lab Studios LLC
+        <span style={{ fontSize: "1.2em", verticalAlign: "-0.05em" }}>©</span> 2026 Laser Lab Studios LLC
       </div>
       {achievementQueue.length > 0 && (
         <AchievementPopup
