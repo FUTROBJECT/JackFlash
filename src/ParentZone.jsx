@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, MODULE_COLORS, DEFAULT_CHILD_SETTINGS } from "./constants.js";
+import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, MODULE_COLORS, DEFAULT_CHILD_SETTINGS, AVATARS } from "./constants.js";
 import { getModuleList, getModule } from "./modules/moduleRegistry.js";
 import { PRODUCTS, purchaseProduct, restorePurchases, getProductsWithStatus } from "./purchaseManager.js";
 import { getAllAchievementsForProfile } from "./achievementEngine.js";
@@ -487,25 +487,32 @@ export function ParentZone({
                         textAlign: "left",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
-                        <div style={{ fontSize: "32px" }}>{profile.avatar}</div>
-                        <div>
-                          <div style={{
-                            fontSize: "16px",
-                            fontWeight: 700,
-                            color: COLORS.black,
-                          }}>
-                            {profile.name}
+                      {(() => {
+                        const avatarDef = AVATARS.find((a) => a.id === profile.avatar);
+                        const avatarEmoji = avatarDef?.emoji || "🤖";
+                        const avatarLabel = avatarDef?.label;
+                        return (
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
+                            <div style={{ fontSize: "32px" }}>{avatarEmoji}</div>
+                            <div>
+                              <div style={{
+                                fontSize: "16px",
+                                fontWeight: 700,
+                                color: COLORS.black,
+                              }}>
+                                {profile.name}
+                              </div>
+                              <div style={{
+                                fontSize: "12px",
+                                color: "#666",
+                                marginTop: "2px",
+                              }}>
+                                {avatarLabel ? `${avatarLabel} · ${profile.activeModule}` : profile.activeModule}
+                              </div>
+                            </div>
                           </div>
-                          <div style={{
-                            fontSize: "12px",
-                            color: "#666",
-                            marginTop: "2px",
-                          }}>
-                            {profile.activeModule}
-                          </div>
-                        </div>
-                      </div>
+                        );
+                      })()}
                       <div style={{
                         fontSize: "16px",
                         color: COLORS.black,
