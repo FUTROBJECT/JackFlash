@@ -7,6 +7,7 @@ import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEng
 import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
+import SmartPracticeExplainer from "./SmartPracticeExplainer.jsx";
 
 // Register the multiply module on first load
 registerModule(multiplyModule);
@@ -433,58 +434,62 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
             const masteredFacts = totalFacts > 0 ? facts.filter(f => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length : 0;
             const masteryPct = totalFacts > 0 ? Math.round((masteredFacts / totalFacts) * 100) : 0;
             return (
-              <div style={{ display: "flex", gap: "6px", alignItems: "stretch", marginBottom: "6px" }}>
+              <div style={{ display: "flex", gap: "6px", alignItems: "stretch", marginBottom: "8px" }}>
                 {/* Mastery progress — cumulative, persisted */}
                 <div style={{
                   flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Space Mono', monospace", fontSize: "11px", fontWeight: 700,
+                  fontFamily: "'Space Mono', monospace", fontWeight: 700,
                   backgroundColor: masteryPct === 100 ? COLORS.green : "white",
                   color: masteryPct === 100 ? "white" : COLORS.black,
                   border: BRUTAL_BORDER_SM, borderRadius: "8px",
-                  padding: "5px 4px", boxShadow: BRUTAL_SHADOW_SM,
+                  padding: "10px 4px", boxShadow: BRUTAL_SHADOW_SM,
                   transition: "all 0.3s ease",
+                  gap: "3px",
                 }}>
-                  <span style={{ fontSize: "14px" }}>⭐ {masteredFacts}/{totalFacts}</span>
-                  <span style={{ fontSize: "9px", opacity: 0.6 }}>mastered</span>
+                  <span style={{ fontSize: "20px", lineHeight: 1 }}>⭐ {masteredFacts}/{totalFacts}</span>
+                  <span style={{ fontSize: "10px", opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Mastered</span>
                 </div>
                 {/* Session score */}
                 <div style={{
                   flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Space Mono', monospace", fontSize: "11px", fontWeight: 700,
+                  fontFamily: "'Space Mono', monospace", fontWeight: 700,
                   backgroundColor: "white", border: BRUTAL_BORDER_SM, borderRadius: "8px",
-                  padding: "5px 4px", boxShadow: BRUTAL_SHADOW_SM,
+                  padding: "10px 4px", boxShadow: BRUTAL_SHADOW_SM,
+                  gap: "3px",
                 }}>
-                  <span style={{ fontSize: "14px" }}>{sessionStats.correct}/{sessionStats.total}</span>
-                  <span style={{ fontSize: "9px", opacity: 0.6 }}>session</span>
+                  <span style={{ fontSize: "20px", lineHeight: 1 }}>{sessionStats.correct}/{sessionStats.total}</span>
+                  <span style={{ fontSize: "10px", opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Session</span>
                 </div>
                 {/* Streak */}
                 <div style={{
                   flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Space Mono', monospace", fontSize: "11px", fontWeight: 700,
+                  fontFamily: "'Space Mono', monospace", fontWeight: 700,
                   backgroundColor: streak >= 3 ? COLORS.orange : "white",
                   color: streak >= 3 ? "white" : COLORS.black,
                   border: BRUTAL_BORDER_SM, borderRadius: "8px",
-                  padding: "5px 4px", boxShadow: BRUTAL_SHADOW_SM,
+                  padding: "10px 4px", boxShadow: BRUTAL_SHADOW_SM,
                   transition: "all 0.2s ease",
+                  gap: "3px",
                 }}>
-                  <span style={{ fontSize: "14px" }}>{"🔥"} {streak}</span>
-                  <span style={{ fontSize: "9px", opacity: 0.6 }}>streak</span>
+                  <span style={{ fontSize: "20px", lineHeight: 1 }}>{"🔥"} {streak}</span>
+                  <span style={{ fontSize: "10px", opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Streak</span>
                 </div>
                 {/* Daily streak */}
                 {dailyStreak && dailyStreak.current > 0 && (
                   <div style={{
                     display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    padding: "5px 8px",
+                    padding: "10px 10px",
                     background: dailyStreak.current >= 7 ? COLORS.orange : COLORS.cream,
                     border: BRUTAL_BORDER_SM, borderRadius: "8px",
-                    fontSize: "11px", fontFamily: "'Space Mono', monospace", fontWeight: 700,
+                    fontFamily: "'Space Mono', monospace", fontWeight: 700,
                     color: dailyStreak.current >= 7 ? "white" : COLORS.black,
                     boxShadow: BRUTAL_SHADOW_SM,
+                    gap: "3px",
                   }}>
-                    <span style={{ fontSize: "14px" }}>
+                    <span style={{ fontSize: "20px", lineHeight: 1 }}>
                       {dailyStreak.current >= 30 ? "👑" : "📅"} {dailyStreak.current}
                     </span>
-                    <span style={{ fontSize: "9px", opacity: 0.6 }}>days</span>
+                    <span style={{ fontSize: "10px", opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Days</span>
                   </div>
                 )}
               </div>
@@ -516,7 +521,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               fontFamily: "'Space Mono', monospace",
               transition: "all 0.1s ease",
             }}>
-              ?
+              How it Works
             </button>
           </div>
         </div>
@@ -553,16 +558,16 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                   <h3 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400, margin: "0 0 12px" }}>The CPA Progression</h3>
                   <p style={{ margin: "0 0 12px", fontSize: "13px" }}>The CPA approach teaches every concept in three stages. JackFlash's three modes match exactly:</p>
                   {[
-                    { stage: "Concrete", icon: "🧱", color: COLORS.green, school: "In the classroom, kids use physical counters and blocks arranged in groups.", app: "Dot arrays are always visible. Your child can count every dot — same strategy, on screen." },
-                    { stage: "Pictorial", icon: "✏️", color: COLORS.orange, school: "In the classroom, kids draw arrays on dot paper and use bar models.", app: "Arrays start visible but fade with mastery. The visual scaffold is there when needed." },
-                    { stage: "Abstract", icon: "🔢", color: COLORS.purple, school: "In the classroom, kids work with equations — symbols on a page.", app: "Pure flashcard mode. \"Show array\" and \"Skip count\" let your child drop back a stage anytime." },
+                    { stage: "Concrete", color: COLORS.green, school: "In the classroom, kids use physical counters and blocks arranged in groups.", app: "Dot arrays are always visible. Your child can count every dot — same strategy, on screen." },
+                    { stage: "Pictorial", color: COLORS.orange, school: "In the classroom, kids draw arrays on dot paper and use bar models.", app: "Arrays start visible but fade with mastery. The visual scaffold is there when needed." },
+                    { stage: "Abstract", color: COLORS.purple, school: "In the classroom, kids work with equations — symbols on a page.", app: "Pure flashcard mode. \"Show array\" and \"Skip count\" let your child drop back a stage anytime." },
                   ].map((s) => (
                     <div key={s.stage} style={{
                       backgroundColor: "white", borderRadius: "8px", padding: "12px",
                       borderLeft: `6px solid ${s.color}`, border: BRUTAL_BORDER_SM,
                       boxShadow: BRUTAL_SHADOW_SM, marginBottom: "8px",
                     }}>
-                      <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "6px" }}>{s.icon} {s.stage}</div>
+                      <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "6px" }}>{s.stage}</div>
                       <div style={{ fontSize: "12px", marginBottom: "4px" }}><strong>At school:</strong> {s.school}</div>
                       <div style={{ fontSize: "12px" }}><strong>In the app:</strong> {s.app}</div>
                     </div>
@@ -573,16 +578,21 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                 <div style={{ backgroundColor: COLORS.cream, borderRadius: "10px", padding: "16px", marginBottom: "16px", border: BRUTAL_BORDER_SM }}>
                   <h3 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400, margin: "0 0 10px" }}>Real Math Tools, Not Just Flashcards</h3>
                   {[
-                    { icon: "📐", label: "Dot arrays", desc: "Rows-and-columns layout matching the dot paper used in classrooms." },
-                    { icon: "🔗", label: "Number bonds", desc: "Part-whole relationships reinforce that × and ÷ are two views of the same fact." },
-                    { icon: "🦘", label: "Skip counting", desc: "Each table introduced through skip counting — the app shows the sequence as a hint." },
-                    { icon: "↔️", label: "× ÷ Mixed", desc: "Division as \"thinking of the corresponding multiplication fact\" — the way strong curricula teach it." },
+                    { label: "Dot arrays", desc: "Rows-and-columns layout matching the dot paper used in classrooms." },
+                    { label: "Number bonds", desc: "Part-whole relationships reinforce that × and ÷ are two views of the same fact." },
+                    { label: "Skip counting", desc: "Each table introduced through skip counting — the app shows the sequence as a hint." },
+                    { label: "× ÷ Mixed", desc: "Division as \"thinking of the corresponding multiplication fact\" — the way strong curricula teach it." },
                   ].map((t) => (
-                    <div key={t.label} style={{ display: "flex", gap: "10px", marginBottom: "8px", fontSize: "13px" }}>
-                      <span style={{ fontSize: "16px", flexShrink: 0 }}>{t.icon}</span>
-                      <span><strong>{t.label}</strong> — {t.desc}</span>
+                    <div key={t.label} style={{ marginBottom: "8px", fontSize: "13px" }}>
+                      <strong>{t.label}</strong> — {t.desc}
                     </div>
                   ))}
+                </div>
+
+                {/* Smart Practice Section — shared explainer */}
+                <div style={{ backgroundColor: COLORS.cream, borderRadius: "10px", padding: "16px", marginBottom: "16px", border: BRUTAL_BORDER_SM }}>
+                  <h3 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400, margin: "0 0 10px" }}>Smart Practice, Not Random Drills</h3>
+                  <SmartPracticeExplainer />
                 </div>
 
                 {/* Groups Section */}

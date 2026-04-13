@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { COLORS, BRUTAL_BORDER_SM, BRUTAL_SHADOW_SM } from "./constants.js";
+import SmartPracticeExplainer from "./SmartPracticeExplainer.jsx";
 
 const linkStyle = {
   color: COLORS.blue,
@@ -232,7 +233,7 @@ function AccordionItem({ title, children, defaultOpen = false }) {
 
 export function HelpFAQ({ onBack }) {
   return (
-    <PageWrapper title="How JackFlash Works" onBack={onBack}>
+    <PageWrapper title="How it Works" onBack={onBack}>
       <p style={{ fontSize: "13px", marginBottom: "16px", opacity: 0.75 }}>
         Tap any question to expand.
       </p>
@@ -256,39 +257,7 @@ export function HelpFAQ({ onBack }) {
       </AccordionItem>
 
       <AccordionItem title="How does JackFlash pick what to practice?">
-        <p style={{ margin: "0 0 10px" }}>
-          Not randomly. Every problem is chosen based on what your child knows and what they're ready for next. Facts are sorted into five groups:
-        </p>
-        <p style={{ margin: "0 0 6px" }}><strong>New</strong> — introduced just 2–3 at a time, so no one gets overwhelmed.</p>
-        <p style={{ margin: "0 0 6px" }}><strong>Learning</strong> — gotten right before but not yet mastered. Shows up often.</p>
-        <p style={{ margin: "0 0 6px" }}><strong>Struggling</strong> — repeatedly wrong. Gets the most attention.</p>
-        <p style={{ margin: "0 0 6px" }}><strong>Mastered</strong> — correct 3 times. Moves into long-term review.</p>
-        <p style={{ margin: 0 }}><strong>Review-due</strong> — mastered facts whose review interval has come up.</p>
-      </AccordionItem>
-
-      <AccordionItem title="What does &ldquo;mastered&rdquo; mean?">
-        <p style={{ margin: "0 0 8px" }}>
-          A fact is mastered after 3 correct answers. The ⭐ counter in the header tracks mastered facts out of the total.
-        </p>
-        <p style={{ margin: 0 }}>
-          Mastery isn't permanent — if your child misses a mastered fact during review, it drops back into the learning pool and needs to be re-mastered. This keeps the standard honest.
-        </p>
-      </AccordionItem>
-
-      <AccordionItem title="How does spaced repetition work?">
-        <p style={{ margin: "0 0 8px" }}>
-          Once a fact is mastered, it comes back on a schedule that stretches over time:
-        </p>
-        <p style={{ margin: "0 0 4px" }}>• Next day → 3 days → 7 days → 14 days → 30 days</p>
-        <p style={{ margin: 0 }}>
-          Each correct review pushes the interval out. A miss resets it. This is how facts move from short-term into long-term memory.
-        </p>
-      </AccordionItem>
-
-      <AccordionItem title="What happens when my child gets a problem wrong?">
-        <p style={{ margin: 0 }}>
-          The fact's mastery level drops by one, so it shows up more often. The visual scaffold (dot array or bar model) also appears automatically — helping your child see the math instead of guessing.
-        </p>
+        <SmartPracticeExplainer />
       </AccordionItem>
 
       <AccordionItem title="Can I see what my child is struggling with?">

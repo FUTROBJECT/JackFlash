@@ -1054,7 +1054,7 @@ export function ParentZone({
                 textDecoration: "none",
                 fontWeight: 600,
               }}>
-                How JackFlash Works
+                How it Works
               </a>
               <a href="#" onClick={(e) => { e.preventDefault(); setLegalPage("privacy"); }} style={{
                 fontSize: "13px",
