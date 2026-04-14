@@ -37,7 +37,7 @@ export default function LogoLockup({ size = "medium", accentColor, subtitle, sta
           fontWeight: 400,
           margin: 0,
           color: COLORS.black,
-          letterSpacing: "0.5px",
+          letterSpacing: "-0.03em",
           whiteSpace: "nowrap",
         }}>
           JackFlash
