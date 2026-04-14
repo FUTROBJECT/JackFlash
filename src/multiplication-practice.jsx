@@ -122,19 +122,27 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     }
   }, [profileId]);
 
-  // Record session on unmount
+  // Record session on unmount — use refs so the cleanup only fires ONCE
+  // (previous version had sessionStats in deps, causing a phantom session to be
+  // recorded on every answered question with inflated cumulative totals)
+  const sessionStatsRef = useRef(sessionStats);
+  useEffect(() => { sessionStatsRef.current = sessionStats; }, [sessionStats]);
+  const moduleIdRef = useRef(moduleId);
+  useEffect(() => { moduleIdRef.current = moduleId; }, [moduleId]);
+
   useEffect(() => {
     return () => {
-      if (profileId && sessionStats.total > 0) {
+      const stats = sessionStatsRef.current;
+      if (profileId && stats.total > 0) {
         recordSession(profileId, {
-          moduleId,
-          correct: sessionStats.correct,
-          total: sessionStats.total,
+          moduleId: moduleIdRef.current,
+          correct: stats.correct,
+          total: stats.total,
           duration: Date.now() - sessionStartTime,
         });
       }
     };
-  }, [profileId, moduleId, sessionStats, sessionStartTime]);
+  }, [profileId, sessionStartTime]);
 
   // Get mastery data (either from profile via data manager, or local state)
   const getMasteryData = useCallback(() => {
