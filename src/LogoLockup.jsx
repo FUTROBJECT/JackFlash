@@ -14,9 +14,9 @@ import LightningBolt from "./LightningBolt.jsx";
  */
 export default function LogoLockup({ size = "medium", accentColor, subtitle, stacked = false, style = {} }) {
   const sizes = {
-    large: { bolt: 80, boltStacked: 140, font: "clamp(48px, 12vw, 70px)" },
-    medium: { bolt: 60, boltStacked: 100, font: "clamp(28px, 7.5vw, 44px)" },
-    small: { bolt: 44, boltStacked: 70, font: "clamp(22px, 6vw, 32px)" },
+    large: { bolt: 80, boltStacked: 140, font: "clamp(56px, 14vw, 82px)" },
+    medium: { bolt: 60, boltStacked: 100, font: "clamp(34px, 9vw, 52px)" },
+    small: { bolt: 44, boltStacked: 70, font: "clamp(26px, 7vw, 38px)" },
   };
   const s = sizes[size] || sizes.medium;
   const boltSize = stacked ? s.boltStacked : s.bolt;
