@@ -32,7 +32,7 @@ export default function LogoLockup({ size = "medium", accentColor, subtitle, sta
       }}>
         <LightningBolt size={boltSize} accentColor={accentColor} />
         <h1 style={{
-          fontFamily: "'Shrikhand', cursive",
+          fontFamily: "'Galindo', cursive",
           fontSize: s.font,
           fontWeight: 400,
           margin: 0,
