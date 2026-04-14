@@ -223,13 +223,22 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     // Singapore Math principle: don't overwhelm — limit new-fact introductions
     // Only allow MAX_NEW_FACTS unseen facts into the weighted pool at a time
     let newCount = 0;
-    const pool = scored.filter((s) => {
+    let pool = scored.filter((s) => {
       if (s.category === "new") {
         newCount++;
         return newCount <= MAX_NEW_FACTS;
       }
       return true;
     });
+
+    // Anti-repeat guard: never show the same fact twice in a row as long as
+    // there is at least one other fact available. Prevents the weighted-random
+    // algorithm from picking a dominant-weight fact back-to-back.
+    const previousKey = currentFact?.factKey;
+    if (previousKey && pool.length > 1) {
+      const withoutPrevious = pool.filter((s) => s.fact.factKey !== previousKey);
+      if (withoutPrevious.length > 0) pool = withoutPrevious;
+    }
 
     // Weighted random selection
     const totalWeight = pool.reduce((sum, s) => sum + s.weight, 0);
@@ -250,7 +259,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     setUserHidScaffold(false);
     setShowNumberBond(false);
     setTimeout(() => inputRef.current?.focus(), 100);
-  }, [facts, getMasteryData]);
+  }, [facts, getMasteryData, currentFact]);
 
   // Trigger pickNewFact when group, focus number, operation, or facts change
   useEffect(() => {
