@@ -419,13 +419,16 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
             {onBack && (
               <button onClick={onBack} style={{
-                padding: "6px 10px", borderRadius: "6px", border: BRUTAL_BORDER_SM,
+                padding: "6px 8px", borderRadius: "6px", border: BRUTAL_BORDER_SM,
                 backgroundColor: "white", color: COLORS.black,
                 boxShadow: BRUTAL_SHADOW_SM, cursor: "pointer",
-                fontFamily: "'Space Mono', monospace", fontSize: "16px", fontWeight: 700,
                 transition: "all 0.1s ease", flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                ←
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 9.5L12 3L21 9.5V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9.5Z" stroke={COLORS.black} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9 22V12H15V22" stroke={COLORS.black} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </button>
             )}
             <LogoLockup size="medium" style={{ flex: 1 }} />
