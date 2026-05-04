@@ -512,22 +512,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               </div>
             );
           })()}
-          {/* Controls row — Reset moved to Parent Zone */}
-          <div style={{ display: "flex", gap: "6px", alignItems: "stretch" }}>
-            <button onClick={() => setView(view === "progress" ? "practice" : "progress")} style={{
-              flex: 1, padding: "6px 4px", borderRadius: "8px",
-              border: BRUTAL_BORDER_SM,
-              backgroundColor: view === "progress" ? COLORS.blue : "white",
-              color: COLORS.black,
-              boxShadow: view === "progress" ? "none" : BRUTAL_SHADOW_SM,
-              transform: view === "progress" ? "translate(2px, 2px)" : "none",
-              fontSize: "12px", fontWeight: 700, cursor: "pointer",
-              fontFamily: "'Space Mono', monospace",
-              transition: "all 0.1s ease",
-            }}>
-              {view === "progress" ? "Practice" : "Progress"}
-            </button>
-          </div>
+          {/* Progress button removed — progress accessed from home screen */}
         </div>
       </div>
 
