@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   initData,
   getAllProfiles,
@@ -13,6 +13,9 @@ import {
   resetMastery,
   isOnboardingComplete,
   completeOnboarding,
+  getMastery,
+  checkStreakOnLaunch,
+  getProfile,
 } from "./dataManager.js";
 import { ProfilePicker, CreateProfile } from "./ProfilePicker.jsx";
 import { ParentGate, ParentZone } from "./ParentZone.jsx";
@@ -27,6 +30,11 @@ export default function App() {
     return isOnboardingComplete() ? "profilePicker" : "onboarding";
   });
   const [refreshKey, setRefreshKey] = useState(0);
+  const [homeTab, setHomeTab] = useState("players");
+  // Track which tab triggered the parent gate so we can route after passing
+  const [gateDestination, setGateDestination] = useState("parentZone");
+  // Track which profile's progress to view
+  const [progressProfileId, setProgressProfileId] = useState(null);
 
   // Force re-read of profiles after changes
   const refresh = useCallback(() => {
@@ -36,6 +44,26 @@ export default function App() {
   const profiles = data ? getAllProfiles() : [];
   const activeProfile = data ? getActiveProfile() : null;
   const parentSettings = data ? getParentSettings() : { masteryThreshold: 3 };
+
+  // Build mastery + streak data for all profiles (for enriched cards)
+  const masteryData = useMemo(() => {
+    const result = {};
+    profiles.forEach((p) => {
+      result[p.id] = getMastery(p.id, p.activeModule) || {};
+    });
+    return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profiles.length, refreshKey]);
+
+  const streakData = useMemo(() => {
+    const result = {};
+    profiles.forEach((p) => {
+      const profile = getProfile(p.id);
+      result[p.id] = profile?.dailyStreak || { current: 0 };
+    });
+    return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profiles.length, refreshKey]);
 
   // Handlers
   const handleSelectProfile = (profileId) => {
@@ -56,15 +84,17 @@ export default function App() {
   };
 
   const handleOpenParentZone = () => {
+    setGateDestination("parentZone");
     setScreen("parentGate");
   };
 
   const handleParentGatePass = () => {
-    setScreen("parentZone");
+    setScreen(gateDestination);
   };
 
   const handleBackToProfiles = () => {
     refresh();
+    setHomeTab("players");
     setScreen("profilePicker");
   };
 
@@ -101,6 +131,29 @@ export default function App() {
     setScreen("profilePicker");
   };
 
+  const handleViewProgress = (profileId) => {
+    setActiveProfile(profileId);
+    setProgressProfileId(profileId);
+    refresh();
+    setScreen("practice");
+    // We'll pass a flag to open practice in progress view
+  };
+
+  const handleTabChange = (tabId) => {
+    if (tabId === "players") {
+      setHomeTab("players");
+      setScreen("profilePicker");
+    } else if (tabId === "modules") {
+      setHomeTab("modules");
+      setGateDestination("parentZone");
+      setScreen("parentGate");
+    } else if (tabId === "settings") {
+      setHomeTab("settings");
+      setGateDestination("parentZone");
+      setScreen("parentGate");
+    }
+  };
+
   if (!data) return null; // Loading
 
   switch (screen) {
@@ -113,6 +166,11 @@ export default function App() {
           onSelectProfile={handleSelectProfile}
           onAddProfile={handleAddProfile}
           onOpenParentZone={handleOpenParentZone}
+          onViewProgress={handleViewProgress}
+          activeTab={homeTab}
+          onTabChange={handleTabChange}
+          masteryData={masteryData}
+          streakData={streakData}
         />
       );
     case "createProfile":
@@ -144,6 +202,11 @@ export default function App() {
       );
     case "practice": {
       const profile = getActiveProfile();
+      const openProgress = progressProfileId === profile?.id;
+      // Clear the flag after using it
+      if (openProgress) {
+        setTimeout(() => setProgressProfileId(null), 0);
+      }
       return (
         <MultiplicationPractice
           key={profile?.id}
@@ -152,6 +215,7 @@ export default function App() {
           profileName={profile?.name}
           profileAvatar={profile?.avatar}
           onBack={handleBackToProfiles}
+          initialView={openProgress ? "progress" : "practice"}
         />
       );
     }
@@ -162,6 +226,11 @@ export default function App() {
           onSelectProfile={handleSelectProfile}
           onAddProfile={handleAddProfile}
           onOpenParentZone={handleOpenParentZone}
+          onViewProgress={handleViewProgress}
+          activeTab={homeTab}
+          onTabChange={handleTabChange}
+          masteryData={masteryData}
+          streakData={streakData}
         />
       );
   }

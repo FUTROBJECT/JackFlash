@@ -7,7 +7,7 @@ import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEng
 import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
-import SmartPracticeExplainer from "./SmartPracticeExplainer.jsx";
+
 
 // Register the multiply module on first load
 registerModule(multiplyModule);
@@ -80,7 +80,7 @@ function BrutalButton({ onClick, children, bg = "white", color = COLORS.black, s
   );
 }
 
-export default function MultiplicationPractice({ moduleId = "multiply", profileId = null, profileName = "Practice", profileAvatar = null, onBack = null }) {
+export default function MultiplicationPractice({ moduleId = "multiply", profileId = null, profileName = "Practice", profileAvatar = null, onBack = null, initialView = "practice" }) {
   // Get the module definition (before hooks so we can use it in initial state)
   const mod = getModule(moduleId);
 
@@ -97,7 +97,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   const [showSkipCount, setShowSkipCount] = useState(false);
   const [showNumberBond, setShowNumberBond] = useState(false);
   const [sessionStats, setSessionStats] = useState({ correct: 0, total: 0 });
-  const [view, setView] = useState("practice");
+  const [view, setView] = useState(initialView);
   const [streak, setStreak] = useState(0);
   // controls removed from practice view — settings managed via Parent Zone
   const [showArrayButton, setShowArrayButton] = useState(true);
@@ -527,19 +527,6 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
             }}>
               {view === "progress" ? "Practice" : "Progress"}
             </button>
-            <button onClick={() => setView(view === "about" ? "practice" : "about")} style={{
-              flex: 1, padding: "6px 4px", borderRadius: "8px",
-              border: BRUTAL_BORDER_SM,
-              backgroundColor: view === "about" ? COLORS.pink : "white",
-              color: view === "about" ? "white" : COLORS.black,
-              boxShadow: view === "about" ? "none" : BRUTAL_SHADOW_SM,
-              transform: view === "about" ? "translate(2px, 2px)" : "none",
-              fontSize: "12px", fontWeight: 700, cursor: "pointer",
-              fontFamily: "'Space Mono', monospace",
-              transition: "all 0.1s ease",
-            }}>
-              How it Works
-            </button>
           </div>
         </div>
       </div>
@@ -548,107 +535,6 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       <div style={{ padding: "clamp(24px, 6vw, 40px) clamp(12px, 4vw, 20px) 40px" }}>
       <div style={{ maxWidth: 540, margin: "0 auto" }}>
         {/* Controls removed — settings managed via Parent Zone */}
-
-        {/* =================== ABOUT VIEW =================== */}
-        {view === "about" && (
-          <div style={{ animation: "fadeSlideUp 0.3s ease both" }}>
-            <div style={{
-              backgroundColor: "white", borderRadius: "12px", padding: "24px",
-              border: BRUTAL_BORDER, boxShadow: `6px 6px 0px ${COLORS.black}`, marginBottom: "16px",
-            }}>
-              <h2 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "22px", fontWeight: 400, color: COLORS.black, margin: "0 0 4px" }}>
-                Why JackFlash Works
-              </h2>
-              <p style={{ fontSize: "12px", fontFamily: "'Space Mono', monospace", margin: "0 0 20px", opacity: 0.5, fontWeight: 700 }}>
-                {mod.grades} · Built on the CPA approach
-              </p>
-              <div style={{ fontSize: "14px", color: COLORS.black, lineHeight: 1.7 }}>
-                <p style={{ margin: "0 0 16px" }}>
-                  Most math apps separate multiplication and division into different exercises. JackFlash teaches them together as <strong>fact families</strong> — because if you know 6 × 4 = 24, you already know 24 ÷ 4 and 24 ÷ 6. That's how strong curricula teach it, and it's how kids actually build fluency.
-                </p>
-                <p style={{ margin: "0 0 16px" }}>
-                  Under the hood, JackFlash uses the <strong>Concrete → Pictorial → Abstract</strong> progression from Singapore-style math — the same approach used in classrooms worldwide. Kids <em>understand</em> multiplication before they <em>memorize</em> it.
-                </p>
-
-                {/* CPA Section */}
-                <div style={{ backgroundColor: COLORS.cream, borderRadius: "10px", padding: "16px", marginBottom: "16px", border: BRUTAL_BORDER_SM }}>
-                  <h3 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400, margin: "0 0 12px" }}>The CPA Progression</h3>
-                  <p style={{ margin: "0 0 12px", fontSize: "13px" }}>The CPA approach teaches every concept in three stages. JackFlash's three modes match exactly:</p>
-                  {[
-                    { stage: "Concrete", color: COLORS.green, school: "In the classroom, kids use physical counters and blocks arranged in groups.", app: "Dot arrays are always visible. Your child can count every dot — same strategy, on screen." },
-                    { stage: "Pictorial", color: COLORS.orange, school: "In the classroom, kids draw arrays on dot paper and use bar models.", app: "Arrays start visible but fade with mastery. The visual scaffold is there when needed." },
-                    { stage: "Abstract", color: COLORS.purple, school: "In the classroom, kids work with equations — symbols on a page.", app: "Pure flashcard mode. \"Show array\" and \"Skip count\" let your child drop back a stage anytime." },
-                  ].map((s) => (
-                    <div key={s.stage} style={{
-                      backgroundColor: "white", borderRadius: "8px", padding: "12px",
-                      borderLeft: `6px solid ${s.color}`, border: BRUTAL_BORDER_SM,
-                      boxShadow: BRUTAL_SHADOW_SM, marginBottom: "8px",
-                    }}>
-                      <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "6px" }}>{s.stage}</div>
-                      <div style={{ fontSize: "12px", marginBottom: "4px" }}><strong>At school:</strong> {s.school}</div>
-                      <div style={{ fontSize: "12px" }}><strong>In the app:</strong> {s.app}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Tools Section */}
-                <div style={{ backgroundColor: COLORS.cream, borderRadius: "10px", padding: "16px", marginBottom: "16px", border: BRUTAL_BORDER_SM }}>
-                  <h3 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400, margin: "0 0 10px" }}>Real Math Tools, Not Just Flashcards</h3>
-                  {[
-                    { label: "Dot arrays", desc: "Rows-and-columns layout matching the dot paper used in classrooms." },
-                    { label: "Number bonds", desc: "Part-whole relationships reinforce that × and ÷ are two views of the same fact." },
-                    { label: "Skip counting", desc: "Each table introduced through skip counting — the app shows the sequence as a hint." },
-                    { label: "× ÷ Mixed", desc: "Division as \"thinking of the corresponding multiplication fact\" — the way strong curricula teach it." },
-                  ].map((t) => (
-                    <div key={t.label} style={{ marginBottom: "8px", fontSize: "13px" }}>
-                      <strong>{t.label}</strong> — {t.desc}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Smart Practice Section — shared explainer */}
-                <div style={{ backgroundColor: COLORS.cream, borderRadius: "10px", padding: "16px", marginBottom: "16px", border: BRUTAL_BORDER_SM }}>
-                  <h3 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400, margin: "0 0 10px" }}>Smart Practice, Not Random Drills</h3>
-                  <SmartPracticeExplainer />
-                </div>
-
-                {/* Groups Section */}
-                <div style={{ backgroundColor: COLORS.cream, borderRadius: "10px", padding: "16px", marginBottom: "16px", border: BRUTAL_BORDER_SM }}>
-                  <h3 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400, margin: "0 0 10px" }}>Table Groups Follow How Kids Learn</h3>
-                  {mod.groups.map((g) => (
-                    <div key={g.id} style={{
-                      backgroundColor: g.color, borderRadius: "6px", padding: "8px 12px",
-                      border: BRUTAL_BORDER_SM, marginBottom: "6px", fontSize: "12px", fontWeight: 600,
-                    }}>
-                      <strong>{g.label}</strong> — {g.id === "easy" && "Introduced first — strong skip-counting patterns."}{g.id === "medium" && "Built on 2s — \"one more group\" reasoning."}{g.id === "hard" && "Hardest facts, tackled last. Most are already known from earlier tables."}
-                    </div>
-                  ))}
-                </div>
-
-                {/* How to use */}
-                <div style={{ backgroundColor: COLORS.cream, borderRadius: "10px", padding: "16px", border: BRUTAL_BORDER_SM }}>
-                  <h3 style={{ fontFamily: "'Shrikhand', cursive", fontSize: "16px", fontWeight: 400, margin: "0 0 10px" }}>How to Use at Home</h3>
-                  <div style={{ fontSize: "13px", lineHeight: 1.7 }}>
-                    <p style={{ margin: "0 0 8px" }}><strong>Start in Pictorial mode</strong> — the sweet spot for third grade. Arrays fade with mastery.</p>
-                    <p style={{ margin: "0 0 8px" }}><strong>One table group at a time</strong> — match whichever group your child's class is on. Use "All" for review.</p>
-                    <p style={{ margin: "0 0 8px" }}><strong>5 minutes max</strong> — short and frequent beats long and grinding.</p>
-                    <p style={{ margin: "0 0 8px" }}><strong>Ask "how could you figure it out?"</strong> — encourage multiple strategies, not just recall.</p>
-                    <p style={{ margin: "0" }}><strong>Add division when × feels solid</strong> — mixed mode reinforces fact families.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <BrutalButton onClick={() => setView("practice")} bg={COLORS.yellow} style={{ width: "100%" }}>
-              Start Practicing →
-            </BrutalButton>
-            <div style={{
-              textAlign: "center", marginTop: "24px", fontSize: "11px",
-              fontFamily: "'Space Mono', monospace", color: COLORS.black, lineHeight: 1.5,
-            }}>
-              <span style={{ fontSize: "1.2em", verticalAlign: "-0.05em" }}>©</span> 2026 Laser Lab Studios LLC. All rights reserved.
-            </div>
-          </div>
-        )}
 
         {/* =================== PROGRESS VIEW =================== */}
         {view === "progress" && (
