@@ -408,12 +408,12 @@ export function ParentZone({
           borderBottom: `2px solid ${COLORS.black}`,
           paddingBottom: "10px",
         }}>
-          {["children", "modules", "settings"].map((tab) => (
+          {["children", "modules", "howItWorks", "settings"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               style={{
-                padding: "8px 16px",
+                padding: "8px 12px",
                 borderRadius: "8px",
                 border: "none",
                 backgroundColor: activeTab === tab ? COLORS.yellow : "transparent",
@@ -421,12 +421,13 @@ export function ParentZone({
                 fontWeight: activeTab === tab ? 700 : 600,
                 cursor: "pointer",
                 fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: "14px",
+                fontSize: "13px",
                 transition: "background-color 0.2s",
               }}
             >
               {tab === "children" && "Children"}
-              {tab === "modules" && "Module Store"}
+              {tab === "modules" && "Modules"}
+              {tab === "howItWorks" && "How it Works"}
               {tab === "settings" && "Settings"}
             </button>
           ))}
@@ -985,6 +986,11 @@ export function ParentZone({
           </div>
         )}
 
+        {/* TAB: How it Works */}
+        {!legalPage && activeTab === "howItWorks" && (
+          <HelpFAQ onBack={() => setActiveTab("children")} />
+        )}
+
         {/* TAB: Settings */}
         {!legalPage && activeTab === "settings" && (
           <div style={{
@@ -1055,14 +1061,6 @@ export function ParentZone({
               flexDirection: "column",
               gap: "8px",
             }}>
-              <a href="#" onClick={(e) => { e.preventDefault(); setLegalPage("help"); }} style={{
-                fontSize: "13px",
-                color: COLORS.blue,
-                textDecoration: "none",
-                fontWeight: 600,
-              }}>
-                How it Works
-              </a>
               <a href="#" onClick={(e) => { e.preventDefault(); setLegalPage("privacy"); }} style={{
                 fontSize: "13px",
                 color: COLORS.blue,
