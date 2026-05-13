@@ -886,12 +886,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
         ))}
       </div>
       </div>
-      <div style={{
-        textAlign: "center", padding: "16px 20px 24px",
-        fontSize: "10px", fontFamily: "'Space Mono', monospace", color: COLORS.black,
-      }}>
-        <span style={{ fontSize: "1.2em", verticalAlign: "-0.05em" }}>©</span> 2026 Laser Lab Studios LLC
-      </div>
+      {/* Legal/copyright moved to Parent Zone Settings */}
       {achievementQueue.length > 0 && (
         <AchievementPopup
           achievement={achievementQueue[0]}
