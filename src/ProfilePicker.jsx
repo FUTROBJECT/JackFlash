@@ -357,11 +357,12 @@ export function ProfilePicker({
   );
 }
 
-export function CreateProfile({ onComplete, onCancel }) {
-  const [step, setStep] = useState(1); // 1: name, 2: avatar, 3: module
+export function CreateProfile({ onComplete, onCancel, preselectedModule = null }) {
+  const hasPreselected = preselectedModule !== null;
+  const [step, setStep] = useState(1); // 1: name, 2: avatar, 3: module (skipped if preselected)
   const [name, setName] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState("robot-blue");
-  const [selectedModule, setSelectedModule] = useState("multiply");
+  const [selectedModule, setSelectedModule] = useState(preselectedModule || "multiply");
 
   const modules = getModuleList();
 
@@ -372,7 +373,16 @@ export function CreateProfile({ onComplete, onCancel }) {
   };
 
   const handleAvatarNext = () => {
-    setStep(3);
+    if (hasPreselected) {
+      // Skip module selection — parent already chose during onboarding
+      onComplete({
+        name: name.trim(),
+        avatar: selectedAvatar,
+        activeModule: selectedModule,
+      });
+    } else {
+      setStep(3);
+    }
   };
 
   const handleModuleComplete = () => {

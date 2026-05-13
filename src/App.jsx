@@ -35,6 +35,8 @@ export default function App() {
   const [gateDestination, setGateDestination] = useState("parentZone");
   // Track which profile's progress to view
   const [progressProfileId, setProgressProfileId] = useState(null);
+  // Module selected during parent onboarding — passed to first profile creation
+  const [onboardingModule, setOnboardingModule] = useState(null);
 
   // Force re-read of profiles after changes
   const refresh = useCallback(() => {
@@ -79,6 +81,7 @@ export default function App() {
   const handleCreateComplete = ({ name, avatar, activeModule }) => {
     const newProfile = createProfile({ name, avatar, activeModule });
     setActiveProfile(newProfile.id);
+    setOnboardingModule(null); // Clear so future "Add Player" shows module step
     refresh();
     setScreen("profilePicker");
   };
@@ -123,12 +126,10 @@ export default function App() {
     refresh();
   };
 
-  const handleOnboardingComplete = ({ name, avatar, activeModule }) => {
+  const handleOnboardingComplete = ({ activeModule }) => {
     completeOnboarding();
-    const newProfile = createProfile({ name, avatar, activeModule });
-    setActiveProfile(newProfile.id);
-    refresh();
-    setScreen("profilePicker");
+    setOnboardingModule(activeModule);
+    setScreen("createProfile");
   };
 
   const handleViewProgress = (profileId) => {
@@ -178,6 +179,7 @@ export default function App() {
         <CreateProfile
           onComplete={handleCreateComplete}
           onCancel={handleBackToProfiles}
+          preselectedModule={onboardingModule}
         />
       );
     case "parentGate":
