@@ -84,8 +84,8 @@ function BottomNav({ activeTab, onTabChange }) {
       display: "flex",
       justifyContent: "center",
       zIndex: 100,
-      padding: "0 16px",
-      paddingBottom: "calc(8px + env(safe-area-inset-bottom, 0px))",
+      padding: "0 12px",
+      paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))",
       pointerEvents: "none",
     }}>
       <div style={{
@@ -93,11 +93,11 @@ function BottomNav({ activeTab, onTabChange }) {
         border: BRUTAL_BORDER,
         boxShadow: BRUTAL_SHADOW,
         borderRadius: "50px",
-        padding: "6px",
+        padding: "8px",
         display: "flex",
         alignItems: "center",
-        gap: "4px",
-        maxWidth: "360px",
+        gap: "8px",
+        maxWidth: "420px",
         width: "100%",
         pointerEvents: "auto",
       }}>
@@ -162,7 +162,7 @@ export function ProfilePicker({
       minHeight: "100vh",
       background: GRID_BG,
       padding: "20px",
-      paddingBottom: "100px",
+      paddingBottom: "110px",
       fontFamily: "'Space Grotesk', sans-serif",
     }}>
       <div style={{ maxWidth: 600, margin: "0 auto" }}>
