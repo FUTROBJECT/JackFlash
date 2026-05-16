@@ -236,6 +236,57 @@ function ProgressReport({ profile }) {
         </div>
       </div>
 
+      {/* Session History — promoted to top of report for visibility */}
+      <div style={{
+        marginBottom: "16px",
+        padding: "12px",
+        background: COLORS.cream,
+        borderRadius: "8px",
+        border: BRUTAL_BORDER_SM,
+      }}>
+        <div style={{
+          fontFamily: "'Space Grotesk', sans-serif",
+          fontSize: "14px",
+          fontWeight: 700,
+          marginBottom: sessions.length > 0 ? "10px" : "0",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+        }}>
+          <span style={{ fontSize: "16px" }}>📋</span> Session History
+        </div>
+        {sessions.length === 0 ? (
+          <p style={{ fontSize: "12px", color: "#888", margin: "8px 0 0 0", fontFamily: "'Space Mono', monospace" }}>
+            No sessions recorded yet. Sessions are saved when your child finishes practicing.
+          </p>
+        ) : (
+          <>
+            {/* Column headers */}
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "0 0 4px 0", fontSize: "11px", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, color: "#888", borderBottom: `1px solid ${COLORS.black}20` }}>
+              <span>Date</span>
+              <span>Score</span>
+              <span>Time</span>
+            </div>
+            {sessions.slice(0, 10).map((s, i) => {
+              const accuracy = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
+              const mins = Math.round((s.duration || 0) / 1000 / 60);
+              return (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: "12px", fontFamily: "'Space Mono', monospace", borderBottom: "1px solid #eee" }}>
+                  <span>{new Date(s.recordedAt).toLocaleDateString()}</span>
+                  <span>{s.correct}/{s.total} ({accuracy}%)</span>
+                  <span>{mins > 0 ? `${mins}m` : "<1m"}</span>
+                </div>
+              );
+            })}
+            {sessions.length > 10 && (
+              <div style={{ fontSize: "11px", color: "#888", textAlign: "center", marginTop: "6px", fontFamily: "'Space Mono', monospace" }}>
+                Showing 10 of {sessions.length} sessions
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       {/* Per-group breakdown */}
       <div style={{ marginBottom: "16px" }}>
         <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "13px", fontWeight: 600, marginBottom: "8px" }}>By Group</div>
@@ -262,24 +313,6 @@ function ProgressReport({ profile }) {
               }}>{f.display}</span>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Recent sessions */}
-      {sessions.length > 0 && (
-        <div style={{ marginBottom: "16px" }}>
-          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "13px", fontWeight: 600, marginBottom: "8px" }}>Recent Sessions</div>
-          {sessions.slice(0, 10).map((s, i) => {
-            const accuracy = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
-            const mins = Math.round((s.duration || 0) / 1000 / 60);
-            return (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: "12px", fontFamily: "'Space Mono', monospace", borderBottom: "1px solid #eee" }}>
-                <span>{new Date(s.recordedAt).toLocaleDateString()}</span>
-                <span>{s.correct}/{s.total} ({accuracy}%)</span>
-                <span>{mins > 0 ? `${mins}m` : "<1m"}</span>
-              </div>
-            );
-          })}
         </div>
       )}
 
