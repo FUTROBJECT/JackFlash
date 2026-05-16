@@ -51,6 +51,7 @@ export const DEFAULT_CHILD_SETTINGS = {
   lockedMode: null,
   lockedGroup: null,
   lockedOperation: null,
+  enabledTables: null, // null = all accessible tables; array like [2,5,10] = only those
 };
 
 // Mastery threshold default

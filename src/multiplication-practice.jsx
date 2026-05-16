@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, DEFAULT_MASTERY_THRESHOLD, AVATARS } from "./constants.js";
 import multiplyModule from "./modules/multiply.jsx";
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
-import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordSession, getProfile } from "./dataManager.js";
+import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordSession, getProfile, updateChildSettings } from "./dataManager.js";
 import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
@@ -86,7 +86,15 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
 
   // ALL state declarations first (React hooks must be called unconditionally)
   const [localMastery, setLocalMastery] = useState({});
-  const [activeGroup, setActiveGroup] = useState(0);
+  // enabledTables persists across sessions via profile settings
+  // null = all accessible tables; array = only those tables
+  const [enabledTables, setEnabledTables] = useState(() => {
+    if (profileId) {
+      const profile = getProfile(profileId);
+      return profile?.settings?.enabledTables || null;
+    }
+    return null;
+  });
   const [mode, setMode] = useState("pictorial");
   const [operation, setOperation] = useState(mod?.defaultOperation || "mixed");
   const [currentFact, setCurrentFact] = useState(null);
@@ -161,14 +169,13 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     );
   }, [mod, moduleId]);
 
-  // Determine current tables based on focus or active group, filtering for accessibility
+  // Determine current tables — focusNumber overrides, then enabledTables, then all accessible
   const currentTables = mod ? (focusNumber
     ? (isTableAccessible(focusNumber) ? [focusNumber] : [])
-    : activeGroup === -1
-      ? mod.focusTables.filter(t => isTableAccessible(t))
-      : (activeGroup >= 0 && isContentAccessible(moduleId, mod.groups[activeGroup]?.id)
-          ? mod.groups[activeGroup]?.tables || []
-          : [])) : [];
+    : enabledTables
+      ? enabledTables.filter(t => isTableAccessible(t))
+      : mod.focusTables.filter(t => isTableAccessible(t))
+  ) : [];
 
   // Generate facts using the module's generateFacts function (memoized to prevent infinite re-render loop)
   const facts = useMemo(() => {
@@ -269,11 +276,46 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [facts, getMasteryData, currentFact]);
 
-  // Trigger pickNewFact when group, focus number, operation, or facts change
+  // Trigger pickNewFact when enabled tables, focus number, operation, or facts change
   useEffect(() => {
     pickNewFact();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeGroup, focusNumber, operation, facts]);
+  }, [enabledTables, focusNumber, operation, facts]);
+
+  // Toggle a single table on/off and persist to profile
+  const toggleTable = useCallback((table) => {
+    const allAccessible = mod ? mod.focusTables.filter(t => isTableAccessible(t)) : [];
+    setEnabledTables(prev => {
+      // If null (all enabled), start from the full accessible list and remove this one
+      const current = prev || allAccessible;
+      let next;
+      if (current.includes(table)) {
+        next = current.filter(t => t !== table);
+        // Don't allow disabling ALL tables — keep at least one
+        if (next.length === 0) return prev;
+      } else {
+        next = [...current, table].sort((a, b) => a - b);
+      }
+      // If next matches all accessible tables, store null (meaning "all")
+      const isAll = allAccessible.length === next.length && allAccessible.every(t => next.includes(t));
+      const toSave = isAll ? null : next;
+      // Persist to profile
+      if (profileId) {
+        updateChildSettings(profileId, { enabledTables: toSave });
+      }
+      return toSave;
+    });
+    setFocusNumber(null); // Clear any single-table focus
+  }, [mod, isTableAccessible, profileId]);
+
+  // Enable all tables shortcut
+  const enableAllTables = useCallback(() => {
+    setEnabledTables(null);
+    setFocusNumber(null);
+    if (profileId) {
+      updateChildSettings(profileId, { enabledTables: null });
+    }
+  }, [profileId]);
 
   // Handle answer submission
   const handleSubmit = useCallback(() => {
@@ -368,9 +410,9 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     ? (currentFact.operation === "divide" ? currentFact.answer : currentFact.b)
     : 1;
 
-  // Check if the current group/focus is locked
+  // Check if the current selection has no accessible tables
   const isCurrentGroupLocked = mod ? ((focusNumber && !isTableAccessible(focusNumber))
-    || (activeGroup >= 0 && !isContentAccessible(moduleId, mod.groups[activeGroup]?.id))) : false;
+    || currentTables.length === 0) : false;
 
   // groupColor removed — controls bar no longer in practice view
 
@@ -572,10 +614,67 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               );
             })()}
 
-            {/* Practice All button — shows when 2+ groups are accessible */}
-            {mod.groups.filter((g) => isContentAccessible(moduleId, g.id)).length >= 2 && (
+            {/* Table Toggles — persisted across sessions */}
+            <div style={{
+              backgroundColor: "white", borderRadius: "12px", padding: "18px",
+              marginBottom: "14px", border: BRUTAL_BORDER, boxShadow: BRUTAL_SHADOW,
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, fontFamily: "'Shrikhand', cursive" }}>
+                  Practice Sets
+                </h3>
+                <button
+                  onClick={enableAllTables}
+                  style={{
+                    padding: "4px 10px", borderRadius: "6px", border: BRUTAL_BORDER_SM,
+                    backgroundColor: !enabledTables ? COLORS.yellow : "white",
+                    fontFamily: "'Space Grotesk', sans-serif", fontSize: "11px",
+                    fontWeight: 700, cursor: "pointer", boxShadow: BRUTAL_SHADOW_SM,
+                  }}
+                >
+                  All On
+                </button>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                {mod.focusTables.map(t => {
+                  const accessible = isTableAccessible(t);
+                  const active = enabledTables ? enabledTables.includes(t) : true;
+                  const groupDef = mod.groups.find(g => g.tables.includes(t));
+                  const color = groupDef?.color || COLORS.blue;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => accessible && toggleTable(t)}
+                      style={{
+                        padding: "10px 14px", borderRadius: "10px",
+                        border: BRUTAL_BORDER_SM,
+                        backgroundColor: !accessible ? "#F0F0F0" : active ? color : "white",
+                        color: COLORS.black,
+                        fontFamily: "'Space Mono', monospace", fontSize: "15px",
+                        fontWeight: 700, cursor: accessible ? "pointer" : "default",
+                        boxShadow: active && accessible ? `3px 3px 0px ${COLORS.black}` : "none",
+                        opacity: !accessible ? 0.4 : active ? 1 : 0.5,
+                        transition: "all 0.15s ease",
+                        minWidth: "52px", textAlign: "center",
+                      }}
+                    >
+                      {!accessible && "🔒 "}{t}s
+                    </button>
+                  );
+                })}
+              </div>
+              <p style={{
+                margin: "12px 0 0 0", fontSize: "11px", color: "#888",
+                fontFamily: "'Space Mono', monospace",
+              }}>
+                Tap to toggle sets on/off — your choices are saved
+              </p>
+            </div>
+
+            {/* Start Practice button */}
+            {currentTables.length > 0 && (
               <button
-                onClick={() => { setActiveGroup(-1); setFocusNumber(null); setView("practice"); }}
+                onClick={() => { setFocusNumber(null); setView("practice"); }}
                 style={{
                   width: "100%", padding: "14px", borderRadius: "12px",
                   border: BRUTAL_BORDER, backgroundColor: COLORS.yellow, color: COLORS.black,
@@ -583,12 +682,12 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                   fontSize: "16px", boxShadow: BRUTAL_SHADOW, marginBottom: "14px",
                 }}
               >
-                Practice All Tables
+                Practice {enabledTables ? `${currentTables.map(t => `${t}s`).join(", ")}` : "All Tables"}
               </button>
             )}
 
-            {/* Mastery Grids by Group — tap to practice */}
-            {mod.groups.map((group, groupIndex) => {
+            {/* Mastery Grids by Group */}
+            {mod.groups.map((group) => {
               const prog = getGroupProgress(group.tables);
               const accessible = isContentAccessible(moduleId, group.id);
               return (
@@ -643,17 +742,6 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                           })
                         )}
                       </div>
-                      <button
-                        onClick={() => { setActiveGroup(groupIndex); setFocusNumber(null); setView("practice"); }}
-                        style={{
-                          width: "100%", padding: "10px", borderRadius: "8px",
-                          border: BRUTAL_BORDER_SM, backgroundColor: group.color, color: COLORS.black,
-                          fontWeight: 700, cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif",
-                          fontSize: "13px", boxShadow: BRUTAL_SHADOW_SM,
-                        }}
-                      >
-                        Practice {group.label}
-                      </button>
                     </>
                   ) : (
                     <div style={{ textAlign: "center", padding: "12px 0" }}>
