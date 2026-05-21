@@ -19,6 +19,7 @@ import {
 } from "./dataManager.js";
 import { ProfilePicker, CreateProfile } from "./ProfilePicker.jsx";
 import { ParentGate, ParentZone } from "./ParentZone.jsx";
+import { initPurchases } from "./purchaseManager.js";
 import MultiplicationPractice from "./multiplication-practice.jsx";
 import Onboarding from "./Onboarding.jsx";
 
@@ -43,6 +44,12 @@ export default function App() {
   // Force re-read of profiles after changes
   const refresh = useCallback(() => {
     setRefreshKey((k) => k + 1);
+  }, []);
+
+  // Initialize the purchase provider once at launch. No-op for the simulated
+  // provider; the Step 2 native provider uses this to connect to the store.
+  useEffect(() => {
+    initPurchases();
   }, []);
 
   const profiles = data ? getAllProfiles() : [];

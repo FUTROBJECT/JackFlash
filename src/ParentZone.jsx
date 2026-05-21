@@ -359,7 +359,8 @@ export function ParentZone({
   const [expandedProfileId, setExpandedProfileId] = useState(null);
   const [confirmResetProfile, setConfirmResetProfile] = useState(null);
   const [confirmDeleteProfile, setConfirmDeleteProfile] = useState(null);
-  const [purchaseMessage, setPurchaseMessage] = useState(null);
+  const [purchaseMessage, setPurchaseMessage] = useState(null); // { tone, text } | null
+  const [purchasePending, setPurchasePending] = useState(null); // productId | "restore" | null
   const [legalPage, setLegalPage] = useState(null); // "privacy" | "terms" | "help" | null
   const modules = getModuleList();
 
@@ -392,24 +393,59 @@ export function ParentZone({
     onUpdateParentSettings({ masteryThreshold: newThreshold });
   };
 
-  const handlePurchase = (productId) => {
-    const product = PRODUCTS[productId];
-    if (!product) return;
-
-    const confirmed = window.confirm(`Purchase ${product.name} for ${product.price}?\n\n(This is a simulated purchase for development)`);
-    if (!confirmed) return;
-
-    const result = purchaseProduct(productId);
-    if (result.success) {
-      setPurchaseMessage(`✓ ${product.name} unlocked!`);
-      setTimeout(() => setPurchaseMessage(null), 3000);
+  // Show a banner; success banners auto-clear, error banners stay until the
+  // next purchase action. The identity check avoids clearing a newer message.
+  const flashMessage = (msg) => {
+    setPurchaseMessage(msg);
+    if (msg && msg.tone === "success") {
+      setTimeout(() => {
+        setPurchaseMessage((current) => (current === msg ? null : current));
+      }, 4000);
     }
   };
 
-  const handleRestore = () => {
-    const result = restorePurchases();
-    setPurchaseMessage(`Restored ${result.restored} purchase(s)`);
-    setTimeout(() => setPurchaseMessage(null), 3000);
+  const handlePurchase = async (productId) => {
+    const product = PRODUCTS[productId];
+    if (!product || purchasePending) return;
+
+    setPurchasePending(productId);
+    setPurchaseMessage(null);
+    try {
+      const result = await purchaseProduct(productId);
+      if (result.status === "purchased") {
+        flashMessage({ tone: "success", text: `✓ ${product.name} unlocked!` });
+      } else if (result.status === "already_owned") {
+        flashMessage({ tone: "success", text: `${product.name} is already unlocked.` });
+      } else if (result.status === "cancelled") {
+        // Parent backed out of the purchase — no message needed.
+      } else {
+        flashMessage({ tone: "error", text: result.error || "That purchase didn't go through. Please try again." });
+      }
+    } finally {
+      setPurchasePending(null);
+    }
+  };
+
+  const handleRestore = async () => {
+    if (purchasePending) return;
+
+    setPurchasePending("restore");
+    setPurchaseMessage(null);
+    try {
+      const result = await restorePurchases();
+      if (result.status === "ok") {
+        flashMessage({
+          tone: "success",
+          text: result.restored > 0
+            ? `Restored ${result.restored} purchase${result.restored === 1 ? "" : "s"}.`
+            : "No previous purchases found for this account.",
+        });
+      } else {
+        flashMessage({ tone: "error", text: result.error || "Restore failed. Please try again." });
+      }
+    } finally {
+      setPurchasePending(null);
+    }
   };
 
   return (
@@ -800,7 +836,7 @@ export function ParentZone({
             {/* Purchase message feedback */}
             {purchaseMessage && (
               <div style={{
-                backgroundColor: COLORS.green,
+                backgroundColor: purchaseMessage.tone === "error" ? COLORS.red : COLORS.green,
                 color: "white",
                 padding: "12px 15px",
                 borderRadius: "8px",
@@ -809,7 +845,7 @@ export function ParentZone({
                 fontWeight: 700,
                 textAlign: "center",
               }}>
-                {purchaseMessage}
+                {purchaseMessage.text}
               </div>
             )}
 
@@ -890,6 +926,7 @@ export function ParentZone({
                     <div style={{ padding: "12px 15px" }}>
                       <button
                         onClick={() => handlePurchase(product.id)}
+                        disabled={purchasePending !== null}
                         style={{
                           width: "100%",
                           padding: "10px",
@@ -898,13 +935,14 @@ export function ParentZone({
                           backgroundColor: COLORS.yellow,
                           color: COLORS.black,
                           fontWeight: 700,
-                          cursor: "pointer",
+                          cursor: purchasePending !== null ? "default" : "pointer",
+                          opacity: purchasePending !== null && purchasePending !== product.id ? 0.5 : 1,
                           fontFamily: "'Space Grotesk', sans-serif",
                           fontSize: "13px",
                           boxShadow: BRUTAL_SHADOW_SM,
                         }}
                       >
-                        {product.price}
+                        {purchasePending === product.id ? "Purchasing…" : product.price}
                       </button>
                     </div>
                   )}
@@ -974,6 +1012,7 @@ export function ParentZone({
                     ) : (
                       <button
                         onClick={() => handlePurchase("bundle.all")}
+                        disabled={purchasePending !== null}
                         style={{
                           width: "100%",
                           padding: "10px",
@@ -982,13 +1021,14 @@ export function ParentZone({
                           backgroundColor: COLORS.black,
                           color: "white",
                           fontWeight: 700,
-                          cursor: "pointer",
+                          cursor: purchasePending !== null ? "default" : "pointer",
+                          opacity: purchasePending !== null && purchasePending !== "bundle.all" ? 0.5 : 1,
                           fontFamily: "'Space Grotesk', sans-serif",
                           fontSize: "13px",
                           boxShadow: BRUTAL_SHADOW_SM,
                         }}
                       >
-                        $9.99
+                        {purchasePending === "bundle.all" ? "Purchasing…" : "$9.99"}
                       </button>
                     )}
                   </div>
@@ -1003,18 +1043,20 @@ export function ParentZone({
             }}>
               <button
                 onClick={handleRestore}
+                disabled={purchasePending !== null}
                 style={{
                   background: "none",
                   border: "none",
                   color: COLORS.blue,
                   fontSize: "12px",
-                  cursor: "pointer",
+                  cursor: purchasePending !== null ? "default" : "pointer",
+                  opacity: purchasePending !== null && purchasePending !== "restore" ? 0.5 : 1,
                   textDecoration: "underline",
                   fontFamily: "'Space Grotesk', sans-serif",
                   fontWeight: 600,
                 }}
               >
-                Restore Purchases
+                {purchasePending === "restore" ? "Restoring…" : "Restore Purchases"}
               </button>
             </div>
           </div>
