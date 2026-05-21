@@ -31,6 +31,8 @@ export default function App() {
   });
   const [refreshKey, setRefreshKey] = useState(0);
   const [homeTab, setHomeTab] = useState("players");
+  // Which Parent Zone tab to open on — set by the home button that was tapped
+  const [parentZoneTab, setParentZoneTab] = useState("children");
   // Track which tab triggered the parent gate so we can route after passing
   const [gateDestination, setGateDestination] = useState("parentZone");
   // Track which profile's progress to view
@@ -145,11 +147,15 @@ export default function App() {
       setHomeTab("players");
       setScreen("profilePicker");
     } else if (tabId === "modules") {
+      // Modules button → Parent Zone, opened on its Modules (store) tab
       setHomeTab("modules");
+      setParentZoneTab("modules");
       setGateDestination("parentZone");
       setScreen("parentGate");
-    } else if (tabId === "settings") {
-      setHomeTab("settings");
+    } else if (tabId === "parentZone") {
+      // Parent Zone button → Parent Zone, opened on its Children tab
+      setHomeTab("parentZone");
+      setParentZoneTab("children");
       setGateDestination("parentZone");
       setScreen("parentGate");
     }
@@ -194,6 +200,7 @@ export default function App() {
         <ParentZone
           profiles={profiles}
           parentSettings={parentSettings}
+          initialTab={parentZoneTab}
           onBack={handleBackToProfiles}
           onUpdateProfile={handleUpdateProfile}
           onDeleteProfile={handleDeleteProfile}

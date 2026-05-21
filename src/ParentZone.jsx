@@ -347,6 +347,7 @@ function ProgressReport({ profile }) {
 export function ParentZone({
   profiles,
   parentSettings,
+  initialTab,
   onBack,
   onUpdateProfile,
   onDeleteProfile,
@@ -354,7 +355,7 @@ export function ParentZone({
   onUpdateChildSettings,
   onUpdateParentSettings,
 }) {
-  const [activeTab, setActiveTab] = useState("children");
+  const [activeTab, setActiveTab] = useState(initialTab || "children");
   const [expandedProfileId, setExpandedProfileId] = useState(null);
   const [confirmResetProfile, setConfirmResetProfile] = useState(null);
   const [confirmDeleteProfile, setConfirmDeleteProfile] = useState(null);
