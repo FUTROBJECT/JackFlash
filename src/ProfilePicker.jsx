@@ -174,7 +174,7 @@ export function ProfilePicker({
           marginBottom: "36px",
           marginTop: "20px",
         }}>
-          <LogoLockup size="medium" />
+          <LogoLockup size="large" />
         </div>
 
         {/* Profile Cards Grid — 2 columns */}
