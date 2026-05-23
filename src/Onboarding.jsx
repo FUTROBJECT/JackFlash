@@ -395,7 +395,7 @@ function HowItWorksScreen({ onNext, onBack }) {
             borderRadius: "8px", padding: "16px", boxShadow: BRUTAL_SHADOW_SM,
           }}>
             <p style={{ fontSize: "14px", fontWeight: 700, margin: "0 0 4px", color: COLORS.black }}>
-              Smart practice, not random drills
+              Smart Practice, not random drills
             </p>
             <p style={{ fontSize: "12px", color: "#555", lineHeight: 1.5, margin: 0 }}>
               Struggling facts come up more often. Mastered facts space out over days. Every session is tailored to your child.

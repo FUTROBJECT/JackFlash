@@ -12,7 +12,7 @@ export default function SmartPracticeExplainer() {
   return (
     <div style={{ fontSize: "13px", lineHeight: 1.7, color: COLORS.black }}>
       <p style={{ margin: "0 0 12px" }}>
-        JackFlash doesn't show random problems. Every question is picked based on what your child knows, what they're still learning, and what they're ready to review.
+        JackFlash uses Smart Practice, so your child never sees random problems. Every question is picked based on what they know, what they're still learning, and what they're ready to review.
       </p>
 
       <h4 style={{
@@ -36,8 +36,8 @@ export default function SmartPracticeExplainer() {
             backgroundColor: "white",
             borderRadius: "8px",
             padding: "8px 12px",
-            borderLeft: `6px solid ${row.color}`,
             border: BRUTAL_BORDER_SM,
+            borderLeft: `6px solid ${row.color}`,
             boxShadow: BRUTAL_SHADOW_SM,
             fontSize: "12.5px",
           }}>
