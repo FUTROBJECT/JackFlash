@@ -2,9 +2,9 @@
 
 ## "Does my child just get random problems?"
 
-No. JackFlash uses a smart practice engine inspired by Singapore Math's mastery-based approach and spaced repetition research. Every problem your child sees is chosen deliberately based on what they know, what they're learning, and what they're ready for next.
+No. JackFlash uses Smart Practice — an adaptive engine inspired by Singapore Math's mastery-based approach and spaced repetition research. Every problem your child sees is chosen deliberately based on what they know, what they're learning, and what they're ready for next.
 
-## "What does 'smart practice' actually mean?"
+## "What does Smart Practice actually mean?"
 
 Behind the scenes, JackFlash sorts every math fact into one of five categories and adjusts how often each one appears:
 
