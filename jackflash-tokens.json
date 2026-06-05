@@ -1,0 +1,221 @@
+{
+  "jackflash": {
+    "color": {
+      "brand": {
+        "yellow": { "value": "#FFD43B", "type": "color", "description": "Primary brand accent — high-energy, used for the wordmark backdrop and headline highlights" },
+        "green":  { "value": "#06D6A0", "type": "color", "description": "Multiply module color · also the Mastered category in Smart Practice" },
+        "blue":   { "value": "#4CC9F0", "type": "color", "description": "Add module color · also the New category in Smart Practice" },
+        "pink":   { "value": "#FF6B9D", "type": "color", "description": "Struggling category in Smart Practice · marketing accent" },
+        "orange": { "value": "#FF9F1C", "type": "color", "description": "Fractions module · Review-due category · marketing accent" },
+        "purple": { "value": "#B388FF", "type": "color", "description": "Place Value module · marketing accent" },
+        "red":    { "value": "#FF5252", "type": "color", "description": "Error / destructive states only — never decorative" }
+      },
+      "surface": {
+        "bg":    { "value": "#FFFBEB", "type": "color", "description": "App background — warm cream, all screens" },
+        "cream": { "value": "#FFF8E7", "type": "color", "description": "Secondary cream surface for nested panels" },
+        "white": { "value": "#FFFFFF", "type": "color", "description": "Card and tile surfaces" },
+        "ink":   { "value": "#1A1A1A", "type": "color", "description": "All borders, shadows, and primary text — never pure black" }
+      },
+      "text": {
+        "primary":   { "value": "{jackflash.color.surface.ink}", "type": "color" },
+        "secondary": { "value": "#555555", "type": "color", "description": "Supporting copy" },
+        "tertiary":  { "value": "#999999", "type": "color", "description": "Hints, captions, disabled states" }
+      },
+      "module": {
+        "multiply":   { "value": "{jackflash.color.brand.green}",  "type": "color" },
+        "add":        { "value": "{jackflash.color.brand.blue}",   "type": "color" },
+        "fractions":  { "value": "{jackflash.color.brand.orange}", "type": "color" },
+        "placeValue": { "value": "{jackflash.color.brand.purple}", "type": "color" }
+      },
+      "smartPractice": {
+        "new":        { "value": "{jackflash.color.brand.blue}",   "type": "color", "description": "New facts — 2–3 introduced at a time" },
+        "learning":   { "value": "{jackflash.color.brand.yellow}", "type": "color", "description": "Seen but not yet mastered" },
+        "struggling": { "value": "{jackflash.color.brand.pink}",   "type": "color", "description": "Missed repeatedly — top priority" },
+        "mastered":   { "value": "{jackflash.color.brand.green}",  "type": "color", "description": "3 correct — moves into long-term review" },
+        "reviewDue":  { "value": "{jackflash.color.brand.orange}", "type": "color", "description": "Mastered facts whose review window has come up" }
+      },
+      "marketing": {
+        "frame1Profiles":       { "value": "{jackflash.color.brand.yellow}", "type": "color" },
+        "frame2SmartPractice":  { "value": "{jackflash.color.brand.green}",  "type": "color" },
+        "frame3Practice":       { "value": "{jackflash.color.brand.blue}",   "type": "color" },
+        "frame4Mastery":        { "value": "{jackflash.color.brand.pink}",   "type": "color" },
+        "frame5ParentZone":     { "value": "{jackflash.color.brand.purple}", "type": "color" },
+        "frame6Badges":         { "value": "{jackflash.color.brand.orange}", "type": "color" }
+      }
+    },
+
+    "fontFamily": {
+      "display":  { "value": "Galindo",        "type": "fontFamilies", "description": "Marketing headlines · friendly, rounded, single weight" },
+      "wordmark": { "value": "Boldonse",       "type": "fontFamilies", "description": "JackFlash wordmark and the heaviest display moments" },
+      "ui":       { "value": "Space Grotesk",  "type": "fontFamilies", "description": "All UI text in the app — body, headings, buttons" },
+      "mono":     { "value": "Space Mono",     "type": "fontFamilies", "description": "Numbers, stat counters, code-like fragments" },
+      "accent":   { "value": "Shrikhand",      "type": "fontFamilies", "description": "Onboarding section headings · playful editorial italic" }
+    },
+
+    "fontWeight": {
+      "regular":  { "value": "400", "type": "fontWeights" },
+      "medium":   { "value": "500", "type": "fontWeights" },
+      "semibold": { "value": "600", "type": "fontWeights" },
+      "bold":     { "value": "700", "type": "fontWeights" }
+    },
+
+    "fontSize": {
+      "xs":         { "value": "11px",  "type": "fontSizes" },
+      "sm":         { "value": "12.5px", "type": "fontSizes" },
+      "base":       { "value": "14px",  "type": "fontSizes" },
+      "lg":         { "value": "18px",  "type": "fontSizes" },
+      "xl":         { "value": "22px",  "type": "fontSizes" },
+      "2xl":        { "value": "26px",  "type": "fontSizes" },
+      "marketing":  { "value": "122px", "type": "fontSizes", "description": "App Store screenshot headlines" },
+      "marketingTight": { "value": "106px", "type": "fontSizes", "description": "Marketing headline fallback for longer captions" }
+    },
+
+    "lineHeight": {
+      "tight":  { "value": "1.16", "type": "lineHeights" },
+      "snug":   { "value": "1.35", "type": "lineHeights" },
+      "normal": { "value": "1.5",  "type": "lineHeights" },
+      "loose":  { "value": "1.7",  "type": "lineHeights" }
+    },
+
+    "letterSpacing": {
+      "normal": { "value": "0",   "type": "letterSpacing" },
+      "wide":   { "value": "1px", "type": "letterSpacing", "description": "All-caps UI labels (e.g. STEP 2 OF 3, MASTERED)" }
+    },
+
+    "typography": {
+      "marketingHeadline": {
+        "value": {
+          "fontFamily":   "{jackflash.fontFamily.display}",
+          "fontWeight":   "{jackflash.fontWeight.regular}",
+          "fontSize":     "{jackflash.fontSize.marketing}",
+          "lineHeight":   "{jackflash.lineHeight.tight}",
+          "letterSpacing": "{jackflash.letterSpacing.normal}"
+        },
+        "type": "typography",
+        "description": "App Store screenshot caption — Galindo, max 3 lines"
+      },
+      "marketingSubline": {
+        "value": {
+          "fontFamily":   "{jackflash.fontFamily.ui}",
+          "fontWeight":   "{jackflash.fontWeight.bold}",
+          "fontSize":     "41px",
+          "lineHeight":   "{jackflash.lineHeight.snug}"
+        },
+        "type": "typography"
+      },
+      "screenHeading": {
+        "value": {
+          "fontFamily": "{jackflash.fontFamily.accent}",
+          "fontWeight": "{jackflash.fontWeight.regular}",
+          "fontSize":   "{jackflash.fontSize.2xl}",
+          "lineHeight": "1.2"
+        },
+        "type": "typography",
+        "description": "Onboarding-style section headings (Shrikhand italic feel)"
+      },
+      "cardTitle": {
+        "value": {
+          "fontFamily": "{jackflash.fontFamily.ui}",
+          "fontWeight": "{jackflash.fontWeight.bold}",
+          "fontSize":   "{jackflash.fontSize.base}",
+          "lineHeight": "1.4"
+        },
+        "type": "typography"
+      },
+      "body": {
+        "value": {
+          "fontFamily": "{jackflash.fontFamily.ui}",
+          "fontWeight": "{jackflash.fontWeight.regular}",
+          "fontSize":   "{jackflash.fontSize.sm}",
+          "lineHeight": "{jackflash.lineHeight.loose}"
+        },
+        "type": "typography",
+        "description": "Default reading body for in-app explainers"
+      },
+      "captionUpper": {
+        "value": {
+          "fontFamily":    "{jackflash.fontFamily.ui}",
+          "fontWeight":    "{jackflash.fontWeight.semibold}",
+          "fontSize":      "{jackflash.fontSize.xs}",
+          "lineHeight":    "1.4",
+          "letterSpacing": "{jackflash.letterSpacing.wide}",
+          "textCase":      "uppercase"
+        },
+        "type": "typography",
+        "description": "Small uppercase UI labels — stat captions, step indicators"
+      },
+      "statNumber": {
+        "value": {
+          "fontFamily": "{jackflash.fontFamily.mono}",
+          "fontWeight": "{jackflash.fontWeight.bold}",
+          "fontSize":   "{jackflash.fontSize.sm}",
+          "lineHeight": "1.4"
+        },
+        "type": "typography",
+        "description": "Numeric counters and ratios"
+      }
+    },
+
+    "spacing": {
+      "xs":  { "value": "4px",  "type": "spacing" },
+      "sm":  { "value": "8px",  "type": "spacing" },
+      "md":  { "value": "12px", "type": "spacing" },
+      "lg":  { "value": "16px", "type": "spacing" },
+      "xl":  { "value": "24px", "type": "spacing" },
+      "2xl": { "value": "32px", "type": "spacing" }
+    },
+
+    "borderRadius": {
+      "sm":   { "value": "5px",   "type": "borderRadius", "description": "Inputs and small chips" },
+      "md":   { "value": "8px",   "type": "borderRadius", "description": "Standard card radius" },
+      "lg":   { "value": "12px",  "type": "borderRadius", "description": "Larger surfaces" },
+      "pill": { "value": "999px", "type": "borderRadius", "description": "Bottom nav pill, badges" }
+    },
+
+    "borderWidth": {
+      "sm":             { "value": "2.5px", "type": "borderWidth", "description": "BRUTAL_BORDER_SM — inputs, small cards" },
+      "md":             { "value": "3px",   "type": "borderWidth", "description": "BRUTAL_BORDER — standard cards, devices" },
+      "categoryAccent": { "value": "6px",   "type": "borderWidth", "description": "Colored left border on Smart Practice category cards" }
+    },
+
+    "shadow": {
+      "brutalSm": {
+        "value": {
+          "x":      "3px",
+          "y":      "3px",
+          "blur":   "0",
+          "spread": "0",
+          "color":  "{jackflash.color.surface.ink}",
+          "type":   "dropShadow"
+        },
+        "type": "boxShadow",
+        "description": "BRUTAL_SHADOW_SM — small cards and chips"
+      },
+      "brutal": {
+        "value": {
+          "x":      "4px",
+          "y":      "4px",
+          "blur":   "0",
+          "spread": "0",
+          "color":  "{jackflash.color.surface.ink}",
+          "type":   "dropShadow"
+        },
+        "type": "boxShadow",
+        "description": "BRUTAL_SHADOW — standard cards, buttons, devices"
+      }
+    },
+
+    "marketing": {
+      "frameWidth":  { "value": "1320px", "type": "sizing", "description": "App Store iPhone 6.9\" portrait width" },
+      "frameHeight": { "value": "2868px", "type": "sizing", "description": "App Store iPhone 6.9\" portrait height" },
+      "iPadWidth":   { "value": "2064px", "type": "sizing", "description": "App Store iPad 13\" portrait width" },
+      "iPadHeight":  { "value": "2752px", "type": "sizing", "description": "App Store iPad 13\" portrait height" },
+      "captionMargin": { "value": "96px", "type": "sizing" },
+      "deviceTop":     { "value": "690px", "type": "sizing", "description": "Top edge of device mockup within iPhone marketing frame" },
+      "deviceScreenWidth": { "value": "1010px", "type": "sizing" },
+      "deviceBezel":   { "value": "26px", "type": "sizing" },
+      "deviceRadius":  { "value": "78px", "type": "borderRadius" },
+      "screenRadius":  { "value": "50px", "type": "borderRadius" }
+    }
+  }
+}

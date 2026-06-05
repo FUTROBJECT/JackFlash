@@ -1,0 +1,66 @@
+{
+  "color": {
+    "brand": {
+      "yellow": {
+        "$type": "color",
+        "$value": "#FFD43B"
+      },
+      "green": {
+        "$type": "color",
+        "$value": "#06D6A0"
+      },
+      "blue": {
+        "$type": "color",
+        "$value": "#4CC9F0"
+      },
+      "pink": {
+        "$type": "color",
+        "$value": "#FF6B9D"
+      },
+      "orange": {
+        "$type": "color",
+        "$value": "#FF9F1C"
+      },
+      "purple": {
+        "$type": "color",
+        "$value": "#B388FF"
+      },
+      "red": {
+        "$type": "color",
+        "$value": "#FF5252"
+      }
+    },
+    "surface": {
+      "bg": {
+        "$type": "color",
+        "$value": "#FFFBEB"
+      },
+      "cream": {
+        "$type": "color",
+        "$value": "#FFF8E7"
+      },
+      "white": {
+        "$type": "color",
+        "$value": "#FFFFFF"
+      },
+      "ink": {
+        "$type": "color",
+        "$value": "#1A1A1A"
+      }
+    },
+    "text": {
+      "primary": {
+        "$type": "color",
+        "$value": "#1A1A1A"
+      },
+      "secondary": {
+        "$type": "color",
+        "$value": "#555555"
+      },
+      "tertiary": {
+        "$type": "color",
+        "$value": "#999999"
+      }
+    }
+  }
+}

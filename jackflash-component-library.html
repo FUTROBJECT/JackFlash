@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JackFlash Component Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Boldonse&family=Galindo&family=Shrikhand&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #FFFBEB; font-family: 'Space Grotesk', sans-serif; color: #1A1A1A; padding: 80px 80px 120px; }
+  .page-title { font-family: 'Boldonse', sans-serif; font-size: 64px; margin-bottom: 12px; }
+  .page-sub { font-family: 'Space Grotesk', sans-serif; font-size: 16px; color: #555; margin-bottom: 64px; }
+  .section { margin-bottom: 72px; }
+  .section-title { font-family: 'Shrikhand', cursive; font-size: 28px; margin-bottom: 8px; }
+  .section-desc { font-size: 14px; color: #555; margin-bottom: 24px; max-width: 640px; line-height: 1.6; }
+  .row { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+  .col { display: flex; flex-direction: column; gap: 16px; }
+
+  /* ---------- Card / Brutal ---------- */
+  .card-brutal {
+    background: #FFFFFF;
+    border: 3px solid #1A1A1A;
+    box-shadow: 4px 4px 0 #1A1A1A;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 320px;
+  }
+  .card-brutal .title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: #1A1A1A; }
+  .card-brutal .body { font-family: 'Space Grotesk', sans-serif; font-weight: 400; font-size: 12.5px; line-height: 1.7; color: #555555; }
+
+  /* ---------- Card / Category (5 variants) ---------- */
+  .card-category {
+    background: #FFFFFF;
+    border: 2.5px solid #1A1A1A;
+    box-shadow: 3px 3px 0 #1A1A1A;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 320px;
+  }
+  .card-category.new        { border-left: 6px solid #4CC9F0; }
+  .card-category.learning   { border-left: 6px solid #FFD43B; }
+  .card-category.struggling { border-left: 6px solid #FF6B9D; }
+  .card-category.mastered   { border-left: 6px solid #06D6A0; }
+  .card-category.review-due { border-left: 6px solid #FF9F1C; }
+  .card-category .label { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px; color: #1A1A1A; }
+  .card-category .desc  { font-family: 'Space Grotesk', sans-serif; font-weight: 400; font-size: 12.5px; color: #555555; }
+
+  /* ---------- Button / Brutal ---------- */
+  .btn-brutal {
+    background: #FFD43B;
+    border: 3px solid #1A1A1A;
+    box-shadow: 4px 4px 0 #1A1A1A;
+    border-radius: 8px;
+    padding: 14px 28px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: #1A1A1A;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-brutal.secondary { background: #FFFFFF; }
+  .btn-brutal.green     { background: #06D6A0; }
+  .btn-brutal.purple    { background: #B388FF; }
+
+  /* ---------- Pill / Nav ---------- */
+  .pill-nav {
+    background: #FFFFFF;
+    border: 3px solid #1A1A1A;
+    box-shadow: 4px 4px 0 #1A1A1A;
+    border-radius: 999px;
+    padding: 6px;
+    display: flex;
+    gap: 4px;
+    width: 420px;
+  }
+  .pill-nav .tab {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 999px;
+    text-align: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    color: #999999;
+    letter-spacing: 0.5px;
+  }
+  .pill-nav .tab.active.players  { background: #FFD43B; color: #1A1A1A; }
+  .pill-nav .tab.active.modules  { background: #B388FF; color: #1A1A1A; }
+  .pill-nav .tab.active.settings { background: #06D6A0; color: #1A1A1A; }
+
+  /* ---------- Profile Card ---------- */
+  .profile-card {
+    background: #FFFFFF;
+    border: 3px solid #1A1A1A;
+    box-shadow: 4px 4px 0 #1A1A1A;
+    border-radius: 12px;
+    padding: 20px 16px;
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .profile-card .avatar { font-size: 56px; line-height: 1; }
+  .profile-card .name { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: #1A1A1A; }
+  .profile-card .progress { width: 100%; height: 8px; background: #F0EDDF; border: 1.5px solid #1A1A1A; border-radius: 999px; overflow: hidden; }
+  .profile-card .progress .fill { height: 100%; background: #06D6A0; }
+  .profile-card .pct { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 11px; color: #999999; align-self: flex-start; }
+
+  /* ---------- Achievement Badge ---------- */
+  .badge {
+    background: #FFF8E7;
+    border: 2.5px solid #1A1A1A;
+    box-shadow: 3px 3px 0 #1A1A1A;
+    border-radius: 8px;
+    padding: 12px 8px;
+    width: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .badge .icon { font-size: 28px; line-height: 1; }
+  .badge .name { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 11px; color: #1A1A1A; text-align: center; line-height: 1.2; }
+  .badge.locked { background: #F0EDDF; }
+  .badge.locked .icon, .badge.locked .name { color: #999999; }
+
+  /* ---------- Stat Tile ---------- */
+  .stat {
+    background: #FFFFFF;
+    border: 3px solid #1A1A1A;
+    box-shadow: 4px 4px 0 #1A1A1A;
+    border-radius: 8px;
+    padding: 10px 16px;
+    width: 130px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .stat .number { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 20px; color: #1A1A1A; }
+  .stat .label  { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 10px; letter-spacing: 1px; color: #999999; }
+
+  /* ---------- Flashcard Mock ---------- */
+  .flashcard {
+    background: #FFFFFF;
+    border: 3px solid #1A1A1A;
+    box-shadow: 4px 4px 0 #1A1A1A;
+    border-radius: 12px;
+    padding: 36px 24px;
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+  .flashcard .num-row { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .flashcard .number-big { font-family: 'Boldonse', sans-serif; font-size: 72px; color: #1A1A1A; line-height: 1; }
+  .flashcard .x { font-family: 'Boldonse', sans-serif; font-size: 56px; color: #FF9F1C; line-height: 1; }
+  .flashcard .rule { width: 80%; height: 4px; background: #1A1A1A; }
+  .flashcard .q { font-family: 'Boldonse', sans-serif; font-size: 56px; color: #999999; line-height: 1; }
+
+  /* ---------- Marketing Frame Template ---------- */
+  .marketing-frame {
+    width: 660px;
+    height: 1434px;
+    background: #06D6A0;
+    padding: 52px 48px 0;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .marketing-frame .headline {
+    font-family: 'Galindo', cursive;
+    font-size: 61px;
+    line-height: 1.16;
+    color: #1A1A1A;
+    margin-bottom: 16px;
+  }
+  .marketing-frame .subline {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: #0C4A3E;
+    line-height: 1.35;
+    margin-bottom: 48px;
+  }
+  .marketing-frame .device {
+    background: #1A1A1A;
+    border-radius: 39px;
+    width: 531px;
+    height: 1100px;
+    margin: 0 auto;
+    padding: 13px;
+    box-shadow: 11px 11px 0 #04A57C;
+  }
+  .marketing-frame .device .screen {
+    background: #FFFBEB;
+    border-radius: 25px;
+    width: 100%;
+    height: 100%;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-title">JackFlash Component Library</div>
+<div class="page-sub">Each block below converts to a native Figma frame. After import, select each block and convert to a Figma component (Cmd/Ctrl + Opt + K).</div>
+
+<!-- Card / Brutal -->
+<div class="section">
+  <div class="section-title">Card / Brutal</div>
+  <div class="section-desc">The base container. White surface, 3px ink border, 4px offset shadow. Everything else descends from this.</div>
+  <div class="row">
+    <div class="card-brutal">
+      <div class="title">Card title</div>
+      <div class="body">A short body line in Space Grotesk regular at 12.5px with loose line height. Use for any default card content.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Card / Category (5 variants) -->
+<div class="section">
+  <div class="section-title">Card / Category</div>
+  <div class="section-desc">Smart Practice category card — same brutal treatment, but the left border is replaced with a 6px colored bar. Five variants, one per category.</div>
+  <div class="col">
+    <div class="card-category new">
+      <div class="label">New</div>
+      <div class="desc">Only 2–3 unseen facts introduced at a time, so nothing gets overwhelming.</div>
+    </div>
+    <div class="card-category learning">
+      <div class="label">Learning</div>
+      <div class="desc">Seen before but not yet mastered. Shown often.</div>
+    </div>
+    <div class="card-category struggling">
+      <div class="label">Struggling</div>
+      <div class="desc">Missed repeatedly. Top priority.</div>
+    </div>
+    <div class="card-category mastered">
+      <div class="label">Mastered</div>
+      <div class="desc">3 correct in a row. Moves into long-term review.</div>
+    </div>
+    <div class="card-category review-due">
+      <div class="label">Review-due</div>
+      <div class="desc">Mastered facts whose review window has come up.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Button / Brutal -->
+<div class="section">
+  <div class="section-title">Button / Brutal</div>
+  <div class="section-desc">Same border and shadow as the card, filled with a brand accent. Yellow is the default primary; white is secondary; the rest are contextual.</div>
+  <div class="row">
+    <div class="btn-brutal">Primary action</div>
+    <div class="btn-brutal secondary">Secondary action</div>
+    <div class="btn-brutal green">Mastered</div>
+    <div class="btn-brutal purple">Parent Zone</div>
+  </div>
+</div>
+
+<!-- Pill / Nav -->
+<div class="section">
+  <div class="section-title">Pill / Nav</div>
+  <div class="section-desc">Bottom navigation. Pill radius, brutal border and shadow. Active tab fills with that tab's color. Inactive tabs are gray.</div>
+  <div class="col">
+    <div class="pill-nav">
+      <div class="tab active players">Players</div>
+      <div class="tab">Modules</div>
+      <div class="tab">Settings</div>
+    </div>
+    <div class="pill-nav">
+      <div class="tab">Players</div>
+      <div class="tab active modules">Modules</div>
+      <div class="tab">Settings</div>
+    </div>
+    <div class="pill-nav">
+      <div class="tab">Players</div>
+      <div class="tab">Modules</div>
+      <div class="tab active settings">Settings</div>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Card -->
+<div class="section">
+  <div class="section-title">Profile Card</div>
+  <div class="section-desc">One per child. Avatar emoji, name, progress bar in the module color, mini percentage.</div>
+  <div class="row">
+    <div class="profile-card">
+      <div class="avatar">&#129412;</div>
+      <div class="name">Jack</div>
+      <div class="progress"><div class="fill" style="width: 67%"></div></div>
+      <div class="pct">67%</div>
+    </div>
+    <div class="profile-card">
+      <div class="avatar">&#128009;</div>
+      <div class="name">Olive</div>
+      <div class="progress"><div class="fill" style="width: 22%"></div></div>
+      <div class="pct">22%</div>
+    </div>
+    <div class="profile-card">
+      <div class="avatar">&#128049;</div>
+      <div class="name">Anna</div>
+      <div class="progress"><div class="fill" style="width: 8%"></div></div>
+      <div class="pct">8%</div>
+    </div>
+  </div>
+</div>
+
+<!-- Achievement Badge -->
+<div class="section">
+  <div class="section-title">Achievement Badge</div>
+  <div class="section-desc">Brutal card, smaller. Cream surface for unlocked, gray-tinted for locked. Earned badges in colored cards keep their saturation; locked badges fade.</div>
+  <div class="row">
+    <div class="badge"><div class="icon">&#128099;</div><div class="name">First Steps</div></div>
+    <div class="badge"><div class="icon">&#128293;</div><div class="name">Getting Warm</div></div>
+    <div class="badge"><div class="icon">&#128293;</div><div class="name">On Fire</div></div>
+    <div class="badge"><div class="icon">&#9889;</div><div class="name">Unstoppable</div></div>
+    <div class="badge locked"><div class="icon">&#128274;</div><div class="name">Week Warrior</div></div>
+    <div class="badge locked"><div class="icon">&#128274;</div><div class="name">Month Master</div></div>
+  </div>
+</div>
+
+<!-- Stat Tile -->
+<div class="section">
+  <div class="section-title">Stat Tile</div>
+  <div class="section-desc">Compact stat indicator. Mono number on top, uppercase caption below. Used in the practice header for Mastered / Session / Streak.</div>
+  <div class="row">
+    <div class="stat"><div class="number">23/150</div><div class="label">MASTERED</div></div>
+    <div class="stat"><div class="number">12/30</div><div class="label">SESSION</div></div>
+    <div class="stat"><div class="number">7</div><div class="label">STREAK</div></div>
+  </div>
+</div>
+
+<!-- Flashcard Mock -->
+<div class="section">
+  <div class="section-title">Flashcard</div>
+  <div class="section-desc">The practice surface — the multiplicand on top, the operator in module color, the multiplier on the second row, divider, and the question mark for the unsolved answer.</div>
+  <div class="row">
+    <div class="flashcard">
+      <div class="num-row"><div class="number-big">6</div></div>
+      <div style="display: flex; align-items: center; gap: 16px;"><div class="x">×</div><div class="number-big">7</div></div>
+      <div class="rule"></div>
+      <div class="q">?</div>
+    </div>
+  </div>
+</div>
+
+<!-- Marketing Frame Template (half-scale of 1320x2868) -->
+<div class="section">
+  <div class="section-title">Marketing Frame (template)</div>
+  <div class="section-desc">App Store screenshot frame, shown at half scale (660 × 1434, real spec is 1320 × 2868). Caption top, device mockup centered below with a colored offset shadow. Replace the device interior with a real screen capture.</div>
+  <div class="row">
+    <div class="marketing-frame">
+      <div class="headline">Smart Practice<br>adapts to<br>your child</div>
+      <div class="subline">Every problem picked for what<br>they're ready for next.</div>
+      <div class="device"><div class="screen"></div></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
