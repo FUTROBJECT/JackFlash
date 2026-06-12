@@ -270,10 +270,12 @@ export function FractionFamilyStrip({ family, highlight }) {
  * FractionPartWholeBond – like NumberBond but with fraction labels.
  */
 export function FractionPartWholeBond({ whole, partA, partB }) {
-  const W = 200, H = 120;
-  const wholeCx = W / 2, wholeCy = 26;
-  const leftCx = 36, leftCy = 95;
-  const rightCx = W - 36, rightCy = 95;
+  // Geometry leaves margin for the 3px strokes and the +2/+3px shadow
+  // offsets — circle extents must stay inside the viewBox or they clip.
+  const W = 200, H = 128;
+  const wholeCx = W / 2, wholeCy = 32;
+  const leftCx = 36, leftCy = 101;
+  const rightCx = W - 36, rightCy = 101;
   const r1 = 28, r2 = 22;
 
   const renderLabel = (n, d, cx, cy, r, fillColor = COLORS.blue) => (
