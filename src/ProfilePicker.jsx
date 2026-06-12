@@ -145,6 +145,170 @@ function BottomNav({ activeTab, onTabChange }) {
   );
 }
 
+/* ─── Module Picker Overlay ─── */
+function ModulePicker({ profile, modules, onConfirm, onCancel }) {
+  const [selected, setSelected] = useState(profile.activeModule || modules[0]?.id);
+
+  return (
+    <div
+      onClick={onCancel}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.55)",
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        zIndex: 200,
+        padding: "0 16px",
+        paddingBottom: "calc(24px + env(safe-area-inset-bottom, 0px))",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "white",
+          border: BRUTAL_BORDER,
+          boxShadow: BRUTAL_SHADOW,
+          borderRadius: "16px",
+          padding: "24px 20px 20px",
+          width: "100%",
+          maxWidth: "420px",
+          fontFamily: "'Space Grotesk', sans-serif",
+        }}
+      >
+        <h2 style={{
+          fontFamily: "'Shrikhand', cursive",
+          fontSize: "24px",
+          fontWeight: 400,
+          margin: "0 0 6px 0",
+          color: COLORS.black,
+          textAlign: "center",
+        }}>
+          What do you want to practice?
+        </h2>
+        <p style={{
+          margin: "0 0 18px 0",
+          fontSize: "13px",
+          color: "#888",
+          textAlign: "center",
+          fontFamily: "'Space Mono', monospace",
+        }}>
+          {profile.name}
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "18px" }}>
+          {modules.map((mod) => {
+            const isActive = selected === mod.id;
+            const accent = MODULE_COLORS[mod.id] || COLORS.yellow;
+            return (
+              <button
+                key={mod.id}
+                onClick={() => setSelected(mod.id)}
+                style={{
+                  background: isActive ? accent : "white",
+                  border: BRUTAL_BORDER,
+                  borderLeft: `8px solid ${accent}`,
+                  boxShadow: isActive ? "none" : BRUTAL_SHADOW_SM,
+                  borderRadius: "10px",
+                  padding: "14px 16px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "all 0.1s",
+                  position: "relative",
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = "translate(3px, 3px)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = "translate(0, 0)";
+                  e.currentTarget.style.boxShadow = isActive ? "none" : BRUTAL_SHADOW_SM;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translate(0, 0)";
+                  e.currentTarget.style.boxShadow = isActive ? "none" : BRUTAL_SHADOW_SM;
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <p style={{
+                    margin: "0 0 2px 0",
+                    fontSize: "17px",
+                    fontWeight: 700,
+                    color: COLORS.black,
+                  }}>
+                    {mod.name}
+                  </p>
+                  {isActive && (
+                    <span style={{
+                      fontSize: "11px",
+                      fontFamily: "'Space Mono', monospace",
+                      fontWeight: 700,
+                      background: COLORS.black,
+                      color: "white",
+                      borderRadius: "4px",
+                      padding: "2px 6px",
+                    }}>
+                      current
+                    </span>
+                  )}
+                </div>
+                <p style={{
+                  margin: 0,
+                  fontSize: "12px",
+                  color: isActive ? COLORS.black : "#666",
+                  fontFamily: "'Space Mono', monospace",
+                }}>
+                  {mod.description}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            onClick={onCancel}
+            style={{
+              flex: 1,
+              padding: "14px",
+              background: "white",
+              border: BRUTAL_BORDER,
+              boxShadow: BRUTAL_SHADOW_SM,
+              borderRadius: "8px",
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontWeight: 700,
+              fontSize: "16px",
+              cursor: "pointer",
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.transform = "translate(3px, 3px)";
+              e.currentTarget.style.boxShadow = "none";
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.transform = "translate(0, 0)";
+              e.currentTarget.style.boxShadow = BRUTAL_SHADOW_SM;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translate(0, 0)";
+              e.currentTarget.style.boxShadow = BRUTAL_SHADOW_SM;
+            }}
+          >
+            Cancel
+          </button>
+          <BrutalButton
+            onClick={() => onConfirm(profile.id, selected)}
+            bg={COLORS.yellow}
+            style={{ flex: 2, fontSize: "17px" }}
+          >
+            Let's Go! →
+          </BrutalButton>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Profile Picker (Players Tab) ─── */
 export function ProfilePicker({
   profiles,
@@ -157,6 +321,23 @@ export function ProfilePicker({
   masteryData = {},
   streakData = {},
 }) {
+  const [pendingProfile, setPendingProfile] = useState(null);
+  const modules = getModuleList();
+  const multiModule = modules.length > 1;
+
+  const handleCardTap = (profile) => {
+    if (multiModule) {
+      setPendingProfile(profile);
+    } else {
+      onSelectProfile(profile.id, profile.activeModule);
+    }
+  };
+
+  const handleModuleConfirm = (profileId, moduleId) => {
+    setPendingProfile(null);
+    onSelectProfile(profileId, moduleId);
+  };
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -195,9 +376,9 @@ export function ProfilePicker({
 
             return (
               <div key={profile.id} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {/* Main avatar card — tap to play */}
+                {/* Main avatar card — tap to play / pick module */}
                 <button
-                  onClick={() => onSelectProfile(profile.id)}
+                  onClick={() => handleCardTap(profile)}
                   style={{
                     background: "white",
                     border: BRUTAL_BORDER,
@@ -238,6 +419,22 @@ export function ProfilePicker({
                   }}>
                     {profile.name}
                   </p>
+                  {/* Active module badge — only shown when multiple modules registered */}
+                  {multiModule && (
+                    <span style={{
+                      fontSize: "10px",
+                      fontFamily: "'Space Mono', monospace",
+                      fontWeight: 700,
+                      background: MODULE_COLORS[profile.activeModule] || COLORS.yellow,
+                      color: COLORS.black,
+                      border: `2px solid ${COLORS.black}`,
+                      borderRadius: "4px",
+                      padding: "2px 6px",
+                      letterSpacing: "0.02em",
+                    }}>
+                      {modules.find((m) => m.id === profile.activeModule)?.name || profile.activeModule}
+                    </span>
+                  )}
                   {/* Mastery bar */}
                   <div style={{ width: "100%", padding: "0 4px" }}>
                     <div style={{
@@ -361,6 +558,16 @@ export function ProfilePicker({
 
       {/* Bottom Navigation */}
       <BottomNav activeTab={activeTab} onTabChange={onTabChange} />
+
+      {/* Module picker overlay — shown when a profile card is tapped and multiple modules exist */}
+      {pendingProfile && (
+        <ModulePicker
+          profile={pendingProfile}
+          modules={modules}
+          onConfirm={handleModuleConfirm}
+          onCancel={() => setPendingProfile(null)}
+        />
+      )}
     </div>
   );
 }

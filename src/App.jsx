@@ -21,6 +21,7 @@ import { ProfilePicker, CreateProfile } from "./ProfilePicker.jsx";
 import { ParentGate, ParentZone } from "./ParentZone.jsx";
 import { initPurchases } from "./purchaseManager.js";
 import MultiplicationPractice from "./multiplication-practice.jsx";
+import FractionsPractice from "./fractions-practice.jsx";
 import Onboarding from "./Onboarding.jsx";
 
 export default function App() {
@@ -77,7 +78,14 @@ export default function App() {
   }, [profiles.length, refreshKey]);
 
   // Handlers
-  const handleSelectProfile = (profileId) => {
+  const handleSelectProfile = (profileId, moduleId) => {
+    // If the kid chose a different module from the overlay, persist it now
+    if (moduleId) {
+      const profile = getProfile(profileId);
+      if (profile && profile.activeModule !== moduleId) {
+        updateProfile(profileId, { activeModule: moduleId });
+      }
+    }
     setActiveProfile(profileId);
     refresh();
     setScreen("practice");
@@ -223,17 +231,20 @@ export default function App() {
       if (openProgress) {
         setTimeout(() => setProgressProfileId(null), 0);
       }
-      return (
-        <MultiplicationPractice
-          key={profile?.id}
-          profileId={profile?.id}
-          moduleId={profile?.activeModule || "multiply"}
-          profileName={profile?.name}
-          profileAvatar={profile?.avatar}
-          onBack={handleBackToProfiles}
-          initialView={openProgress ? "progress" : "practice"}
-        />
-      );
+      const activeModuleId = profile?.activeModule || "multiply";
+      const commonProps = {
+        key: profile?.id,
+        profileId: profile?.id,
+        moduleId: activeModuleId,
+        profileName: profile?.name,
+        profileAvatar: profile?.avatar,
+        onBack: handleBackToProfiles,
+        initialView: openProgress ? "progress" : "practice",
+      };
+      if (activeModuleId === "fractions") {
+        return <FractionsPractice {...commonProps} />;
+      }
+      return <MultiplicationPractice {...commonProps} />;
     }
     default:
       return (
