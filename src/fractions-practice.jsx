@@ -668,11 +668,10 @@ function buildBuildBarChoices(item) {
   const choices = new Set([n]);
   if (n > 1) choices.add(n - 1);
   if (n < d) choices.add(n + 1);
-  if (d - n !== n) choices.add(d - n);
-  while (choices.size < 4) {
-    const rnd = Math.floor(Math.random() * (d - 1)) + 1;
-    choices.add(rnd);
-  }
+  if (d - n !== n && d - n >= 1) choices.add(d - n);
+  // Valid shade counts are 1..d — small denominators can't yield 4 distinct
+  // choices, so fill deterministically and let the grid show fewer buttons.
+  for (let c = 1; c <= d && choices.size < 4; c++) choices.add(c);
   return [...choices].slice(0, 4).sort(() => Math.random() - 0.5);
 }
 
@@ -868,6 +867,14 @@ export default function FractionsPractice({
     return 0;
   }, [mode, currentItem, getMasteryLevel]);
 
+  // Skills whose question already embeds the visual get no separate scaffold;
+  // concrete F2 gets none either (until feedback) — the bar there is the input,
+  // and a pre-shaded copy would reveal the answer.
+  const scaffoldRendered = !!currentItem
+    && currentItem.skill !== "F1"
+    && currentItem.skill !== "E4"
+    && !(currentItem.skill === "F2" && mode === "concrete" && !feedback);
+
   // Evaluate an answer and return true/false
   const evaluateAnswer = useCallback((item, answerPayload) => {
     const { type, value } = answerPayload;
@@ -992,7 +999,10 @@ export default function FractionsPractice({
     } else if (currentItem.answerType === "buildBar") {
       evalValue = String(value);
     }
-    handleAnswer({ type: currentItem.answerType === "tapTwo" || currentItem.answerType === "tapTwoOrEqual" ? "tapTwo" : "choice", value: evalValue });
+    const payloadType = (currentItem.answerType === "tapTwo" || currentItem.answerType === "tapTwoOrEqual") ? "tapTwo"
+      : currentItem.answerType === "buildBar" ? "buildBar"
+        : "choice";
+    handleAnswer({ type: payloadType, value: evalValue });
   }, [currentItem, feedback, handleAnswer]);
 
   const handleOrderSubmit = useCallback((tapOrder) => {
@@ -1419,8 +1429,11 @@ export default function FractionsPractice({
                     </div>
                   )}
 
-                  {/* Scaffold (non-abstract, non-F1-which-embeds-it-in-question) */}
-                  {currentItem.skill !== "E4" && (
+                  {/* Scaffold — skipped where the question already embeds the visual
+                      (F1 bar/circle, E4 number line) and in concrete F2, where the
+                      interactive bar is the input and a pre-shaded bar would reveal
+                      the answer (it still appears there after a wrong answer). */}
+                  {scaffoldRendered && (
                     <div
                       onClick={mode === "pictorial" && scaffoldOpacity > 0 && !showScaffold && !userHidScaffold
                         ? () => setUserHidScaffold(true)
@@ -1438,7 +1451,7 @@ export default function FractionsPractice({
                   )}
 
                   {/* Tap-to-dismiss scaffold in pictorial */}
-                  {mode === "pictorial" && scaffoldOpacity > 0 && !showScaffold && !userHidScaffold && (
+                  {scaffoldRendered && mode === "pictorial" && scaffoldOpacity > 0 && !showScaffold && !userHidScaffold && (
                     <div
                       onClick={() => setUserHidScaffold(true)}
                       style={{ marginTop: 6, fontSize: 11, fontFamily: "'Space Mono', monospace", opacity: 0.45, fontWeight: 700, cursor: "pointer" }}
@@ -1448,7 +1461,7 @@ export default function FractionsPractice({
                   )}
 
                   {/* Show me button (abstract mode) */}
-                  {mode === "abstract" && !showScaffold && !feedback && (
+                  {scaffoldRendered && mode === "abstract" && !showScaffold && !feedback && (
                     <div style={{ marginTop: 12, textAlign: "center" }}>
                       <BrutalButton small onClick={() => setShowScaffold(true)} bg={COLORS.cream}>
                         Show me
@@ -1473,9 +1486,9 @@ export default function FractionsPractice({
                             backgroundColor: COLORS.yellow, padding: "2px 8px",
                             border: BRUTAL_BORDER_SM, borderRadius: 4, fontSize: 20,
                           }}>
-                            {currentItem.correctAnswer.includes("/")
+                            {String(currentItem.correctAnswer).includes("/")
                               ? (() => {
-                                const [n, d] = currentItem.correctAnswer.split("/").map(Number);
+                                const [n, d] = String(currentItem.correctAnswer).split("/").map(Number);
                                 return <FractionDisplay n={n} d={d} size="normal" />;
                               })()
                               : currentItem.correctAnswer}

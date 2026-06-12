@@ -233,7 +233,6 @@ export default function App() {
       }
       const activeModuleId = profile?.activeModule || "multiply";
       const commonProps = {
-        key: profile?.id,
         profileId: profile?.id,
         moduleId: activeModuleId,
         profileName: profile?.name,
@@ -242,9 +241,9 @@ export default function App() {
         initialView: openProgress ? "progress" : "practice",
       };
       if (activeModuleId === "fractions") {
-        return <FractionsPractice {...commonProps} />;
+        return <FractionsPractice key={profile?.id} {...commonProps} />;
       }
-      return <MultiplicationPractice {...commonProps} />;
+      return <MultiplicationPractice key={profile?.id} {...commonProps} />;
     }
     default:
       return (

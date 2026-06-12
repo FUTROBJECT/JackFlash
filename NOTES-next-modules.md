@@ -87,6 +87,21 @@ automatically — no nav work needed beyond the App.jsx practice-case branch.
   files were App.jsx (routing), ProfilePicker.jsx (ModulePicker), and
   achievementEngine.js (icons + trigger fallthrough).
 
+## Play-test in the browser before calling it done
+
+Static QA (build + code-reading + logic scripts) passed this module while two
+real bugs survived: an infinite `while` loop in distractor generation that
+froze the page the first time an F2 item was drawn (small denominators could
+never yield 4 distinct choices), and a string-vs-number `correctAnswer`
+mismatch that crashed the wrong-answer render AND silently marked every
+correct pictorial F2 answer wrong. Both were found in minutes by driving the
+app in the Claude preview browser (`.claude/launch.json` is set up; use
+`preview_start` → resize to mobile → tap through one item of EVERY answerType
+in every mode, including at least one wrong answer each). Make that a
+standing QA step for Add & Subtract and Place Value. Watch for: item types
+whose `correctAnswer` is a number vs string (evaluateAnswer compares
+strictly), and any `while` loop over randomly generated choices.
+
 ## Grade 3 scope reminders for the next two specs (from the prompt)
 
 - **Add & Subtract:** within 10,000, regrouping, mental-math strategies,
