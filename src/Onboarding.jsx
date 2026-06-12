@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, MODULE_COLORS } from "./constants.js";
 import { getModuleList } from "./modules/moduleRegistry.js";
+import { isModuleLocked } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
 
 function BrutalButton({ onClick, children, bg = COLORS.yellow, disabled = false, style = {} }) {
@@ -147,10 +148,11 @@ function ModuleScreen({ selectedModule, onSelectModule, onNext, onBack }) {
 
   const getModuleColor = (moduleId) => MODULE_COLORS[moduleId] || COLORS.blue;
 
-  // Placeholder future modules
+  // Placeholder future modules (registered modules render above, including
+  // locked ones — only list modules that don't exist yet)
   const futureModules = [
     { id: "add", name: "Add + Subtract", label: "Coming soon" },
-    { id: "fractions", name: "Fractions", label: "Coming soon" },
+    { id: "placeValue", name: "Place Value", label: "Coming soon" },
   ];
 
   return (
@@ -183,32 +185,35 @@ function ModuleScreen({ selectedModule, onSelectModule, onNext, onBack }) {
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "24px" }}>
-          {modules.map((module) => (
+          {modules.map((module) => {
+            const locked = isModuleLocked(module.id);
+            return (
             <button
               key={module.id}
-              onClick={() => onSelectModule(module.id)}
+              onClick={() => !locked && onSelectModule(module.id)}
               style={{
                 background: "white",
-                border: selectedModule === module.id ? `3px solid ${getModuleColor(module.id)}` : BRUTAL_BORDER,
-                borderLeft: `6px solid ${getModuleColor(module.id)}`,
+                border: !locked && selectedModule === module.id ? `3px solid ${getModuleColor(module.id)}` : BRUTAL_BORDER,
+                borderLeft: `6px solid ${locked ? "#CCC" : getModuleColor(module.id)}`,
                 boxShadow: BRUTAL_SHADOW_SM,
                 borderRadius: "8px",
                 padding: "14px 16px",
-                cursor: "pointer",
+                cursor: locked ? "default" : "pointer",
                 textAlign: "left",
                 transition: "all 0.15s",
+                opacity: locked ? 0.6 : 1,
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <p style={{ margin: "0 0 3px", fontSize: "15px", fontWeight: 700, color: COLORS.black }}>
-                    {module.name}
+                    {locked ? "🔒 " : ""}{module.name}
                   </p>
                   <p style={{ margin: 0, fontSize: "11px", fontFamily: "'Space Mono', monospace", color: "#666" }}>
-                    {module.description} · Grades {module.grades}
+                    {locked ? "Unlock in the Parent Zone after setup" : `${module.description} · Grades ${module.grades}`}
                   </p>
                 </div>
-                {selectedModule === module.id && (
+                {!locked && selectedModule === module.id && (
                   <div style={{
                     width: 22, height: 22, borderRadius: "50%",
                     background: getModuleColor(module.id), border: BRUTAL_BORDER_SM,
@@ -220,7 +225,8 @@ function ModuleScreen({ selectedModule, onSelectModule, onNext, onBack }) {
                 )}
               </div>
             </button>
-          ))}
+            );
+          })}
 
           {/* Future modules */}
           {futureModules.map((fm) => (

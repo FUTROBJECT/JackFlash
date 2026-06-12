@@ -930,7 +930,9 @@ const fractionsModule = {
     },
   ],
 
-  freeContent: ["foundations"],
+  // No free tier — the whole module is gated behind the Parent Zone purchase
+  // (module.fractions.full or the bundle).
+  freeContent: [],
 
   // Skill focus labels in kid-friendly language
   skillLabels: {

@@ -1542,7 +1542,7 @@ export default function FractionsPractice({
                   Ask a parent to unlock more Fractions content in the Parent Zone!
                 </div>
                 <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: "#999" }}>
-                  Free content: Foundations group
+                  Fractions unlocks in Parent Zone → Modules
                 </div>
                 <div style={{ marginTop: 16 }}>
                   <BrutalButton onClick={() => setView("progress")} bg={COLORS.yellow}>

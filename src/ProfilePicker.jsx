@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, MODULE_COLORS, AVATARS } from "./constants.js";
 import { getModuleList } from "./modules/moduleRegistry.js";
+import { isModuleLocked } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
 
 function BrutalButton({ onClick, children, bg = COLORS.yellow, disabled = false, style = {} }) {
@@ -147,7 +148,11 @@ function BottomNav({ activeTab, onTabChange }) {
 
 /* ─── Module Picker Overlay ─── */
 function ModulePicker({ profile, modules, onConfirm, onCancel }) {
-  const [selected, setSelected] = useState(profile.activeModule || modules[0]?.id);
+  const [selected, setSelected] = useState(() => {
+    const current = profile.activeModule;
+    if (current && !isModuleLocked(current)) return current;
+    return modules.find(m => !isModuleLocked(m.id))?.id;
+  });
 
   return (
     <div
@@ -199,33 +204,38 @@ function ModulePicker({ profile, modules, onConfirm, onCancel }) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "18px" }}>
           {modules.map((mod) => {
-            const isActive = selected === mod.id;
+            const locked = isModuleLocked(mod.id);
+            const isActive = !locked && selected === mod.id;
             const accent = MODULE_COLORS[mod.id] || COLORS.yellow;
             return (
               <button
                 key={mod.id}
-                onClick={() => setSelected(mod.id)}
+                onClick={() => !locked && setSelected(mod.id)}
                 style={{
                   background: isActive ? accent : "white",
                   border: BRUTAL_BORDER,
-                  borderLeft: `8px solid ${accent}`,
+                  borderLeft: `8px solid ${locked ? "#CCC" : accent}`,
                   boxShadow: isActive ? "none" : BRUTAL_SHADOW_SM,
                   borderRadius: "10px",
                   padding: "14px 16px",
-                  cursor: "pointer",
+                  cursor: locked ? "default" : "pointer",
                   textAlign: "left",
                   transition: "all 0.1s",
                   position: "relative",
+                  opacity: locked ? 0.6 : 1,
                 }}
                 onMouseDown={(e) => {
+                  if (locked) return;
                   e.currentTarget.style.transform = "translate(3px, 3px)";
                   e.currentTarget.style.boxShadow = "none";
                 }}
                 onMouseUp={(e) => {
+                  if (locked) return;
                   e.currentTarget.style.transform = "translate(0, 0)";
                   e.currentTarget.style.boxShadow = isActive ? "none" : BRUTAL_SHADOW_SM;
                 }}
                 onMouseLeave={(e) => {
+                  if (locked) return;
                   e.currentTarget.style.transform = "translate(0, 0)";
                   e.currentTarget.style.boxShadow = isActive ? "none" : BRUTAL_SHADOW_SM;
                 }}
@@ -237,9 +247,23 @@ function ModulePicker({ profile, modules, onConfirm, onCancel }) {
                     fontWeight: 700,
                     color: COLORS.black,
                   }}>
-                    {mod.name}
+                    {locked ? "🔒 " : ""}{mod.name}
                   </p>
-                  {isActive && (
+                  {locked && (
+                    <span style={{
+                      fontSize: "11px",
+                      fontFamily: "'Space Mono', monospace",
+                      fontWeight: 700,
+                      background: "#EEE",
+                      color: COLORS.black,
+                      borderRadius: "4px",
+                      padding: "2px 6px",
+                      border: BRUTAL_BORDER_SM,
+                    }}>
+                      Parent Zone
+                    </span>
+                  )}
+                  {!locked && mod.id === profile.activeModule && (
                     <span style={{
                       fontSize: "11px",
                       fontFamily: "'Space Mono', monospace",
@@ -297,7 +321,8 @@ function ModulePicker({ profile, modules, onConfirm, onCancel }) {
             Cancel
           </button>
           <BrutalButton
-            onClick={() => onConfirm(profile.id, selected)}
+            onClick={() => selected && onConfirm(profile.id, selected)}
+            disabled={!selected}
             bg={COLORS.yellow}
             style={{ flex: 2, fontSize: "17px" }}
           >
@@ -797,23 +822,26 @@ export function CreateProfile({ onComplete, onCancel, preselectedModule = null }
             </h2>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {modules.map((module) => (
+              {modules.map((module) => {
+                const locked = isModuleLocked(module.id);
+                return (
                 <button
                   key={module.id}
-                  onClick={() => setSelectedModule(module.id)}
+                  onClick={() => !locked && setSelectedModule(module.id)}
                   style={{
                     background: "white",
-                    border: selectedModule === module.id ? `4px solid ${getModuleColor(module.id)}` : BRUTAL_BORDER,
-                    borderLeft: `8px solid ${getModuleColor(module.id)}`,
+                    border: !locked && selectedModule === module.id ? `4px solid ${getModuleColor(module.id)}` : BRUTAL_BORDER,
+                    borderLeft: `8px solid ${locked ? "#CCC" : getModuleColor(module.id)}`,
                     boxShadow: BRUTAL_SHADOW_SM,
                     borderRadius: "8px",
                     padding: "14px 16px",
-                    cursor: "pointer",
+                    cursor: locked ? "default" : "pointer",
                     textAlign: "left",
                     transition: "all 0.15s",
+                    opacity: locked ? 0.6 : 1,
                   }}
                   onMouseDown={(e) => {
-                    if (selectedModule !== module.id) {
+                    if (!locked && selectedModule !== module.id) {
                       e.currentTarget.style.transform = "translate(1px, 1px)";
                       e.currentTarget.style.boxShadow = "none";
                     }
@@ -831,7 +859,7 @@ export function CreateProfile({ onComplete, onCancel, preselectedModule = null }
                       color: COLORS.black,
                     }}
                   >
-                    {module.name}
+                    {locked ? "🔒 " : ""}{module.name}
                   </p>
                   <p
                     style={{
@@ -850,10 +878,11 @@ export function CreateProfile({ onComplete, onCancel, preselectedModule = null }
                       color: "#777",
                     }}
                   >
-                    {module.description}
+                    {locked ? "Unlock in the Parent Zone → Modules" : module.description}
                   </p>
                 </button>
-              ))}
+                );
+              })}
             </div>
 
             <div style={{ display: "flex", gap: "12px" }}>

@@ -48,13 +48,13 @@ export const PRODUCTS = {
   "module.fractions.full": {
     id: "module.fractions.full",
     name: "Fractions",
-    description: "Equivalent fractions, comparing, fraction arithmetic",
-    gradeRange: "Grades 3–5",
+    description: "Equal parts, equivalent fractions, comparing, fraction arithmetic",
+    gradeRange: "Grades 2–4",
     price: "$3.99",
     priceValue: 3.99,
     type: "module_unlock",
     moduleId: "fractions",
-    available: false,
+    available: true,
   },
   "module.placevalue.full": {
     id: "module.placevalue.full",
@@ -101,6 +101,15 @@ export function isContentAccessible(moduleId, groupId) {
   if (isModuleFullyUnlocked(moduleId)) return true;
   const mod = getModule(moduleId);
   return mod?.freeContent?.includes(groupId) ?? false;
+}
+
+// A module is "locked" when it has no free tier and hasn't been purchased —
+// it shouldn't be selectable in onboarding, profile creation, or the module
+// picker until a parent unlocks it in the Parent Zone.
+export function isModuleLocked(moduleId) {
+  if (isModuleFullyUnlocked(moduleId)) return false;
+  const mod = getModule(moduleId);
+  return !(mod?.freeContent?.length > 0);
 }
 
 export function getProductsWithStatus() {

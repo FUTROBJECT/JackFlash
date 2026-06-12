@@ -194,25 +194,41 @@ function ProgressReport({ profile }) {
   if (!mod) return null;
 
   const mastery = profile.mastery?.[profile.activeModule] || {};
-  const allFacts = mod.generateFacts({ tables: mod.focusTables, operation: "mixed" });
   const masteryThreshold = 3; // Could come from parent settings
 
+  // Normalize module content to generic { key, display } items. Fact-based
+  // modules (multiply) expose generateFacts()/focusTables; pool-based modules
+  // (fractions) expose a flat item pool grouped by group id.
+  let allItems, groupStats;
+  if (typeof mod.generateFacts === "function") {
+    const facts = mod.generateFacts({ tables: mod.focusTables, operation: "mixed" });
+    allItems = facts.map(f => ({ key: f.factKey, display: f.display }));
+    groupStats = mod.groups.map(group => {
+      const groupFacts = mod.generateFacts({ tables: group.tables, operation: "mixed" });
+      const groupMastered = groupFacts.filter(f => (mastery[f.factKey]?.correct || 0) >= masteryThreshold).length;
+      return { ...group, total: groupFacts.length, mastered: groupMastered };
+    });
+  } else {
+    const pool = mod.pool || [];
+    const itemDisplay = (item) =>
+      item.itemKey.slice(item.itemKey.indexOf(":") + 1).replace(",", " vs ");
+    allItems = pool.map(i => ({ key: i.itemKey, display: itemDisplay(i) }));
+    groupStats = mod.groups.map(group => {
+      const groupItems = pool.filter(i => i.group === group.id);
+      const groupMastered = groupItems.filter(i => (mastery[i.itemKey]?.correct || 0) >= masteryThreshold).length;
+      return { ...group, total: groupItems.length, mastered: groupMastered };
+    });
+  }
+
   // Calculate stats
-  const totalFacts = allFacts.length;
-  const masteredFacts = allFacts.filter(f => (mastery[f.factKey]?.correct || 0) >= masteryThreshold).length;
+  const totalFacts = allItems.length;
+  const masteredFacts = allItems.filter(it => (mastery[it.key]?.correct || 0) >= masteryThreshold).length;
   const masteryPercent = totalFacts > 0 ? Math.round((masteredFacts / totalFacts) * 100) : 0;
 
-  // Per-group breakdown
-  const groupStats = mod.groups.map(group => {
-    const groupFacts = mod.generateFacts({ tables: group.tables, operation: "mixed" });
-    const groupMastered = groupFacts.filter(f => (mastery[f.factKey]?.correct || 0) >= masteryThreshold).length;
-    return { ...group, total: groupFacts.length, mastered: groupMastered };
-  });
-
-  // Weakest facts — both attempted-but-not-mastered and never-attempted
-  const weakFacts = allFacts
-    .map(f => ({ ...f, level: mastery[f.factKey]?.correct || 0 }))
-    .filter(f => f.level < masteryThreshold)
+  // Weakest items — both attempted-but-not-mastered and never-attempted
+  const weakFacts = allItems
+    .map(it => ({ ...it, level: mastery[it.key]?.correct || 0 }))
+    .filter(it => it.level < masteryThreshold)
     .sort((a, b) => a.level - b.level)
     .slice(0, 10);
 
@@ -307,7 +323,7 @@ function ProgressReport({ profile }) {
           <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "13px", fontWeight: 600, marginBottom: "8px" }}>Needs Practice</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {weakFacts.map(f => (
-              <span key={f.factKey} style={{
+              <span key={f.key} style={{
                 padding: "4px 8px", background: COLORS.cream, border: BRUTAL_BORDER_SM,
                 borderRadius: "4px", fontSize: "12px", fontFamily: "'Space Mono', monospace",
               }}>{f.display}</span>
