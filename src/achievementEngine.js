@@ -84,6 +84,13 @@ const MODULE_ACHIEVEMENT_ICONS = {
   "group-clear-hard": "⭐",
   "multiply-master": "🏆",
   "fact-family-pro": "🔄",
+  // Fractions module achievements
+  "frac-equal-parts-expert": "🍕",
+  "frac-match-maker": "🔗",
+  "frac-fair-judge": "⚖️",
+  "frac-piece-keeper": "➕",
+  "frac-master": "🏆",
+  "frac-renamer-pro": "🔄",
 };
 
 /**
@@ -121,6 +128,10 @@ function checkTrigger(triggerType, params, values) {
       return checkDivisionCount(params.count, values.mastery);
 
     default:
+      // Delegate to module-supplied extra trigger checker (e.g. fractions module)
+      if (values.module && typeof values.module.checkExtraTrigger === "function") {
+        return values.module.checkExtraTrigger(triggerType, params, values);
+      }
       return false;
   }
 }
