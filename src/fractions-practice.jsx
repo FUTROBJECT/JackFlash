@@ -124,6 +124,7 @@ function Choice4Grid({ choices, onPick, picked, correct }) {
     <div style={{
       display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10,
       marginTop: 16, width: "100%", maxWidth: 320,
+      marginLeft: "auto", marginRight: "auto",
     }}>
       {choices.map((c, i) => {
         const [n, d] = c.split("/").map(Number);
@@ -230,7 +231,7 @@ function OrderThreeTiles({ fracs, direction, onSubmitOrder, submitted, correctOr
   const isCorrect = submitted && JSON.stringify(tapOrder) === JSON.stringify(correctOrder);
 
   return (
-    <div style={{ marginTop: 16, width: "100%", maxWidth: 340 }}>
+    <div style={{ marginTop: 16, width: "100%", maxWidth: 340, marginLeft: "auto", marginRight: "auto" }}>
       <div style={{
         fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700,
         textAlign: "center", marginBottom: 10, opacity: 0.6,
@@ -507,7 +508,7 @@ function QuestionDisplay({ item }) {
   if (skill === "F1") {
     return (
       <div style={{ textAlign: "center" }}>
-        <div style={{ marginBottom: 12 }}>
+        <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}>
           {item.displayType === "circle" ? (
             <CircleFraction n={item.n} d={item.d} />
           ) : (
@@ -1480,11 +1481,12 @@ export default function FractionsPractice({
                       {feedback === "correct" ? (
                         streak >= 5 ? "OUTSTANDING! ⚡" : streak >= 3 ? "🔥 STREAK! KEEP GOING!" : ["NICE!", "GOT IT!", "YES!", "CORRECT!", "BOOM!"][Math.floor(Math.random() * 5)]
                       ) : (
-                        <span>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                           It's{" "}
                           <span style={{
-                            backgroundColor: COLORS.yellow, padding: "2px 8px",
-                            border: BRUTAL_BORDER_SM, borderRadius: 4, fontSize: 20,
+                            backgroundColor: COLORS.yellow, padding: "6px 12px",
+                            border: BRUTAL_BORDER_SM, borderRadius: 6, fontSize: 20,
+                            display: "inline-flex", alignItems: "center", justifyContent: "center",
                           }}>
                             {String(currentItem.correctAnswer).includes("/")
                               ? (() => {
