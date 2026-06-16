@@ -499,12 +499,12 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               <div style={{ display: "flex", gap: "6px", alignItems: "stretch", marginBottom: "8px", minHeight: "56px" }}>
                 {/* Mastery progress — cumulative, persisted */}
                 <div style={{
-                  flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  flex: 1.5, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                   fontFamily: "'Space Mono', monospace", fontWeight: 700,
                   backgroundColor: masteryPct === 100 ? COLORS.green : "white",
                   color: masteryPct === 100 ? "white" : COLORS.black,
                   border: BRUTAL_BORDER_SM, borderRadius: "8px",
-                  padding: "8px 4px", boxShadow: BRUTAL_SHADOW_SM,
+                  padding: "8px 12px", boxShadow: BRUTAL_SHADOW_SM,
                   transition: "all 0.3s ease",
                   gap: "3px",
                 }}>

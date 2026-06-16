@@ -1097,11 +1097,11 @@ export default function FractionsPractice({
             return (
               <div style={{ display: "flex", gap: 6, alignItems: "stretch", marginBottom: 8, minHeight: 56 }}>
                 <div style={{
-                  flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  flex: 1.5, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                   fontFamily: "'Space Mono', monospace", fontWeight: 700,
                   backgroundColor: masteryPct === 100 ? COLORS.green : "white",
                   color: masteryPct === 100 ? "white" : COLORS.black,
-                  border: BRUTAL_BORDER_SM, borderRadius: 8, padding: "8px 4px",
+                  border: BRUTAL_BORDER_SM, borderRadius: 8, padding: "8px 12px",
                   boxShadow: BRUTAL_SHADOW_SM, gap: 3,
                 }}>
                   <span style={{ fontSize: "clamp(14px, 5vw, 20px)", lineHeight: 1, whiteSpace: "nowrap" }}>⭐ {masteredItems}/{totalItems}</span>
