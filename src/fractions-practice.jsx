@@ -1519,12 +1519,7 @@ export default function FractionsPractice({
                   ) : null}
                 </div>
 
-                {/* Progress button */}
-                <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
-                  <BrutalButton small onClick={() => setView("progress")} bg="white">
-                    📊 Progress
-                  </BrutalButton>
-                </div>
+                {/* Progress button removed — progress accessed from home screen */}
               </div>
             ) : (
               <div style={{ textAlign: "center", padding: "40px 20px", animation: "fadeSlideUp 0.3s ease both" }}>
@@ -1543,11 +1538,6 @@ export default function FractionsPractice({
                 </div>
                 <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: "#999" }}>
                   Fractions unlocks in Parent Zone → Modules
-                </div>
-                <div style={{ marginTop: 16 }}>
-                  <BrutalButton onClick={() => setView("progress")} bg={COLORS.yellow}>
-                    See Progress
-                  </BrutalButton>
                 </div>
               </div>
             )
