@@ -496,7 +496,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
             const masteredFacts = totalFacts > 0 ? facts.filter(f => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length : 0;
             const masteryPct = totalFacts > 0 ? Math.round((masteredFacts / totalFacts) * 100) : 0;
             return (
-              <div style={{ display: "flex", gap: "6px", alignItems: "stretch", marginBottom: "8px" }}>
+              <div style={{ display: "flex", gap: "6px", alignItems: "stretch", marginBottom: "8px", minHeight: "64px" }}>
                 {/* Mastery progress — cumulative, persisted */}
                 <div style={{
                   flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -508,7 +508,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                   transition: "all 0.3s ease",
                   gap: "3px",
                 }}>
-                  <span style={{ fontSize: "20px", lineHeight: 1 }}>⭐ {masteredFacts}/{totalFacts}</span>
+                  <span style={{ fontSize: "20px", lineHeight: 1, whiteSpace: "nowrap" }}>⭐ {masteredFacts}/{totalFacts}</span>
                   <span style={{ fontSize: "10px", opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Mastered</span>
                 </div>
                 {/* Session score */}
@@ -519,7 +519,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                   padding: "10px 4px", boxShadow: BRUTAL_SHADOW_SM,
                   gap: "3px",
                 }}>
-                  <span style={{ fontSize: "20px", lineHeight: 1 }}>{sessionStats.correct}/{sessionStats.total}</span>
+                  <span style={{ fontSize: "20px", lineHeight: 1, whiteSpace: "nowrap" }}>{sessionStats.correct}/{sessionStats.total}</span>
                   <span style={{ fontSize: "10px", opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Session</span>
                 </div>
                 {/* Streak */}
@@ -533,7 +533,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                   transition: "all 0.2s ease",
                   gap: "3px",
                 }}>
-                  <span style={{ fontSize: "20px", lineHeight: 1 }}>{"🔥"} {streak}</span>
+                  <span style={{ fontSize: "20px", lineHeight: 1, whiteSpace: "nowrap" }}>{"🔥"} {streak}</span>
                   <span style={{ fontSize: "10px", opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Streak</span>
                 </div>
                 {/* Daily streak */}

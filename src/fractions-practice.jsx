@@ -1095,7 +1095,7 @@ export default function FractionsPractice({
             ).length;
             const masteryPct = totalItems > 0 ? Math.round((masteredItems / totalItems) * 100) : 0;
             return (
-              <div style={{ display: "flex", gap: 6, alignItems: "stretch", marginBottom: 8 }}>
+              <div style={{ display: "flex", gap: 6, alignItems: "stretch", marginBottom: 8, minHeight: 64 }}>
                 <div style={{
                   flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                   fontFamily: "'Space Mono', monospace", fontWeight: 700,
@@ -1104,7 +1104,7 @@ export default function FractionsPractice({
                   border: BRUTAL_BORDER_SM, borderRadius: 8, padding: "10px 4px",
                   boxShadow: BRUTAL_SHADOW_SM, gap: 3,
                 }}>
-                  <span style={{ fontSize: 20, lineHeight: 1 }}>⭐ {masteredItems}/{totalItems}</span>
+                  <span style={{ fontSize: 20, lineHeight: 1, whiteSpace: "nowrap" }}>⭐ {masteredItems}/{totalItems}</span>
                   <span style={{ fontSize: 10, opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Mastered</span>
                 </div>
                 <div style={{
@@ -1113,7 +1113,7 @@ export default function FractionsPractice({
                   backgroundColor: "white", border: BRUTAL_BORDER_SM, borderRadius: 8,
                   padding: "10px 4px", boxShadow: BRUTAL_SHADOW_SM, gap: 3,
                 }}>
-                  <span style={{ fontSize: 20, lineHeight: 1 }}>{sessionStats.correct}/{sessionStats.total}</span>
+                  <span style={{ fontSize: 20, lineHeight: 1, whiteSpace: "nowrap" }}>{sessionStats.correct}/{sessionStats.total}</span>
                   <span style={{ fontSize: 10, opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Session</span>
                 </div>
                 <div style={{
@@ -1124,7 +1124,7 @@ export default function FractionsPractice({
                   border: BRUTAL_BORDER_SM, borderRadius: 8,
                   padding: "10px 4px", boxShadow: BRUTAL_SHADOW_SM, gap: 3,
                 }}>
-                  <span style={{ fontSize: 20, lineHeight: 1 }}>🔥 {streak}</span>
+                  <span style={{ fontSize: 20, lineHeight: 1, whiteSpace: "nowrap" }}>🔥 {streak}</span>
                   <span style={{ fontSize: 10, opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Streak</span>
                 </div>
                 {dailyStreak && dailyStreak.current > 0 && (
