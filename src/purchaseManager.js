@@ -71,7 +71,7 @@ export const PRODUCTS = {
   },
   "module.connections.full": {
     id: "module.connections.full",
-    name: "Mixed Practice — Capstone",
+    name: "Connections — Capstone",
     description: "The capstone module: fraction of a group (Grade 4 stretch / enrichment), two-step word problems, and mixed shuffle drill — unlocks after mastering Multiply, Divide & Fractions",
     gradeRange: "Grade 3 Capstone (fraction-of-quantity: Grade 4 stretch / enrichment)",
     price: "$3.99",

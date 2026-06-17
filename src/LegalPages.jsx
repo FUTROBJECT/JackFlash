@@ -240,7 +240,7 @@ export function HelpFAQ({ onBack }) {
 
       <AccordionItem title="What is JackFlash?" defaultOpen>
         <p style={{ margin: 0 }}>
-          A math fact fluency app for grades 2–5. It helps kids master multiplication and division using the Concrete-Pictorial-Abstract (CPA) approach from Singapore Math — the same method used in top-performing classrooms worldwide.
+          A math fluency app for grades 2–5. It helps kids master multiplication, division, and fractions — and then connect them — using the Concrete-Pictorial-Abstract (CPA) approach from Singapore Math, the same method used in top-performing classrooms worldwide.
         </p>
       </AccordionItem>
 
@@ -253,6 +253,36 @@ export function HelpFAQ({ onBack }) {
       <AccordionItem title="Why teach multiplication and division together?">
         <p style={{ margin: 0 }}>
           They're inverse operations sharing the same fact families. Knowing 6 × 4 = 24 means your child also knows 24 ÷ 4 = 6 and 24 ÷ 6 = 4. Teaching them together builds deeper understanding than drilling them separately.
+        </p>
+      </AccordionItem>
+
+      <AccordionItem title="What is Connections (the Capstone)?">
+        <p style={{ margin: "0 0 8px" }}>
+          Connections is JackFlash's <strong>capstone</strong> module. Where the other modules build one skill at a time, this one <strong>connects</strong> multiplication, division, and fractions using the bar model — the unifying tool of Singapore Math.
+        </p>
+        <p style={{ margin: "0 0 8px" }}>
+          Your child works on problems that genuinely tie the ideas together: finding a fraction of a quantity (½ of 12), two-step word problems, and a shuffle drill that mixes all three so they have to decide <em>which</em> operation to use — a skill that single-topic drilling never builds.
+        </p>
+        <p style={{ margin: 0 }}>
+          It's deliberately the last stop: it assumes the foundations are already solid and rewards your child for putting them all together.
+        </p>
+      </AccordionItem>
+
+      <AccordionItem title="How does my child unlock Connections?">
+        <p style={{ margin: "0 0 8px" }}>
+          Two things both have to be true — and one of them can't be bought:
+        </p>
+        <p style={{ margin: "0 0 8px" }}>
+          <strong>1. It's unlocked in the Parent Zone</strong> — either purchased on its own or included in the All-Modules bundle.
+        </p>
+        <p style={{ margin: "0 0 8px" }}>
+          <strong>2. Your child has mastered the foundations</strong> — all of Multiplication, Division, <em>and</em> Fractions.
+        </p>
+        <p style={{ margin: "0 0 8px" }}>
+          <strong>Buying it is not enough on its own.</strong> Even after purchase, Connections stays locked until your child has mastered all three foundation skills — they earn their way in. Until then the module card shows a checklist of what's still left to master, filling in as each one is conquered.
+        </p>
+        <p style={{ margin: 0 }}>
+          (Mastering Fractions, in turn, requires the Fractions module to be unlocked in the Parent Zone — so the foundations have to be in place first.)
         </p>
       </AccordionItem>
 

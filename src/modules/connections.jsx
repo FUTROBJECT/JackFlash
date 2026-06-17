@@ -364,7 +364,7 @@ export function checkExtraConnectionsTrigger(triggerType, params, values) {
 
 const connectionsModule = {
   id: "connections",
-  name: "Mixed Practice",
+  name: "Connections",
   grades: "Grade 3 — Capstone",
   color: "#FFB703", // amber/gold — the summit accent
   description: "Put it all together — fractions, multiplication & division connected by the bar model",

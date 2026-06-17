@@ -95,7 +95,7 @@ function WelcomeScreen({ onNext }) {
           margin: "0 0 32px 0",
           lineHeight: 1.6,
         }}>
-          Math fact fluency, the right way.
+          Math fluency, the right way.
         </p>
 
         <div style={{
