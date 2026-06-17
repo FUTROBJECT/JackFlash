@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, MODULE_COLORS, AVATARS } from "./constants.js";
 import { getModuleList } from "./modules/moduleRegistry.js";
-import { isModuleLocked } from "./purchaseManager.js";
+import { isModuleLocked, getConnectionsPrereqStatus } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
 
 function BrutalButton({ onClick, children, bg = COLORS.yellow, disabled = false, style = {} }) {
@@ -154,6 +154,9 @@ function ModulePicker({ profile, modules, onConfirm, onCancel }) {
     return modules.find(m => !isModuleLocked(m.id))?.id;
   });
 
+  // Capstone prereq status for connections module — null-guarded
+  const connPrereq = getConnectionsPrereqStatus(profile?.id);
+
   return (
     <div
       onClick={onCancel}
@@ -205,40 +208,32 @@ function ModulePicker({ profile, modules, onConfirm, onCancel }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "18px" }}>
           {modules.map((mod) => {
             const locked = isModuleLocked(mod.id);
-            const isActive = !locked && selected === mod.id;
+            // Connections capstone has an additional mastery-gate on top of purchase
+            const isCapstone = mod.id === "connections";
+            const capstoneMasteryLocked = isCapstone && connPrereq.purchaseOk && !connPrereq.unlocked;
+            const effectivelyLocked = locked || (isCapstone && !connPrereq.unlocked);
+            const isActive = !effectivelyLocked && selected === mod.id;
             const accent = MODULE_COLORS[mod.id] || COLORS.yellow;
             return (
-              <button
+              <div
                 key={mod.id}
-                onClick={() => !locked && setSelected(mod.id)}
                 style={{
                   background: isActive ? accent : "white",
-                  border: BRUTAL_BORDER,
-                  borderLeft: `8px solid ${locked ? "#CCC" : accent}`,
+                  borderTop: BRUTAL_BORDER,
+                  borderRight: BRUTAL_BORDER,
+                  borderBottom: BRUTAL_BORDER,
+                  borderLeft: `8px solid ${effectivelyLocked ? "#CCC" : accent}`,
                   boxShadow: isActive ? "none" : BRUTAL_SHADOW_SM,
                   borderRadius: "10px",
                   padding: "14px 16px",
-                  cursor: locked ? "default" : "pointer",
+                  cursor: effectivelyLocked ? "default" : "pointer",
                   textAlign: "left",
                   transition: "all 0.1s",
                   position: "relative",
-                  opacity: locked ? 0.6 : 1,
+                  opacity: effectivelyLocked ? 0.75 : 1,
+                  userSelect: "none",
                 }}
-                onMouseDown={(e) => {
-                  if (locked) return;
-                  e.currentTarget.style.transform = "translate(3px, 3px)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-                onMouseUp={(e) => {
-                  if (locked) return;
-                  e.currentTarget.style.transform = "translate(0, 0)";
-                  e.currentTarget.style.boxShadow = isActive ? "none" : BRUTAL_SHADOW_SM;
-                }}
-                onMouseLeave={(e) => {
-                  if (locked) return;
-                  e.currentTarget.style.transform = "translate(0, 0)";
-                  e.currentTarget.style.boxShadow = isActive ? "none" : BRUTAL_SHADOW_SM;
-                }}
+                onClick={() => !effectivelyLocked && setSelected(mod.id)}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <p style={{
@@ -247,7 +242,23 @@ function ModulePicker({ profile, modules, onConfirm, onCancel }) {
                     fontWeight: 700,
                     color: COLORS.black,
                   }}>
-                    {locked ? "🔒 " : ""}{mod.name}
+                    {effectivelyLocked ? "🔒 " : ""}{mod.name}
+                    {isCapstone && (
+                      <span style={{
+                        marginLeft: 6,
+                        fontSize: "10px",
+                        fontFamily: "'Space Mono', monospace",
+                        fontWeight: 700,
+                        background: "#FFB703",
+                        color: COLORS.black,
+                        borderRadius: "4px",
+                        padding: "1px 5px",
+                        border: BRUTAL_BORDER_SM,
+                        verticalAlign: "middle",
+                      }}>
+                        CAPSTONE
+                      </span>
+                    )}
                   </p>
                   {locked && (
                     <span style={{
@@ -263,7 +274,7 @@ function ModulePicker({ profile, modules, onConfirm, onCancel }) {
                       Parent Zone
                     </span>
                   )}
-                  {!locked && mod.id === profile.activeModule && (
+                  {!locked && !effectivelyLocked && mod.id === profile.activeModule && (
                     <span style={{
                       fontSize: "11px",
                       fontFamily: "'Space Mono', monospace",
@@ -278,14 +289,51 @@ function ModulePicker({ profile, modules, onConfirm, onCancel }) {
                   )}
                 </div>
                 <p style={{
-                  margin: 0,
+                  margin: "0 0 0 0",
                   fontSize: "12px",
                   color: isActive ? COLORS.black : "#666",
                   fontFamily: "'Space Mono', monospace",
                 }}>
                   {mod.description}
                 </p>
-              </button>
+
+                {/* Capstone three-prerequisite progress checklist */}
+                {isCapstone && effectivelyLocked && (
+                  <div style={{
+                    marginTop: 10,
+                    padding: "8px 10px",
+                    backgroundColor: "#FFF8E7",
+                    border: BRUTAL_BORDER_SM,
+                    borderRadius: 8,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4,
+                  }}>
+                    <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, fontWeight: 700, color: "#888", marginBottom: 2 }}>
+                      Master these first:
+                    </div>
+                    {[
+                      { label: "Multiply (all tables)", done: connPrereq.multiplyMastered },
+                      { label: "Divide (all tables)", done: connPrereq.divideMastered },
+                      { label: "Fractions (all groups)", done: connPrereq.fractionsMastered },
+                    ].map(({ label, done }) => (
+                      <div key={label} style={{
+                        display: "flex", alignItems: "center", gap: 6,
+                        fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: done ? 700 : 400,
+                        color: done ? COLORS.green : "#888",
+                      }}>
+                        <span style={{ fontSize: 14 }}>{done ? "✓" : "○"}</span>
+                        {label}
+                      </div>
+                    ))}
+                    {!connPrereq.purchaseOk && (
+                      <div style={{ marginTop: 4, fontFamily: "'Space Mono', monospace", fontSize: 10, color: "#AAA" }}>
+                        Also needs Parent Zone unlock
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
@@ -830,7 +878,9 @@ export function CreateProfile({ onComplete, onCancel, preselectedModule = null }
                   onClick={() => !locked && setSelectedModule(module.id)}
                   style={{
                     background: "white",
-                    border: !locked && selectedModule === module.id ? `4px solid ${getModuleColor(module.id)}` : BRUTAL_BORDER,
+                    borderTop: !locked && selectedModule === module.id ? `4px solid ${getModuleColor(module.id)}` : BRUTAL_BORDER,
+                    borderRight: !locked && selectedModule === module.id ? `4px solid ${getModuleColor(module.id)}` : BRUTAL_BORDER,
+                    borderBottom: !locked && selectedModule === module.id ? `4px solid ${getModuleColor(module.id)}` : BRUTAL_BORDER,
                     borderLeft: `8px solid ${locked ? "#CCC" : getModuleColor(module.id)}`,
                     boxShadow: BRUTAL_SHADOW_SM,
                     borderRadius: "8px",

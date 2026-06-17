@@ -1,5 +1,7 @@
-import { unlockModule, getPurchases, addPurchase, setBundlePurchased, isBundlePurchased } from "./dataManager.js";
+import { unlockModule, getPurchases, addPurchase, setBundlePurchased, isBundlePurchased, getMastery } from "./dataManager.js";
 import { getModule } from "./modules/moduleRegistry.js";
+import { DEFAULT_MASTERY_THRESHOLD } from "./constants.js";
+import { FRACTION_POOL } from "./modules/fractions.jsx";
 
 // ============================================================================
 // PURCHASE MANAGER
@@ -67,6 +69,17 @@ export const PRODUCTS = {
     moduleId: "placeValue",
     available: false,
   },
+  "module.connections.full": {
+    id: "module.connections.full",
+    name: "Mixed Practice — Capstone",
+    description: "The capstone module: fraction of a group (Grade 4 stretch / enrichment), two-step word problems, and mixed shuffle drill — unlocks after mastering Multiply, Divide & Fractions",
+    gradeRange: "Grade 3 Capstone (fraction-of-quantity: Grade 4 stretch / enrichment)",
+    price: "$3.99",
+    priceValue: 3.99,
+    type: "module_unlock",
+    moduleId: "connections",
+    available: false, // flip to true when module ships
+  },
   "bundle.all": {
     id: "bundle.all",
     name: "All Modules Bundle",
@@ -82,6 +95,13 @@ export const PRODUCTS = {
 function moduleUnlockProducts() {
   return Object.values(PRODUCTS).filter((p) => p.type === "module_unlock");
 }
+
+// ⚠️ TEMP PLAY-TEST BYPASS — REMOVE BEFORE SHIPPING ⚠️
+// When true, the Connections capstone is treated as fully unlocked (both the
+// purchase layer AND the Multiply/Divide/Fractions mastery layer) so the screens
+// can be exercised without grinding three modules to mastery first.
+// Set back to false to restore the real gate. Search "CONNECTIONS_GATE_BYPASS".
+const CONNECTIONS_GATE_BYPASS = false;
 
 // ============================================================================
 // ENTITLEMENT CACHE (synchronous, local)
@@ -107,9 +127,84 @@ export function isContentAccessible(moduleId, groupId) {
 // it shouldn't be selectable in onboarding, profile creation, or the module
 // picker until a parent unlocks it in the Parent Zone.
 export function isModuleLocked(moduleId) {
+  if (CONNECTIONS_GATE_BYPASS && moduleId === "connections") return false; // TEMP play-test bypass
   if (isModuleFullyUnlocked(moduleId)) return false;
   const mod = getModule(moduleId);
   return !(mod?.freeContent?.length > 0);
+}
+
+// ============================================================================
+// CONNECTIONS CAPSTONE GATE
+// ----------------------------------------------------------------------------
+// Two independent layers must both pass:
+//   Layer 1: purchase entitlement (isModuleFullyUnlocked)
+//   Layer 2: Multiply mastered + Divide mastered + Fractions mastered
+//
+// Null-guards every mastery read — new profiles have no mastery object.
+// Returns { unlocked, multiplyMastered, divideMastered, fractionsMastered }
+// so the locked-state card can show per-prerequisite progress.
+// ============================================================================
+
+function _checkMultiplyMastered(multiplyMastery) {
+  const m = multiplyMastery || {};
+  const tables = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+  for (const t of tables) {
+    for (let i = 1; i <= 10; i++) {
+      const key = `${t}x${i}`;
+      if ((m[key]?.correct || 0) < DEFAULT_MASTERY_THRESHOLD) return false;
+    }
+  }
+  return true;
+}
+
+function _checkDivideMastered(multiplyMastery) {
+  const m = multiplyMastery || {};
+  const tables = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+  for (const t of tables) {
+    for (let i = 1; i <= 10; i++) {
+      const product = t * i;
+      const key1 = `${product}÷${t}`;
+      const key2 = `${product}÷${i}`;
+      if ((m[key1]?.correct || 0) < DEFAULT_MASTERY_THRESHOLD) return false;
+      if ((m[key2]?.correct || 0) < DEFAULT_MASTERY_THRESHOLD) return false;
+    }
+  }
+  return true;
+}
+
+function _checkFractionsMastered(fractionsMastery) {
+  const m = fractionsMastery || {};
+  // FRACTION_POOL is imported at the top of this file — check all pool items
+  return FRACTION_POOL.length > 0 && FRACTION_POOL.every(
+    item => (m[item.itemKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD
+  );
+}
+
+export function getConnectionsPrereqStatus(profileId) {
+  // ⚠️ TEMP PLAY-TEST BYPASS — REMOVE BEFORE SHIPPING ⚠️
+  if (CONNECTIONS_GATE_BYPASS) {
+    return { unlocked: true, purchaseOk: true, multiplyMastered: true, divideMastered: true, fractionsMastered: true };
+  }
+  // Null-guard: profileId may be undefined/null during rendering of new profiles
+  if (!profileId) {
+    return { unlocked: false, purchaseOk: false, multiplyMastered: false, divideMastered: false, fractionsMastered: false };
+  }
+
+  const purchaseOk = isModuleFullyUnlocked("connections");
+  const multiplyMastery = getMastery(profileId, "multiply") || {};
+  const fractionsMastery = getMastery(profileId, "fractions") || {};
+
+  const multiplyMastered = _checkMultiplyMastered(multiplyMastery);
+  const divideMastered = _checkDivideMastered(multiplyMastery);
+  const fractionsMastered = _checkFractionsMastered(fractionsMastery);
+
+  const unlocked = purchaseOk && multiplyMastered && divideMastered && fractionsMastered;
+
+  return { unlocked, purchaseOk, multiplyMastered, divideMastered, fractionsMastered };
+}
+
+export function isConnectionsUnlocked(profileId) {
+  return getConnectionsPrereqStatus(profileId).unlocked;
 }
 
 export function getProductsWithStatus() {

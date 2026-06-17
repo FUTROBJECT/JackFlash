@@ -22,6 +22,7 @@ export const MODULE_COLORS = {
   add: COLORS.blue,
   fractions: COLORS.orange,
   placeValue: COLORS.purple,
+  connections: "#FFB703", // amber/gold capstone color
 };
 
 // Avatar definitions for profile creation

@@ -22,6 +22,7 @@ import { ParentGate, ParentZone } from "./ParentZone.jsx";
 import { initPurchases } from "./purchaseManager.js";
 import MultiplicationPractice from "./multiplication-practice.jsx";
 import FractionsPractice from "./fractions-practice.jsx";
+import ConnectionsPractice from "./connections-practice.jsx";
 import Onboarding from "./Onboarding.jsx";
 
 export default function App() {
@@ -242,6 +243,9 @@ export default function App() {
       };
       if (activeModuleId === "fractions") {
         return <FractionsPractice key={profile?.id} {...commonProps} />;
+      }
+      if (activeModuleId === "connections") {
+        return <ConnectionsPractice key={profile?.id} {...commonProps} />;
       }
       return <MultiplicationPractice key={profile?.id} {...commonProps} />;
     }

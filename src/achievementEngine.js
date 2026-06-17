@@ -91,6 +91,13 @@ const MODULE_ACHIEVEMENT_ICONS = {
   "frac-piece-keeper": "➕",
   "frac-master": "🏆",
   "frac-renamer-pro": "🔄",
+  // Connections (capstone) module achievements
+  "conn-bridge-builder":   "🌉",
+  "conn-whole-and-parts":  "🔢",
+  "conn-two-step-thinker": "👣",
+  "conn-quick-switch":     "⚡",
+  "conn-the-connector":    "🏆",
+  "conn-summit":           "🏔️",
 };
 
 /**
@@ -275,6 +282,7 @@ export function checkAfterAnswer({
   const threshold = masteryThreshold || getParentSettings().masteryThreshold;
 
   const values = {
+    profileId,
     streak,
     sessionTotal,
     sessionStartTime,
