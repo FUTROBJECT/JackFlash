@@ -330,7 +330,19 @@ function QuestionDisplay({ item, concreteState, onSplit, onSelect, mode }) {
           </div>
         );
       }
-      // F1 / E4: generic question text or bar shown in scaffold
+      // F1: "Which fraction is it?" — the bar IS the prompt here (not a fade-able
+      // scaffold), so render it at full opacity right under the question.
+      if (item.n !== undefined && item.d !== undefined) {
+        return (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+            <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#666" }}>
+              {item.questionText || "Which fraction is it?"}
+            </div>
+            <FractionBar n={item.n} d={item.d} color={COLORS.purple} opacity={1} />
+          </div>
+        );
+      }
+      // E4: generic question text
       return (
         <div style={{ textAlign: "center", fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#666" }}>
           {item.questionText || "Which fraction is it?"}
