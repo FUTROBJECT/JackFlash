@@ -866,7 +866,7 @@ export function ParentZone({
             )}
 
             {/* Module cards from getProductsWithStatus */}
-            {getProductsWithStatus().filter(p => p.type === "module_unlock").map((product) => {
+            {getProductsWithStatus().filter(p => p.type === "module_unlock" && p.available !== false).map((product) => {
               const moduleColor = MODULE_COLORS[product.moduleId] || COLORS.blue;
               const isPurchased = product.purchased;
               const isAvailable = product.available !== false;
@@ -971,6 +971,11 @@ export function ParentZone({
               const bundleProduct = PRODUCTS["bundle.all"];
               const { purchased: isPurchased } = getProductsWithStatus()
                 .find(p => p.id === "bundle.all") || {};
+              // Savings vs buying the currently-available paid modules individually.
+              // Shown only when positive, so we never overstate the deal at launch.
+              const paidNow = getProductsWithStatus().filter(p => p.type === "module_unlock" && p.available !== false);
+              const indivTotal = paidNow.reduce((s, p) => s + (p.priceValue || 0), 0);
+              const bundleSavings = indivTotal - (bundleProduct.priceValue || 0);
               return (
                 <div
                   style={{
@@ -1000,7 +1005,7 @@ export function ParentZone({
                       margin: "6px 0 0 0",
                       fontWeight: 700,
                     }}>
-                      Best value — save $5.97
+                      {bundleSavings > 0 ? `Best value — save $${bundleSavings.toFixed(2)}` : "Best value"}
                     </p>
                     <p style={{
                       fontSize: "13px",

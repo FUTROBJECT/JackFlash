@@ -34,18 +34,18 @@ export const PRODUCTS = {
     priceValue: 3.99,
     type: "module_unlock",
     moduleId: "multiply",
-    available: true,
+    available: false, // Multiply/Divide is the free module — not sold
   },
   "module.add.full": {
     id: "module.add.full",
     name: "Add & Subtract",
-    description: "Addition & subtraction fact families, facts to 20",
-    gradeRange: "Grades K–2",
+    description: "Number bonds & facts to 20, plus adding & subtracting to 10,000 with bar models",
+    gradeRange: "Grades K–3",
     price: "$3.99",
     priceValue: 3.99,
     type: "module_unlock",
     moduleId: "add",
-    available: false,       // flip to true when module ships
+    available: false, // flip to true when module ships (after play-test)
   },
   "module.fractions.full": {
     id: "module.fractions.full",
@@ -307,20 +307,103 @@ const simulatedProvider = {
   },
 };
 
-// Native provider — implemented in Step 2 against RevenueCat or a StoreKit /
-// Play Billing plugin. Its purchase()/restore() will verify with the store and
-// then call applyEntitlement() on success. Left unimplemented for now; it is
-// never selected until Capacitor is installed (see isNativePlatform()).
+// ----------------------------------------------------------------------------
+// RevenueCat native provider (Phase 2 scaffold).
+//
+// SAFE TO SHIP AS-IS: the RevenueCat SDK is loaded with a lazy, @vite-ignore'd
+// dynamic import keyed by a variable, so Vite never bundles or resolves it — the
+// web build stays green even though the package isn't installed yet. This code
+// path only runs inside a native Capacitor shell (isNativePlatform()); on web the
+// simulatedProvider is used, so web/gh-pages behavior is unchanged.
+//
+// TO GO LIVE (Phase 2):
+//   1. `npm i @revenuecat/purchases-capacitor` (after Capacitor is added).
+//   2. Paste the public SDK keys below (RevenueCat dashboard → API keys, per platform).
+//   3. In the RevenueCat dashboard: create one Entitlement per unlock and attach the
+//      matching App Store / Play product. Name the *store product identifiers* the
+//      same as our internal product ids so purchase() can match them:
+//        entitlement "fractions" → store product "module.fractions.full"
+//        entitlement "all"       → store product "bundle.all"
+//      (and add an entitlement per future module as they ship).
+//   4. Verify the plugin's return shapes against the installed version — the RC
+//      Capacitor API has shifted across majors; adjust the destructuring if needed.
+// ----------------------------------------------------------------------------
+const REVENUECAT_KEYS = {
+  ios: "REVENUECAT_IOS_PUBLIC_SDK_KEY__TODO",
+  android: "REVENUECAT_ANDROID_PUBLIC_SDK_KEY__TODO",
+};
+
+// RevenueCat entitlement id → our internal product id (what applyEntitlement expects).
+const RC_ENTITLEMENT_TO_PRODUCT = {
+  fractions: "module.fractions.full",
+  all: "bundle.all",
+  // add: "module.add.full", connections: "module.connections.full"  // v1.1/v1.2
+};
+
+// Lazy SDK loader — variable specifier + @vite-ignore keeps it out of the web bundle.
+const RC_MODULE_ID = "@revenuecat/purchases-capacitor";
+let _rc = null;
+async function loadRevenueCat() {
+  if (!_rc) {
+    const mod = await import(/* @vite-ignore */ RC_MODULE_ID);
+    _rc = mod.Purchases || (mod.default && mod.default.Purchases) || mod.default;
+  }
+  return _rc;
+}
+
+// Mirror every active RevenueCat entitlement into our local entitlement cache.
+function applyActiveEntitlements(customerInfo) {
+  const active = (customerInfo && customerInfo.entitlements && customerInfo.entitlements.active) || {};
+  Object.keys(active).forEach((entId) => {
+    const productId = RC_ENTITLEMENT_TO_PRODUCT[entId];
+    if (productId) applyEntitlement(productId);
+  });
+}
+
 const nativeProvider = {
   id: "native",
+
   async init() {
-    throw new Error("Native purchase provider not implemented yet (Step 2).");
+    const Purchases = await loadRevenueCat();
+    const platform = (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform()) || "ios";
+    const apiKey = platform === "android" ? REVENUECAT_KEYS.android : REVENUECAT_KEYS.ios;
+    await Purchases.configure({ apiKey });
+    // Pull whatever the store already knows for this user (covers reinstalls).
+    const { customerInfo } = await Purchases.getCustomerInfo();
+    applyActiveEntitlements(customerInfo);
   },
+
   async purchase(productId) {
-    throw new Error("Native purchase provider not implemented yet (Step 2).");
+    const product = PRODUCTS[productId];
+    if (!product) return { status: "error", productId, error: "Unknown product." };
+    if (product.available === false) return { status: "error", productId, error: "This product isn't available yet." };
+    if (isProductOwned(productId)) return { status: "already_owned", productId };
+
+    const Purchases = await loadRevenueCat();
+    const offerings = await Purchases.getOfferings();
+    const pkgs = (offerings && offerings.current && offerings.current.availablePackages) || [];
+    const pkg = pkgs.find((p) => p.product && p.product.identifier === productId);
+    if (!pkg) return { status: "error", productId, error: "Product not found in store offerings." };
+
+    try {
+      const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
+      applyActiveEntitlements(customerInfo);
+      applyEntitlement(productId); // ensure the just-bought item is applied even if the entitlement map lags
+      return { status: "purchased", productId };
+    } catch (err) {
+      if (err && (err.userCancelled || err.code === "PURCHASE_CANCELLED")) {
+        return { status: "cancelled", productId };
+      }
+      return { status: "error", productId, error: String(err && err.message ? err.message : err) };
+    }
   },
+
   async restore() {
-    throw new Error("Native purchase provider not implemented yet (Step 2).");
+    const Purchases = await loadRevenueCat();
+    const { customerInfo } = await Purchases.restorePurchases();
+    applyActiveEntitlements(customerInfo);
+    const restored = Object.keys((customerInfo && customerInfo.entitlements && customerInfo.entitlements.active) || {}).length;
+    return { status: "ok", restored };
   },
 };
 

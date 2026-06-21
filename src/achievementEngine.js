@@ -98,6 +98,18 @@ const MODULE_ACHIEVEMENT_ICONS = {
   "conn-quick-switch":     "⚡",
   "conn-the-connector":    "🏆",
   "conn-summit":           "🏔️",
+  // Add & Subtract module achievements
+  "add-bond-boss":         "🔗",
+  "add-ten-maker":         "🔟",
+  "add-fact-flash":        "⚡",
+  "add-family-finder":     "🔄",
+  "add-mystery-number":    "❓",
+  "add-tier-two":          "🚪",
+  "add-regroup-ranger":    "🏗️",
+  "add-mental-whiz":       "🧠",
+  "add-bar-builder":       "📊",
+  "add-master":            "🏆",
+  "add-bond-pro":          "💯",
 };
 
 /**

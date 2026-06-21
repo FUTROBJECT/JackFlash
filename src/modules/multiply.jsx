@@ -313,8 +313,8 @@ const multiplyModule = {
     },
   ],
 
-  // Only the easy group is available to free tier
-  freeContent: ["easy"],
+  // Multiply/Divide is the fully-free module (the v1 launch hook) — all groups free, no purchase
+  freeContent: ["easy", "medium", "hard"],
 
   // Available operations
   operations: [

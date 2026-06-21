@@ -19,7 +19,7 @@ export const BRUTAL_BORDER_SM = `2.5px solid ${COLORS.black}`;
 // Module brand colors (used on profile cards, module badges, etc.)
 export const MODULE_COLORS = {
   multiply: COLORS.green,
-  add: COLORS.blue,
+  add: "#EF476F",
   fractions: COLORS.orange,
   placeValue: COLORS.purple,
   connections: "#FFB703", // amber/gold capstone color

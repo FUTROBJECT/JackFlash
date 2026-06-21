@@ -1,14 +1,20 @@
 /**
  * Shared bar-model and number-bond components.
  *
- * Extracted here so multiply, fractions, and connections modules can all import
- * without copying code a third time (per NOTES-next-modules.md rule).
+ * Extracted here so multiply, fractions, connections, and add modules can all
+ * import without copying code (per NOTES-next-modules.md rule).
  *
  * Canonical original:  src/modules/fractions.jsx  (visual components)
  *                      src/multiplication-practice.jsx (NumberBond, MasteryDots)
+ *
+ * Add & Subtract additions (fourth consumer):
+ *   TenFrame          — interactive two-row ten-frame for M-group CPA
+ *   PlaceValueChart   — interactive column trade for R-group CPA
+ *   PartWholeBar      — missing-cell part-whole bar model for W1
+ *   ComparisonBar     — two-bar comparison model for W2
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { COLORS, BRUTAL_BORDER_SM, BRUTAL_BORDER, BRUTAL_SHADOW_SM, DEFAULT_MASTERY_THRESHOLD } from "../constants.js";
 
 // ---------------------------------------------------------------------------
@@ -502,6 +508,400 @@ export function TwoStepChip({ step1Result, animate = false }) {
       }}>
         Step 2 = ?
       </span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TenFrame — interactive two-row ten-frame for M-group CPA.
+// Responsive: uses viewBox + width:100% so it never overflows 320px screens.
+// Each cell is a circle; interactive mode shows a "Move" button.
+// Props:
+//   frameA   — counters in the first addend (fills first frame left-to-right)
+//   frameB   — counters remaining in the second addend
+//   moved    — how many of B's counters have been moved to complete A's ten
+//   onMove   — () => void  (called when child taps to move one counter)
+//   interactive — bool
+//   opacity  — for pictorial fading
+//   animate  — bool
+// ---------------------------------------------------------------------------
+export function TenFrame({
+  frameA = 8, frameB = 5, moved = 0,
+  onMove = null, interactive = false,
+  opacity = 1, animate = false,
+}) {
+  const firstFilled = frameA + moved;
+  const secondFilled = Math.max(0, frameB - moved);
+  const canMove = interactive && onMove && moved < frameB && firstFilled < 10;
+
+  function renderFrame(filledCount, color) {
+    const cells = Array.from({ length: 10 }, (_, i) => i < filledCount);
+    return (
+      <>
+        {/* Frame border */}
+        <rect x={0} y={0} width={140} height={66}
+          fill="white" stroke={COLORS.black} strokeWidth={2.5} rx={5} />
+        {/* Row divider */}
+        <line x1={0} y1={33} x2={140} y2={33} stroke={COLORS.black} strokeWidth={1.5} />
+        {/* Column dividers */}
+        {[1,2,3,4].map(c => (
+          <line key={c} x1={c * 28} y1={0} x2={c * 28} y2={66}
+            stroke={COLORS.black} strokeWidth={1.5} />
+        ))}
+        {/* Counters */}
+        {cells.map((filled, i) => {
+          const col = i % 5;
+          const row = Math.floor(i / 5);
+          const cx = col * 28 + 14;
+          const cy = row * 33 + 16;
+          return (
+            <circle key={i} cx={cx} cy={cy} r={9}
+              fill={filled ? color : "#F0F0F0"}
+              stroke={COLORS.black} strokeWidth={1.5}
+              style={{ animation: animate && filled ? `dotPop 0.25s ease ${i * 30}ms both` : "none" }}
+            />
+          );
+        })}
+      </>
+    );
+  }
+
+  return (
+    <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: 320 }}>
+      <svg viewBox="0 0 300 100" width="100%" style={{ display: "block" }}>
+        {/* First frame */}
+        <g transform="translate(0, 8)">
+          {renderFrame(Math.min(firstFilled, 10), COLORS.orange)}
+        </g>
+        {/* Second frame */}
+        <g transform="translate(152, 8)">
+          {renderFrame(secondFilled, COLORS.blue)}
+        </g>
+        {/* Labels */}
+        <text x={70} y={88} textAnchor="middle"
+          fontFamily="'Space Mono', monospace" fontSize={10} fontWeight={700}
+          fill={COLORS.black} opacity={0.6}>
+          {firstFilled < 10 ? `${frameA} + ${moved} moved` : `10`}
+        </text>
+        <text x={222} y={88} textAnchor="middle"
+          fontFamily="'Space Mono', monospace" fontSize={10} fontWeight={700}
+          fill={COLORS.black} opacity={0.6}>
+          {`${secondFilled} left`}
+        </text>
+      </svg>
+      {/* Running total */}
+      <div style={{
+        textAlign: "center", fontFamily: "'Shrikhand', cursive",
+        fontSize: 18, color: COLORS.black, marginTop: 2,
+      }}>
+        {firstFilled >= 10
+          ? `10 + ${secondFilled} = ${10 + secondFilled}`
+          : `${firstFilled} + ${secondFilled}`}
+      </div>
+      {/* Move button */}
+      {canMove && (
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}>
+          <button
+            onClick={onMove}
+            style={{
+              padding: "10px 24px", borderRadius: 8, border: BRUTAL_BORDER_SM,
+              backgroundColor: COLORS.yellow, fontFamily: "'Space Mono', monospace",
+              fontSize: 13, fontWeight: 700, cursor: "pointer",
+              boxShadow: BRUTAL_SHADOW_SM, minHeight: 44,
+            }}
+          >
+            Move 1 counter →
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PlaceValueChart — place-value disc visualisation for R-group.
+// Shows ones / tens / hundreds / thousands as colored discs.
+// Responsive: viewBox + width:100%.
+// ---------------------------------------------------------------------------
+export function PlaceValueChart({
+  digits,       // array [onesDigit, tensDigit, hundredsDigit?, thousandsDigit?]
+  op = "+",
+  opacity = 1,
+  animate = false,
+  highlightCol = null,  // column index to highlight (shows trade)
+}) {
+  const labels = ["Ones", "Tens", "Hundreds", "Thousands"];
+  const discColors = [COLORS.pink, COLORS.blue, COLORS.green, COLORS.purple];
+  const colCount = digits.length; // 3 or 4
+  const colW = Math.min(72, Math.floor(300 / colCount));
+  const totalW = colCount * colW;
+
+  return (
+    <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: 320 }}>
+      <svg viewBox={`0 0 ${totalW} 110`} width="100%" style={{ display: "block" }}>
+        {digits.map((d, i) => {
+          // Display thousands on left (index colCount-1-i for display)
+          const displayIdx = colCount - 1 - i;
+          const x = displayIdx * colW + colW / 2;
+          const isHL = highlightCol === i;
+          return (
+            <g key={i}>
+              {/* Column header */}
+              <text x={x} y={14} textAnchor="middle"
+                fontFamily="'Space Mono', monospace" fontSize={9} fontWeight={700}
+                fill={COLORS.black}>
+                {labels[i] || `10^${i}`}
+              </text>
+              {/* Column separator */}
+              {displayIdx > 0 && (
+                <line x1={displayIdx * colW} y1={18} x2={displayIdx * colW} y2={104}
+                  stroke={COLORS.black} strokeWidth={1.5} strokeDasharray="4 3" />
+              )}
+              {/* Disc shadow */}
+              <circle cx={x + 2} cy={62} r={24} fill={COLORS.black} opacity={0.12} />
+              {/* Disc */}
+              <circle cx={x} cy={60} r={24}
+                fill={isHL ? COLORS.orange : discColors[i]}
+                stroke={COLORS.black} strokeWidth={2.5}
+                style={{ animation: (animate || isHL) ? `dotPop 0.3s ease ${i * 60}ms both` : "none" }}
+              />
+              {/* Digit */}
+              <text x={x} y={64} textAnchor="middle" dominantBaseline="central"
+                fontFamily="'Shrikhand', cursive" fontSize={22} fill={COLORS.black}>
+                {d}
+              </text>
+              {/* Trade label */}
+              {isHL && (
+                <text x={x} y={96} textAnchor="middle"
+                  fontFamily="'Space Mono', monospace" fontSize={8} fontWeight={700}
+                  fill={COLORS.orange} style={{ animation: "fadeSlideUp 0.3s ease both" }}>
+                  {op === "+" ? "carry!" : "borrow!"}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PartWholeBar — Singapore part-whole bar model for W1 word problems.
+// Responsive: viewBox + width:100%.
+// ---------------------------------------------------------------------------
+export function PartWholeBar({
+  whole, partA, partB,
+  missingIs = null,  // "whole" | "partA" | "partB"
+  labelA = null, labelB = null,
+  opacity = 1, animate = false,
+}) {
+  const W = 280, H = 100;
+  const barTop = 8, barH = 32;
+  const partTop = 58, partH = 30;
+
+  function Cell({ x, y, w, h, label, missing, color }) {
+    return (
+      <g>
+        <rect x={x} y={y} width={w} height={h}
+          fill={missing ? COLORS.cream : color}
+          stroke={COLORS.black} strokeWidth={2.5} rx={4}
+          style={{ animation: animate ? "dotPop 0.3s ease both" : "none" }}
+        />
+        <text x={x + w / 2} y={y + h / 2 + 1} textAnchor="middle" dominantBaseline="central"
+          fontFamily="'Shrikhand', cursive" fontSize={14} fill={COLORS.black}>
+          {missing ? "?" : label}
+        </text>
+      </g>
+    );
+  }
+
+  return (
+    <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: 320 }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
+        {/* Whole bar */}
+        <Cell x={8} y={barTop} w={W - 16} h={barH}
+          label={whole} missing={missingIs === "whole"} color={COLORS.yellow}
+        />
+        {/* Bracket lines */}
+        <line x1={W / 2} y1={barTop + barH} x2={W / 2} y2={partTop}
+          stroke={COLORS.black} strokeWidth={2} />
+        <line x1={18} y1={partTop} x2={W - 18} y2={partTop}
+          stroke={COLORS.black} strokeWidth={2} />
+        {/* Part A */}
+        <Cell x={8} y={partTop} w={(W - 24) / 2} h={partH}
+          label={labelA || partA} missing={missingIs === "partA"} color={COLORS.blue}
+        />
+        {/* Part B */}
+        <Cell x={W / 2 + 4} y={partTop} w={(W - 24) / 2} h={partH}
+          label={labelB || partB} missing={missingIs === "partB"} color={COLORS.green}
+        />
+      </svg>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ComparisonBar — two-bar comparison model for W2 word problems.
+// Responsive: viewBox + width:100%.
+// ---------------------------------------------------------------------------
+export function ComparisonBar({
+  baseValue, baseLabel = "Base",
+  biggerValue, biggerLabel = "Bigger",
+  diffLabel = null,
+  missingIs = null,  // "bigger" | "base" | "diff"
+  opacity = 1, animate = false,
+}) {
+  const W = 280, H = 110;
+  const barH = 28;
+  const maxVal = Math.max(baseValue || 1, biggerValue || 1, 1);
+  const availW = W - 76;
+  const baseW = Math.max(28, Math.round(((baseValue || 0) / maxVal) * availW));
+  const bigW = Math.max(28, Math.round(((biggerValue || 0) / maxVal) * availW));
+
+  return (
+    <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: 320 }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
+        {/* Base label */}
+        <text x={50} y={22 + barH / 2} textAnchor="end" dominantBaseline="central"
+          fontFamily="'Space Mono', monospace" fontSize={9} fontWeight={700} fill={COLORS.black}>
+          {baseLabel}
+        </text>
+        {/* Base bar */}
+        <rect x={55} y={18} width={baseW} height={barH}
+          fill={missingIs === "base" ? COLORS.cream : COLORS.blue}
+          stroke={COLORS.black} strokeWidth={2.5} rx={4}
+          style={{ animation: animate ? "dotPop 0.3s ease both" : "none" }}
+        />
+        <text x={55 + baseW / 2} y={18 + barH / 2 + 1} textAnchor="middle" dominantBaseline="central"
+          fontFamily="'Shrikhand', cursive" fontSize={13} fill={COLORS.black}>
+          {missingIs === "base" ? "?" : baseValue}
+        </text>
+
+        {/* Bigger label */}
+        <text x={50} y={60 + barH / 2} textAnchor="end" dominantBaseline="central"
+          fontFamily="'Space Mono', monospace" fontSize={9} fontWeight={700} fill={COLORS.black}>
+          {biggerLabel}
+        </text>
+        {/* Bigger bar */}
+        <rect x={55} y={58} width={bigW} height={barH}
+          fill={missingIs === "bigger" ? COLORS.cream : COLORS.orange}
+          stroke={COLORS.black} strokeWidth={2.5} rx={4}
+          style={{ animation: animate ? "dotPop 0.3s ease 0.1s both" : "none" }}
+        />
+        <text x={55 + bigW / 2} y={58 + barH / 2 + 1} textAnchor="middle" dominantBaseline="central"
+          fontFamily="'Shrikhand', cursive" fontSize={13} fill={COLORS.black}>
+          {missingIs === "bigger" ? "?" : biggerValue}
+        </text>
+
+        {/* Difference bracket (only when bigger > base) */}
+        {bigW > baseW && (
+          <g style={{ animation: animate ? "fadeSlideUp 0.3s ease 0.15s both" : "none" }}>
+            <line x1={55 + baseW} y1={64} x2={55 + bigW} y2={64}
+              stroke={COLORS.black} strokeWidth={1.5} strokeDasharray="3 2" />
+            <line x1={55 + baseW} y1={58} x2={55 + baseW} y2={94}
+              stroke={COLORS.black} strokeWidth={1.5} />
+            <line x1={55 + bigW} y1={58} x2={55 + bigW} y2={94}
+              stroke={COLORS.black} strokeWidth={1.5} />
+            <rect x={55 + baseW + 2} y={80}
+              width={Math.max(4, bigW - baseW - 4)} height={18}
+              fill={missingIs === "diff" ? COLORS.cream : COLORS.yellow}
+              stroke={COLORS.black} strokeWidth={2} rx={3}
+            />
+            <text x={55 + baseW + (bigW - baseW) / 2} y={89 + 1}
+              textAnchor="middle" dominantBaseline="central"
+              fontFamily="'Shrikhand', cursive" fontSize={11} fill={COLORS.black}>
+              {missingIs === "diff" ? "?" : (diffLabel || (biggerValue - baseValue))}
+            </text>
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AddNumberBond — standard NumberBond with "+" operator for the add module.
+// Responsive SVG (viewBox + width:100%).
+// ---------------------------------------------------------------------------
+export function AddNumberBond({ whole, partA, partB, show, opLabel = "+", hideNode = null }) {
+  if (!show) return null;
+  // hideNode ("whole" | "partA" | "partB") renders that node as "?" — used so the
+  // bond states the question (unknown blank) rather than revealing the answer.
+  const disp = (node, val) => (hideNode === node ? "?" : val);
+  const w = 180, h = 130;
+  const wholeCx = w / 2, wholeCy = 28;
+  const leftCx = 34, leftCy = 102;
+  const rightCx = w - 34, rightCy = 102;
+  const r1 = 26, r2 = 22;
+  return (
+    <div style={{ display: "flex", justifyContent: "center", marginTop: 12, animation: "fadeSlideUp 0.4s ease both" }}>
+      <svg width="100%" viewBox={`0 0 ${w} ${h}`} style={{ maxWidth: w, display: "block" }}>
+        <line x1={wholeCx} y1={wholeCy + r1} x2={leftCx} y2={leftCy - r2}
+          stroke={COLORS.black} strokeWidth="3" />
+        <line x1={wholeCx} y1={wholeCy + r1} x2={rightCx} y2={rightCy - r2}
+          stroke={COLORS.black} strokeWidth="3" />
+        <circle cx={wholeCx + 3} cy={wholeCy + 3} r={r1} fill={COLORS.black} />
+        <circle cx={wholeCx} cy={wholeCy} r={r1}
+          fill={COLORS.yellow} stroke={COLORS.black} strokeWidth="3" />
+        <text x={wholeCx} y={wholeCy + 1} textAnchor="middle" dominantBaseline="central"
+          fontFamily="'Space Mono', monospace" fontSize="17" fontWeight="700"
+          fill={COLORS.black}>{disp("whole", whole)}</text>
+        <circle cx={leftCx + 2} cy={leftCy + 2} r={r2} fill={COLORS.black} />
+        <circle cx={leftCx} cy={leftCy} r={r2}
+          fill={COLORS.blue} stroke={COLORS.black} strokeWidth="3" />
+        <text x={leftCx} y={leftCy + 1} textAnchor="middle" dominantBaseline="central"
+          fontFamily="'Space Mono', monospace" fontSize="15" fontWeight="700"
+          fill={COLORS.black}>{disp("partA", partA)}</text>
+        <text x={w / 2} y={leftCy + 1} textAnchor="middle" dominantBaseline="central"
+          fontFamily="'Space Mono', monospace" fontSize="16" fontWeight="700"
+          fill={COLORS.black}>{opLabel}</text>
+        <circle cx={rightCx + 2} cy={rightCy + 2} r={r2} fill={COLORS.black} />
+        <circle cx={rightCx} cy={rightCy} r={r2}
+          fill={COLORS.green} stroke={COLORS.black} strokeWidth="3" />
+        <text x={rightCx} y={rightCy + 1} textAnchor="middle" dominantBaseline="central"
+          fontFamily="'Space Mono', monospace" fontSize="15" fontWeight="700"
+          fill={COLORS.black}>{disp("partB", partB)}</text>
+      </svg>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// JumpStrip — number-line jump strategy hint for S-group items.
+// Shows: start → [+jump1] → mid → [+jump2] → end
+// ---------------------------------------------------------------------------
+export function JumpStrip({ start, jumps = [], animate = false }) {
+  // jumps: array of { label, landAt }
+  return (
+    <div style={{
+      display: "flex", flexWrap: "wrap", gap: 6,
+      justifyContent: "center", marginTop: 8, alignItems: "center",
+    }}>
+      <span style={{
+        fontFamily: "'Shrikhand', cursive", fontSize: 20,
+        color: COLORS.black,
+        animation: animate ? "fadeSlideUp 0.3s ease both" : "none",
+      }}>{start}</span>
+      {jumps.map((j, i) => (
+        <React.Fragment key={i}>
+          <span style={{
+            fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
+            backgroundColor: COLORS.yellow, color: COLORS.black,
+            padding: "3px 8px", borderRadius: 6, border: BRUTAL_BORDER_SM,
+            animation: animate ? `fadeSlideUp 0.3s ease ${(i + 1) * 80}ms both` : "none",
+          }}>
+            {j.label}
+          </span>
+          <span style={{
+            fontFamily: "'Shrikhand', cursive", fontSize: 20,
+            color: i === jumps.length - 1 ? COLORS.green : COLORS.black,
+            animation: animate ? `fadeSlideUp 0.3s ease ${(i + 1) * 80 + 40}ms both` : "none",
+          }}>
+            {j.landAt}
+          </span>
+        </React.Fragment>
+      ))}
     </div>
   );
 }

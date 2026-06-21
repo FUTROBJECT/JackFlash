@@ -151,6 +151,7 @@ function ModuleScreen({ selectedModule, onSelectModule, onNext, onBack }) {
   // Placeholder future modules (registered modules render above, including
   // locked ones — only list modules that don't exist yet)
   const futureModules = [
+    { id: "connections", name: "Connections", label: "Coming soon" },
     { id: "add", name: "Add + Subtract", label: "Coming soon" },
     { id: "placeValue", name: "Place Value", label: "Coming soon" },
   ];
