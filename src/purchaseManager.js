@@ -35,6 +35,7 @@ export const PRODUCTS = {
     type: "module_unlock",
     moduleId: "multiply",
     available: false, // Multiply/Divide is the free module — not sold
+    free: true, // included with the app; shown in the store as "Included", never "Coming Soon"
   },
   "module.add.full": {
     id: "module.add.full",
@@ -72,7 +73,7 @@ export const PRODUCTS = {
   "module.connections.full": {
     id: "module.connections.full",
     name: "Connections — Capstone",
-    description: "The capstone module: fraction of a group (Grade 4 stretch / enrichment), two-step word problems, and mixed shuffle drill — unlocks after mastering Multiply, Divide & Fractions",
+    description: "The capstone module: fraction of a group (Grade 4 stretch / enrichment), two-step word problems, and mixed shuffle drill",
     gradeRange: "Grade 3 Capstone (fraction-of-quantity: Grade 4 stretch / enrichment)",
     price: "$3.99",
     priceValue: 3.99,

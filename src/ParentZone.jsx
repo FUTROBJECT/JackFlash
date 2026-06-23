@@ -871,24 +871,47 @@ export function ParentZone({
               </div>
             )}
 
-            {/* Module cards from getProductsWithStatus */}
-            {getProductsWithStatus().filter(p => p.type === "module_unlock" && p.available !== false).map((product) => {
+            {/* Module cards from getProductsWithStatus. We show every module —
+                free (Multiply/Divide), for-sale, and coming-soon — sorted so the
+                free + purchasable cards lead and the grayed "coming soon" hints
+                trail. The card itself adapts to each state. */}
+            {getProductsWithStatus()
+              .filter(p => p.type === "module_unlock")
+              .map(p => ({ ...p, _rank: p.free ? 0 : (p.available !== false ? 1 : 2) }))
+              .sort((a, b) => a._rank - b._rank)
+              .map((product) => {
               const moduleColor = MODULE_COLORS[product.moduleId] || COLORS.blue;
               const isPurchased = product.purchased;
               const isAvailable = product.available !== false;
+              const isFree = product.free === true;
+              // The Connections capstone gets emphasis treatment instead of the
+              // generic grayed "coming soon" card — it's the goal kids work toward.
+              // Rainbow highlight uses the brand palette (exploratory — refine later).
+              const isCapstone = product.moduleId === "connections";
+              const isComingSoon = !isAvailable && !isFree && !isCapstone;
+              const rainbow = [COLORS.red, COLORS.orange, COLORS.yellow, COLORS.green, COLORS.blue, COLORS.purple];
+              // Cyan accent for the capstone chip, pill, and footer (rainbow stays as the top band).
+              const capstoneAccent = COLORS.blue;
 
               return (
                 <div
                   key={product.id}
                   style={{
-                    backgroundColor: "white",
+                    backgroundColor: isCapstone ? COLORS.cream : "white",
                     borderRadius: "12px",
-                    border: BRUTAL_BORDER_SM,
-                    boxShadow: BRUTAL_SHADOW_SM,
+                    border: isCapstone ? BRUTAL_BORDER : BRUTAL_BORDER_SM,
+                    boxShadow: isCapstone ? BRUTAL_SHADOW : BRUTAL_SHADOW_SM,
                     overflow: "hidden",
-                    opacity: isAvailable ? 1 : 0.7,
+                    opacity: isComingSoon ? 0.6 : 1,
                   }}
                 >
+                  {isCapstone && (
+                    <div aria-hidden style={{ display: "flex", height: "12px" }}>
+                      {rainbow.map((c) => (
+                        <div key={c} style={{ flex: 1, backgroundColor: c }} />
+                      ))}
+                    </div>
+                  )}
                   <div style={{
                     padding: "15px",
                     borderBottom: BRUTAL_BORDER_SM,
@@ -902,7 +925,7 @@ export function ParentZone({
                       {/* Module color marker (replaces the left stripe) */}
                       <span aria-hidden style={{
                         flexShrink: 0, width: "26px", height: "26px", borderRadius: "6px",
-                        backgroundColor: moduleColor, border: BRUTAL_BORDER_SM,
+                        backgroundColor: isCapstone ? capstoneAccent : moduleColor, border: BRUTAL_BORDER_SM,
                       }} />
                       <h3 style={{
                         fontSize: "16px",
@@ -924,11 +947,39 @@ export function ParentZone({
                         }}>
                           ✓ Unlocked
                         </div>
-                      ) : !isAvailable ? (
+                      ) : isFree ? (
+                        <div style={{
+                          backgroundColor: COLORS.green,
+                          color: "white",
+                          padding: "4px 8px",
+                          borderRadius: "6px",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                        }}>
+                          ✓ Included
+                        </div>
+                      ) : isCapstone ? (
+                        <div style={{
+                          backgroundColor: capstoneAccent,
+                          color: COLORS.black,
+                          padding: "4px 9px",
+                          borderRadius: "6px",
+                          border: BRUTAL_BORDER_SM,
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.5px",
+                          whiteSpace: "nowrap",
+                        }}>
+                          ★ Capstone
+                        </div>
+                      ) : isComingSoon ? (
                         <div style={{
                           color: "#666",
                           fontSize: "11px",
                           fontWeight: 700,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.5px",
                         }}>
                           Coming Soon
                         </div>
@@ -971,6 +1022,21 @@ export function ParentZone({
                       >
                         {purchasePending === product.id ? "Purchasing…" : product.price}
                       </button>
+                    </div>
+                  )}
+                  {isCapstone && !isPurchased && (
+                    <div style={{
+                      padding: "11px 15px",
+                      backgroundColor: capstoneAccent,
+                      borderTop: BRUTAL_BORDER_SM,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      color: COLORS.black,
+                    }}>
+                      <span>Unlocks after mastering Multiply, Divide &amp; Fractions</span>
                     </div>
                   )}
                 </div>
