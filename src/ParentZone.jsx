@@ -3,6 +3,7 @@ import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_S
 import { getModuleList, getModule } from "./modules/moduleRegistry.js";
 import { PRODUCTS, purchaseProduct, restorePurchases, getProductsWithStatus } from "./purchaseManager.js";
 import { getAllAchievementsForProfile } from "./achievementEngine.js";
+import { Dropdown } from "./shared/ui.jsx";
 import LogoLockup from "./LogoLockup.jsx";
 import { PrivacyPolicy, TermsOfService, HelpFAQ } from "./LegalPages.jsx";
 
@@ -634,26 +635,11 @@ export function ParentZone({
                           }}>
                             Active Module
                           </label>
-                          <select
+                          <Dropdown
                             value={profile.activeModule}
-                            onChange={(e) => onUpdateProfile(profile.id, { activeModule: e.target.value })}
-                            style={{
-                              width: "100%",
-                              padding: "8px",
-                              borderRadius: "8px",
-                              border: BRUTAL_BORDER_SM,
-                              fontFamily: "'Space Grotesk', sans-serif",
-                              fontSize: "14px",
-                              cursor: "pointer",
-                              boxSizing: "border-box",
-                            }}
-                          >
-                            {modules.map((m) => (
-                              <option key={m.id} value={m.id}>
-                                {m.name}
-                              </option>
-                            ))}
-                          </select>
+                            onChange={(val) => onUpdateProfile(profile.id, { activeModule: val })}
+                            options={modules.map((m) => ({ value: m.id, label: m.name }))}
+                          />
                         </div>
 
                         {/* Show Scaffold Button toggle */}
@@ -705,25 +691,16 @@ export function ParentZone({
                           }}>
                             Lock CPA Mode
                           </label>
-                          <select
+                          <Dropdown
                             value={profile.settings.lockedMode || ""}
-                            onChange={(e) => handleChangeDropdown(profile.id, "lockedMode", e.target.value || null)}
-                            style={{
-                              width: "100%",
-                              padding: "8px",
-                              borderRadius: "8px",
-                              border: BRUTAL_BORDER_SM,
-                              fontFamily: "'Space Grotesk', sans-serif",
-                              fontSize: "14px",
-                              cursor: "pointer",
-                              boxSizing: "border-box",
-                            }}
-                          >
-                            <option value="">Unlocked</option>
-                            <option value="concrete">Concrete</option>
-                            <option value="pictorial">Pictorial</option>
-                            <option value="abstract">Abstract</option>
-                          </select>
+                            onChange={(val) => handleChangeDropdown(profile.id, "lockedMode", val || null)}
+                            options={[
+                              { value: "", label: "Unlocked" },
+                              { value: "concrete", label: "Concrete" },
+                              { value: "pictorial", label: "Pictorial" },
+                              { value: "abstract", label: "Abstract" },
+                            ]}
+                          />
                         </div>
 
                         {/* Lock Operation dropdown — operations from active module */}
@@ -741,25 +718,14 @@ export function ParentZone({
                               }}>
                                 Lock Operation
                               </label>
-                              <select
+                              <Dropdown
                                 value={profile.settings.lockedOperation || ""}
-                                onChange={(e) => handleChangeDropdown(profile.id, "lockedOperation", e.target.value || null)}
-                                style={{
-                                  width: "100%",
-                                  padding: "8px",
-                                  borderRadius: "8px",
-                                  border: BRUTAL_BORDER_SM,
-                                  fontFamily: "'Space Grotesk', sans-serif",
-                                  fontSize: "14px",
-                                  cursor: "pointer",
-                                  boxSizing: "border-box",
-                                }}
-                              >
-                                <option value="">Any Operation</option>
-                                {operations.map((op) => (
-                                  <option key={op.id} value={op.id}>{op.label}</option>
-                                ))}
-                              </select>
+                                onChange={(val) => handleChangeDropdown(profile.id, "lockedOperation", val || null)}
+                                options={[
+                                  { value: "", label: "Any Operation" },
+                                  ...operations.map((op) => ({ value: op.id, label: op.label })),
+                                ]}
+                              />
                             </div>
                           );
                         })()}

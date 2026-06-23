@@ -1,8 +1,8 @@
 // Shared neo-brutalist UI primitives — the clean "Unstructured-style" language:
 // dotted-divider lists, checkbox markers, +/− toggles, and solid-fill accent
 // callouts. Deliberately FLAT (no drop-shadows) and with NO left-stripe accents.
-import { useState } from "react";
-import { COLORS, BRUTAL_BORDER_SM, DOTTED_RULE } from "../constants.js";
+import { useState, useEffect, useRef } from "react";
+import { COLORS, BRUTAL_BORDER_SM, BRUTAL_SHADOW_SM, DOTTED_RULE } from "../constants.js";
 
 // Progress-grid cell label: the actual problem from an item key rather than the
 // repeated skill id. Keys are `prefix:…:content` (e.g. "build:2/3", "add:col:342+215",
@@ -122,6 +122,115 @@ export function Callout({ title, color = COLORS.pink, children, style }) {
         </>
       )}
       {children}
+    </div>
+  );
+}
+
+// Flat custom dropdown replacing the native <select>. A native select's open
+// popup is rendered by the OS (the glassy 3D look) and can't be styled, so we
+// render our own button + opaque flat panel instead. `options` is
+// [{ value, label }]; `onChange` receives the chosen value (not an event).
+export function Dropdown({ value, onChange, options, style }) {
+  const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(-1);
+  const ref = useRef(null);
+  const selected = options.find((o) => o.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{ position: "relative", ...style }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          width: "100%",
+          padding: "9px 12px",
+          borderRadius: "8px",
+          border: BRUTAL_BORDER_SM,
+          backgroundColor: "white",
+          fontFamily: "'Space Grotesk', sans-serif",
+          fontSize: "14px",
+          fontWeight: 600,
+          color: COLORS.black,
+          cursor: "pointer",
+          boxSizing: "border-box",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "10px",
+          textAlign: "left",
+        }}
+      >
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {selected ? selected.label : ""}
+        </span>
+        <span aria-hidden style={{
+          flexShrink: 0,
+          fontFamily: "'Space Mono', monospace",
+          fontSize: "11px",
+          transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          transition: "transform 0.15s ease",
+        }}>▼</span>
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute",
+          top: "calc(100% + 5px)",
+          left: 0,
+          right: 0,
+          backgroundColor: "white",
+          border: BRUTAL_BORDER_SM,
+          borderRadius: "8px",
+          boxShadow: BRUTAL_SHADOW_SM,
+          overflow: "hidden",
+          zIndex: 30,
+          animation: "fadeSlideUp 0.15s ease both",
+        }}>
+          {options.map((o, i) => {
+            const isSel = o.value === value;
+            const isHover = hovered === i;
+            return (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => { onChange(o.value); setOpen(false); }}
+                onPointerEnter={() => setHovered(i)}
+                onPointerLeave={() => setHovered((h) => (h === i ? -1 : h))}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  border: "none",
+                  borderTop: i === 0 ? "none" : `2px solid ${COLORS.black}`,
+                  backgroundColor: isSel ? COLORS.cream : (isHover ? "#F2F2F2" : "white"),
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontSize: "14px",
+                  fontWeight: isSel ? 700 : 500,
+                  color: COLORS.black,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <span aria-hidden style={{ width: "14px", flexShrink: 0, fontWeight: 700 }}>{isSel ? "✓" : ""}</span>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
