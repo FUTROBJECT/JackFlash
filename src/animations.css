@@ -1,0 +1,6 @@
+/* App-wide keyframes, shared across screens (FAQ accordion, page wrappers, etc.).
+   Loaded globally via main.jsx so animations work outside the practice screens. */
+@keyframes fadeSlideUp {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}

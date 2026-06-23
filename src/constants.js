@@ -16,6 +16,17 @@ export const BRUTAL_SHADOW_SM = `3px 3px 0px ${COLORS.black}`;
 export const BRUTAL_BORDER = `3px solid ${COLORS.black}`;
 export const BRUTAL_BORDER_SM = `2.5px solid ${COLORS.black}`;
 
+// Evenly-spaced round-dot divider — the clean separator used in lists/accordions
+// (no left-stripe accents). Apply as a style object: <div style={DOTTED_RULE} />.
+export const DOTTED_RULE = {
+  height: "3px",
+  backgroundImage: `radial-gradient(circle, ${COLORS.black} 1.5px, transparent 2px)`,
+  backgroundSize: "11px 3px",
+  backgroundRepeat: "repeat-x",
+  backgroundPosition: "left center",
+  opacity: 0.6,
+};
+
 // Module brand colors (used on profile cards, module badges, etc.)
 export const MODULE_COLORS = {
   multiply: COLORS.green,

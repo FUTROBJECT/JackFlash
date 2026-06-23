@@ -19,6 +19,7 @@ import {
   COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM,
   DEFAULT_MASTERY_THRESHOLD, AVATARS,
 } from "./constants.js";
+import { itemCellLabel } from "./shared/ui.jsx";
 import fractionsModule, {
   FRACTION_POOL, shouldAllowSkill, FractionDisplay,
   FractionBar, TwoStackedBars, AddBarsScaffold, NumberLineScaffold,
@@ -1261,32 +1262,51 @@ export default function FractionsPractice({
                             backgroundColor: group.color, transition: "width 0.5s ease",
                           }} />
                         </div>
-                        <div style={{
-                          display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5, marginBottom: 14,
-                        }}>
-                          {groupItems.map(item => {
-                            const level = getMasteryLevel(item.itemKey);
-                            const mastered = level >= DEFAULT_MASTERY_THRESHOLD;
-                            return (
-                              <div key={item.itemKey} style={{
-                                padding: "5px 3px", borderRadius: 6,
-                                backgroundColor: mastered ? group.color : "#F8F8F8",
-                                border: mastered ? BRUTAL_BORDER_SM : "2px solid #E0E0E0",
-                                textAlign: "center", fontSize: 10,
-                                fontFamily: "'Space Mono', monospace",
-                                fontWeight: mastered ? 700 : 400,
-                                boxShadow: mastered ? `2px 2px 0px ${COLORS.black}` : "none",
+                        {(() => {
+                          // Group the group's items by skill (preserving pool order) so each
+                          // sub-type gets a readable header ("Name it!", "Shade it!", …) and
+                          // its own row of cells — disambiguates same-fraction-across-skills.
+                          const bySkill = [];
+                          groupItems.forEach(item => {
+                            let bucket = bySkill.find(b => b.skill === item.skill);
+                            if (!bucket) { bucket = { skill: item.skill, items: [] }; bySkill.push(bucket); }
+                            bucket.items.push(item);
+                          });
+                          return bySkill.map(({ skill, items }) => (
+                            <div key={skill} style={{ marginBottom: 14 }}>
+                              <div style={{
+                                fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
+                                color: "#888", marginBottom: 6,
                               }}>
-                                <div style={{ lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                  {item.skill}
-                                </div>
-                                <div style={{ marginTop: 2, display: "flex", justifyContent: "center" }}>
-                                  <MasteryDots level={Math.min(level, DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
-                                </div>
+                                {fractionsModule.skillLabels?.[skill] || skill}
                               </div>
-                            );
-                          })}
-                        </div>
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5 }}>
+                                {items.map(item => {
+                                  const level = getMasteryLevel(item.itemKey);
+                                  const mastered = level >= DEFAULT_MASTERY_THRESHOLD;
+                                  return (
+                                    <div key={item.itemKey} style={{
+                                      padding: "5px 3px", borderRadius: 6,
+                                      backgroundColor: mastered ? group.color : "#F8F8F8",
+                                      border: mastered ? BRUTAL_BORDER_SM : "2px solid #E0E0E0",
+                                      textAlign: "center", fontSize: 10,
+                                      fontFamily: "'Space Mono', monospace",
+                                      fontWeight: mastered ? 700 : 400,
+                                      boxShadow: mastered ? `2px 2px 0px ${COLORS.black}` : "none",
+                                    }}>
+                                      <div style={{ lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        {itemCellLabel(item.itemKey)}
+                                      </div>
+                                      <div style={{ marginTop: 2, display: "flex", justifyContent: "center" }}>
+                                        <MasteryDots level={Math.min(level, DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ));
+                        })()}
                       </>
                     ) : (
                       <div style={{ textAlign: "center", padding: "12px 0" }}>

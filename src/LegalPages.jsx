@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { COLORS, BRUTAL_BORDER_SM, BRUTAL_SHADOW_SM } from "./constants.js";
+import { COLORS, BRUTAL_BORDER_SM, BRUTAL_SHADOW_SM, DOTTED_RULE } from "./constants.js";
+import { AccordionItem } from "./shared/ui.jsx";
 import SmartPracticeExplainer from "./SmartPracticeExplainer.jsx";
 
 const linkStyle = {
@@ -48,7 +48,7 @@ function PageWrapper({ title, onBack, children }) {
         </button>
         <h2 style={{
           fontFamily: "'Shrikhand', cursive",
-          fontSize: "20px",
+          fontSize: "26px",
           fontWeight: 400,
           color: COLORS.black,
           margin: 0,
@@ -172,64 +172,8 @@ export function TermsOfService({ onBack }) {
   );
 }
 
-// Collapsible accordion row — click header to expand/collapse
-function AccordionItem({ title, children, defaultOpen = false }) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div style={{
-      border: BRUTAL_BORDER_SM,
-      borderRadius: "8px",
-      marginBottom: "10px",
-      background: "white",
-      overflow: "hidden",
-    }}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        style={{
-          width: "100%",
-          background: open ? COLORS.yellow : "white",
-          border: "none",
-          borderBottom: open ? BRUTAL_BORDER_SM : "none",
-          padding: "12px 14px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "10px",
-          cursor: "pointer",
-          fontFamily: "'Space Grotesk', sans-serif",
-          fontSize: "14px",
-          fontWeight: 700,
-          color: COLORS.black,
-          textAlign: "left",
-          transition: "background 0.15s",
-        }}
-      >
-        <span>{title}</span>
-        <span style={{
-          fontFamily: "'Space Mono', monospace",
-          fontSize: "18px",
-          fontWeight: 700,
-          lineHeight: 1,
-          transform: open ? "rotate(45deg)" : "rotate(0deg)",
-          transition: "transform 0.15s",
-        }}>
-          +
-        </span>
-      </button>
-      {open && (
-        <div style={{
-          padding: "14px 14px 16px",
-          fontFamily: "'Space Grotesk', sans-serif",
-          fontSize: "13.5px",
-          lineHeight: 1.65,
-          color: COLORS.black,
-        }}>
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
+// AccordionItem and DOTTED_RULE now live in the shared design system:
+//   src/shared/ui.jsx (AccordionItem) · src/constants.js (DOTTED_RULE)
 
 export function HelpFAQ({ onBack }) {
   return (
@@ -322,6 +266,8 @@ export function HelpFAQ({ onBack }) {
           Still stuck? Email <strong>hello@laserlabstudios.com</strong>.
         </p>
       </AccordionItem>
+
+      <div style={DOTTED_RULE} />
     </PageWrapper>
   );
 }

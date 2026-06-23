@@ -1,5 +1,6 @@
 // Data Manager for JackFlash - Multi-profile storage with migration support
 import { DEFAULT_CHILD_SETTINGS, DEFAULT_MASTERY_THRESHOLD, STREAK_MIN_PROBLEMS, SESSION_HISTORY_CAP } from "./constants.js";
+import { saveDurable } from "./storage.js";
 
 const DATA_KEY = "jackflash_data";
 const OLD_DATA_KEY = "jackflash_mastery";
@@ -459,6 +460,7 @@ export function saveData() {
     const json = JSON.stringify(_data);
     console.log("[JF] saveData: writing", (json.length / 1024).toFixed(1), "KB to localStorage");
     localStorage.setItem(DATA_KEY, json);
+    saveDurable(json); // mirror to durable native storage (no-op on web)
     // Verify the write actually stuck
     const verify = localStorage.getItem(DATA_KEY);
     if (!verify) {

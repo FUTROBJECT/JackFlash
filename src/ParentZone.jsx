@@ -70,6 +70,11 @@ export function ParentGate({ onPass, onCancel }) {
   const [problem, setProblem] = useState(generateProblem());
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
+  // Rotate a brand color behind the box — a fresh one each time the gate appears.
+  const [bgColor] = useState(() => {
+    const palette = [COLORS.pink, COLORS.blue, COLORS.green, COLORS.yellow, COLORS.orange, COLORS.purple];
+    return palette[Math.floor(Math.random() * palette.length)];
+  });
 
   function generateProblem() {
     const first = Math.floor(Math.random() * (49 - 11 + 1)) + 11; // 11-49
@@ -94,7 +99,8 @@ export function ParentGate({ onPass, onCancel }) {
   return (
     <div style={{
       minHeight: "100vh",
-      backgroundColor: "#FFFFFF",
+      // Rotating solid brand color behind the box
+      backgroundColor: bgColor,
       padding: "20px",
       fontFamily: "'Space Grotesk', sans-serif",
       display: "flex",
@@ -880,7 +886,6 @@ export function ParentZone({
                     border: BRUTAL_BORDER_SM,
                     boxShadow: BRUTAL_SHADOW_SM,
                     overflow: "hidden",
-                    borderLeft: `6px solid ${moduleColor}`,
                     opacity: isAvailable ? 1 : 0.7,
                   }}
                 >
@@ -891,13 +896,19 @@ export function ParentZone({
                     <div style={{
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "space-between",
+                      gap: "10px",
                       marginBottom: "8px",
                     }}>
+                      {/* Module color marker (replaces the left stripe) */}
+                      <span aria-hidden style={{
+                        flexShrink: 0, width: "26px", height: "26px", borderRadius: "6px",
+                        backgroundColor: moduleColor, border: BRUTAL_BORDER_SM,
+                      }} />
                       <h3 style={{
                         fontSize: "16px",
                         fontWeight: 700,
                         margin: 0,
+                        flex: 1,
                         color: COLORS.black,
                       }}>
                         {product.name}

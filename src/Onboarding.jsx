@@ -2,6 +2,7 @@ import { useState } from "react";
 import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, MODULE_COLORS } from "./constants.js";
 import { getModuleList } from "./modules/moduleRegistry.js";
 import { isModuleLocked } from "./purchaseManager.js";
+import { Callout } from "./shared/ui.jsx";
 import LogoLockup from "./LogoLockup.jsx";
 
 function BrutalButton({ onClick, children, bg = COLORS.yellow, disabled = false, style = {} }) {
@@ -195,7 +196,6 @@ function ModuleScreen({ selectedModule, onSelectModule, onNext, onBack }) {
               style={{
                 background: "white",
                 border: !locked && selectedModule === module.id ? `3px solid ${getModuleColor(module.id)}` : BRUTAL_BORDER,
-                borderLeft: `6px solid ${locked ? "#CCC" : getModuleColor(module.id)}`,
                 boxShadow: BRUTAL_SHADOW_SM,
                 borderRadius: "8px",
                 padding: "14px 16px",
@@ -205,8 +205,14 @@ function ModuleScreen({ selectedModule, onSelectModule, onNext, onBack }) {
                 opacity: locked ? 0.6 : 1,
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                {/* Module color marker (replaces the left stripe) */}
+                <span aria-hidden style={{
+                  flexShrink: 0, width: 30, height: 30, borderRadius: "7px",
+                  backgroundColor: locked ? "#CCC" : getModuleColor(module.id),
+                  border: BRUTAL_BORDER_SM,
+                }} />
+                <div style={{ flex: 1 }}>
                   <p style={{ margin: "0 0 3px", fontSize: "15px", fontWeight: 700, color: COLORS.black }}>
                     {locked ? "🔒 " : ""}{module.name}
                   </p>
@@ -236,14 +242,17 @@ function ModuleScreen({ selectedModule, onSelectModule, onNext, onBack }) {
               style={{
                 background: "white",
                 border: "2.5px solid #DDD",
-                borderLeft: "6px solid #DDD",
                 borderRadius: "8px",
                 padding: "14px 16px",
                 opacity: 0.5,
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span aria-hidden style={{
+                  flexShrink: 0, width: 30, height: 30, borderRadius: "7px",
+                  backgroundColor: "#E8E8E8", border: "2.5px solid #DDD",
+                }} />
+                <div style={{ flex: 1 }}>
                   <p style={{ margin: "0 0 2px", fontSize: "15px", fontWeight: 700, color: COLORS.black }}>{fm.name}</p>
                   <p style={{ margin: 0, fontSize: "11px", color: "#999" }}>{fm.label}</p>
                 </div>
@@ -308,7 +317,7 @@ function HowItWorksScreen({ onNext, onBack }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
           {/* CPA: Concrete */}
           <div style={{
-            background: "white", border: BRUTAL_BORDER, borderTop: `6px solid ${COLORS.green}`,
+            background: "white", border: BRUTAL_BORDER,
             borderRadius: "8px", padding: "16px", boxShadow: BRUTAL_SHADOW_SM,
           }}>
             <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
@@ -338,7 +347,7 @@ function HowItWorksScreen({ onNext, onBack }) {
 
           {/* CPA: Pictorial */}
           <div style={{
-            background: "white", border: BRUTAL_BORDER, borderTop: `6px solid ${COLORS.orange}`,
+            background: "white", border: BRUTAL_BORDER,
             borderRadius: "8px", padding: "16px", boxShadow: BRUTAL_SHADOW_SM,
           }}>
             <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
@@ -368,7 +377,7 @@ function HowItWorksScreen({ onNext, onBack }) {
 
           {/* CPA: Abstract */}
           <div style={{
-            background: "white", border: BRUTAL_BORDER, borderTop: `6px solid ${COLORS.purple}`,
+            background: "white", border: BRUTAL_BORDER,
             borderRadius: "8px", padding: "16px", boxShadow: BRUTAL_SHADOW_SM,
           }}>
             <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
@@ -421,6 +430,26 @@ function HowItWorksScreen({ onNext, onBack }) {
               Short and frequent beats long and grinding. The daily streak keeps them coming back.
             </p>
           </div>
+
+          {/* "Perfect For" callout — solid-fill accent block (no left stripe) */}
+          <Callout title="Perfect For">
+            {[
+              "Kids in grades 2–5 building math fact fluency",
+              "Swapping random drills for visual, adaptive practice",
+              "Short 5-minute daily sessions that build a streak",
+            ].map((t) => (
+              <div key={t} style={{
+                display: "flex", gap: "10px", alignItems: "baseline",
+                marginBottom: "9px", fontSize: "13px", lineHeight: 1.5, color: COLORS.black,
+              }}>
+                <span aria-hidden style={{
+                  flexShrink: 0, width: "8px", height: "8px",
+                  backgroundColor: COLORS.black, transform: "translateY(2px)",
+                }} />
+                <span>{t}</span>
+              </div>
+            ))}
+          </Callout>
         </div>
 
         <div style={{ display: "flex", gap: "12px" }}>

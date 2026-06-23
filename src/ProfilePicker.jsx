@@ -219,10 +219,7 @@ function ModulePicker({ profile, modules, onConfirm, onCancel }) {
                 key={mod.id}
                 style={{
                   background: isActive ? accent : "white",
-                  borderTop: BRUTAL_BORDER,
-                  borderRight: BRUTAL_BORDER,
-                  borderBottom: BRUTAL_BORDER,
-                  borderLeft: `8px solid ${effectivelyLocked ? "#CCC" : accent}`,
+                  border: BRUTAL_BORDER,
                   boxShadow: isActive ? "none" : BRUTAL_SHADOW_SM,
                   borderRadius: "10px",
                   padding: "14px 16px",
@@ -235,9 +232,16 @@ function ModulePicker({ profile, modules, onConfirm, onCancel }) {
                 }}
                 onClick={() => !effectivelyLocked && setSelected(mod.id)}
               >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  {/* Module color marker (replaces the left stripe) */}
+                  <span aria-hidden style={{
+                    flexShrink: 0, width: "30px", height: "30px", borderRadius: "7px",
+                    backgroundColor: isActive ? "white" : (effectivelyLocked ? "#CCC" : accent),
+                    border: BRUTAL_BORDER_SM,
+                  }} />
                   <p style={{
-                    margin: "0 0 2px 0",
+                    margin: 0,
+                    flex: 1,
                     fontSize: "17px",
                     fontWeight: 700,
                     color: COLORS.black,
@@ -878,10 +882,7 @@ export function CreateProfile({ onComplete, onCancel, preselectedModule = null }
                   onClick={() => !locked && setSelectedModule(module.id)}
                   style={{
                     background: "white",
-                    borderTop: !locked && selectedModule === module.id ? `4px solid ${getModuleColor(module.id)}` : BRUTAL_BORDER,
-                    borderRight: !locked && selectedModule === module.id ? `4px solid ${getModuleColor(module.id)}` : BRUTAL_BORDER,
-                    borderBottom: !locked && selectedModule === module.id ? `4px solid ${getModuleColor(module.id)}` : BRUTAL_BORDER,
-                    borderLeft: `8px solid ${locked ? "#CCC" : getModuleColor(module.id)}`,
+                    border: !locked && selectedModule === module.id ? `4px solid ${getModuleColor(module.id)}` : BRUTAL_BORDER,
                     boxShadow: BRUTAL_SHADOW_SM,
                     borderRadius: "8px",
                     padding: "14px 16px",
@@ -901,16 +902,16 @@ export function CreateProfile({ onComplete, onCancel, preselectedModule = null }
                     e.currentTarget.style.boxShadow = BRUTAL_SHADOW_SM;
                   }}
                 >
-                  <p
-                    style={{
-                      margin: "0 0 4px 0",
-                      fontSize: "16px",
-                      fontWeight: 700,
-                      color: COLORS.black,
-                    }}
-                  >
-                    {locked ? "🔒 " : ""}{module.name}
-                  </p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
+                    <span aria-hidden style={{
+                      flexShrink: 0, width: "28px", height: "28px", borderRadius: "7px",
+                      backgroundColor: locked ? "#CCC" : getModuleColor(module.id),
+                      border: BRUTAL_BORDER_SM,
+                    }} />
+                    <p style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: COLORS.black }}>
+                      {locked ? "🔒 " : ""}{module.name}
+                    </p>
+                  </div>
                   <p
                     style={{
                       margin: "0 0 4px 0",

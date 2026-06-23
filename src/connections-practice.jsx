@@ -42,6 +42,7 @@ import {
   MasteryDots, NumberBond, FractionDisplay, FractionBar, TwoStackedBars,
   FractionInputFields, FractionQtyBarModel, TwoStepBarModel, EqualShareStrip, TwoStepChip,
 } from "./shared/barComponents.jsx";
+import { itemCellLabel } from "./shared/ui.jsx";
 
 // We also need the fraction answer-type renderers (Choice4Grid, TapTwoCards, etc.)
 // for S2 items that borrow fraction question formats.
@@ -1205,36 +1206,67 @@ export default function ConnectionsPractice({
                         backgroundColor: group.color, transition: "width 0.5s ease",
                       }} />
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5, marginBottom: 14 }}>
-                      {groupItems.slice(0, 40).map(item => {
-                        const level = getMasteryLevel(item.itemKey);
-                        const mastered = level >= DEFAULT_MASTERY_THRESHOLD;
-                        const label = item.skill === "I1" ? `${item.numerator}/${item.denominator}×${item.quantity}`
-                          : item.skill === "I2" ? `${item.numerator}/${item.denominator}×${item.quantity}`
-                          : item.skill === "T1" || item.skill === "T2" ? item.skill
-                          : item.skill === "S1" ? item.display
-                          : "S2";
+                    {(() => {
+                      // Section by skill with readable headers (drill pools are huge, so
+                      // cap each section and show an honest "+N more").
+                      const CELL_CAP = 50;
+                      const bySkill = [];
+                      groupItems.forEach(item => {
+                        let bucket = bySkill.find(b => b.skill === item.skill);
+                        if (!bucket) { bucket = { skill: item.skill, items: [] }; bySkill.push(bucket); }
+                        bucket.items.push(item);
+                      });
+                      return bySkill.map(({ skill, items }) => {
+                        const shown = items.slice(0, CELL_CAP);
+                        const extra = items.length - shown.length;
                         return (
-                          <div key={item.itemKey} style={{
-                            padding: "5px 3px", borderRadius: 6,
-                            backgroundColor: mastered ? group.color : "#F8F8F8",
-                            border: mastered ? BRUTAL_BORDER_SM : "2px solid #E0E0E0",
-                            textAlign: "center", fontSize: 9,
-                            fontFamily: "'Space Mono', monospace",
-                            fontWeight: mastered ? 700 : 400,
-                            boxShadow: mastered ? `2px 2px 0px ${COLORS.black}` : "none",
-                            overflow: "hidden",
-                          }}>
-                            <div style={{ lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {label}
+                          <div key={skill} style={{ marginBottom: 14 }}>
+                            <div style={{
+                              fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
+                              color: "#888", marginBottom: 6,
+                            }}>
+                              {connectionsModule.skillLabels?.[skill] || skill}
                             </div>
-                            <div style={{ marginTop: 2, display: "flex", justifyContent: "center" }}>
-                              <MasteryDots level={Math.min(level, DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5 }}>
+                              {shown.map(item => {
+                                const level = getMasteryLevel(item.itemKey);
+                                const mastered = level >= DEFAULT_MASTERY_THRESHOLD;
+                                // Two-step items share a first step, so show both steps to keep cells distinct.
+                                const twoStep = item.skill === "T1" || item.skill === "T2";
+                                const label = (item.skill === "I1" || item.skill === "I2") ? `${item.numerator}/${item.denominator} of ${item.quantity}`
+                                  : twoStep ? (item.step1 && item.step2 ? `${item.step1.label} → ${item.step2.label}` : (item.step1 ? item.step1.label : item.skill))
+                                  : item.skill === "S1" ? item.display
+                                  : itemCellLabel(item.itemKey);
+                                return (
+                                  <div key={item.itemKey} style={{
+                                    padding: "5px 3px", borderRadius: 6,
+                                    backgroundColor: mastered ? group.color : "#F8F8F8",
+                                    border: mastered ? BRUTAL_BORDER_SM : "2px solid #E0E0E0",
+                                    textAlign: "center", fontSize: 9,
+                                    fontFamily: "'Space Mono', monospace",
+                                    fontWeight: mastered ? 700 : 400,
+                                    boxShadow: mastered ? `2px 2px 0px ${COLORS.black}` : "none",
+                                    overflow: "hidden",
+                                  }}>
+                                    <div style={{ lineHeight: 1.1, overflow: "hidden", textOverflow: twoStep ? "clip" : "ellipsis", whiteSpace: twoStep ? "normal" : "nowrap" }}>
+                                      {label}
+                                    </div>
+                                    <div style={{ marginTop: 2, display: "flex", justifyContent: "center" }}>
+                                      <MasteryDots level={Math.min(level, DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
+                            {extra > 0 && (
+                              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: "#AAA", marginTop: 5 }}>
+                                +{extra} more
+                              </div>
+                            )}
                           </div>
                         );
-                      })}
-                    </div>
+                      });
+                    })()}
                   </div>
                 );
               })}

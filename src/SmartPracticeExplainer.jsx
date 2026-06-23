@@ -24,7 +24,7 @@ export default function SmartPracticeExplainer() {
       }}>
         Five categories, weighted differently
       </h4>
-      <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "14px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "9px", marginBottom: "14px" }}>
         {[
           { label: "New", desc: "Only 2–3 unseen facts introduced at a time, so nothing gets overwhelming.", color: COLORS.blue },
           { label: "Learning", desc: "Seen before but not yet mastered. Shown often.", color: COLORS.yellow },
@@ -33,15 +33,29 @@ export default function SmartPracticeExplainer() {
           { label: "Review-due", desc: "Mastered facts whose review window has come up.", color: COLORS.orange },
         ].map((row) => (
           <div key={row.label} style={{
-            backgroundColor: "white",
-            borderRadius: "8px",
-            padding: "8px 12px",
+            display: "flex",
+            alignItems: "baseline",
+            gap: "11px",
+            // Tinted with the category color + solid chip + brutalist box — pronounced,
+            // color-coded, and NO left stripe.
+            backgroundColor: row.color + "26",
             border: BRUTAL_BORDER_SM,
-            borderLeft: `6px solid ${row.color}`,
             boxShadow: BRUTAL_SHADOW_SM,
+            borderRadius: "10px",
+            padding: "11px 13px",
             fontSize: "12.5px",
+            lineHeight: 1.5,
           }}>
-            <strong>{row.label}</strong> — {row.desc}
+            <span aria-hidden style={{
+              flexShrink: 0,
+              width: "16px",
+              height: "16px",
+              borderRadius: "5px",
+              backgroundColor: row.color,
+              border: BRUTAL_BORDER_SM,
+              transform: "translateY(2px)",
+            }} />
+            <span><strong>{row.label}</strong> — {row.desc}</span>
           </div>
         ))}
       </div>
