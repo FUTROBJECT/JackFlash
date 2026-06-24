@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import AnimatedWordmark from "./AnimatedWordmark.jsx";
+import { COLORS } from "./constants.js";
 
-// Opening splash: the animated wordmark over the app's grid-paper background.
-// Shown once per launch (mounted at the root for one page-load), auto-dismisses
-// with a fade, and is tap-to-skip. Under prefers-reduced-motion the wordmark
-// freezes (handled inside AnimatedWordmark) and we hold only briefly.
+// Opening splash: the animated lockup centered, with a "Let's Go" button anchored
+// near the bottom that the user must tap to enter the app (no auto-dismiss). The
+// button fades in shortly after load so the lockup reads first. Reduced-motion is
+// handled inside AnimatedWordmark (the wordmark freezes).
 const GRID_BG = `
   repeating-linear-gradient(0deg, transparent, transparent 23px, rgba(0,0,0,0.05) 23px, rgba(0,0,0,0.05) 24px),
   repeating-linear-gradient(90deg, transparent, transparent 23px, rgba(0,0,0,0.05) 23px, rgba(0,0,0,0.05) 24px),
@@ -15,14 +16,15 @@ const BASE_SIZE = 92;  // wordmark font-size before fit-to-width scaling
 
 export default function SplashScreen({ onDone }) {
   const [leaving, setLeaving] = useState(false);
+  const [ready, setReady] = useState(false); // CTA fade-in after the lockup lands
+  const [pressed, setPressed] = useState(false);
   const [scale, setScale] = useState(1);
   const frameRef = useRef(null);
   const markRef = useRef(null);
 
-  // Scale the wordmark down so it always fits the viewport width (Galindo is
-  // wide; measuring beats guessing a font-size from screen width). offsetWidth
-  // is the pre-transform layout width, so re-measuring after the webfont loads
-  // is accurate — important because the fallback font measures narrower (FOUT).
+  // Scale the lockup down so it always fits the viewport width (Galindo is wide;
+  // measuring beats guessing). offsetWidth is the pre-transform layout width, so
+  // re-measuring after the webfont loads is accurate (the fallback measures narrower).
   useLayoutEffect(() => {
     const measure = () => {
       const avail = (frameRef.current?.clientWidth || window.innerWidth) - PAD * 2;
@@ -33,15 +35,10 @@ export default function SplashScreen({ onDone }) {
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
   }, []);
 
+  // Reveal the CTA a beat after the lockup so it doesn't pop in simultaneously.
   useEffect(() => {
-    const reduce =
-      typeof window !== "undefined" &&
-      window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const hold = reduce ? 800 : 2400; // ms on screen before auto-dismiss
-    const t = window.setTimeout(dismiss, hold);
+    const t = window.setTimeout(() => setReady(true), 650);
     return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function dismiss() {
@@ -55,9 +52,8 @@ export default function SplashScreen({ onDone }) {
   return (
     <div
       ref={frameRef}
-      role="img"
-      aria-label="JackFlash"
-      onClick={dismiss}
+      role="dialog"
+      aria-label="Welcome to JackFlash"
       style={{
         position: "fixed",
         inset: 0,
@@ -68,12 +64,47 @@ export default function SplashScreen({ onDone }) {
         background: GRID_BG,
         opacity: leaving ? 0 : 1,
         transition: "opacity 0.42s ease",
-        cursor: "pointer",
         padding: PAD,
       }}
     >
       <div ref={markRef} style={{ transform: `scale(${scale})`, transformOrigin: "center" }}>
         <AnimatedWordmark size={BASE_SIZE} accentColor="#4CC9F0" stacked subtitle="Math fluency, the right way." />
+      </div>
+
+      <div
+        style={{
+          position: "absolute",
+          bottom: "9%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          opacity: ready ? 1 : 0,
+          transition: "opacity 0.45s ease",
+        }}
+      >
+        <button
+          onClick={dismiss}
+          onPointerDown={() => setPressed(true)}
+          onPointerUp={() => setPressed(false)}
+          onPointerLeave={() => setPressed(false)}
+          onPointerCancel={() => setPressed(false)}
+          style={{
+            backgroundColor: COLORS.yellow,
+            color: COLORS.black,
+            border: `3px solid ${COLORS.black}`,
+            borderRadius: "12px",
+            boxShadow: pressed ? `2px 2px 0 ${COLORS.black}` : `5px 5px 0 ${COLORS.black}`,
+            padding: "15px 44px",
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontWeight: 700,
+            fontSize: "19px",
+            letterSpacing: "0.01em",
+            cursor: "pointer",
+            transform: pressed ? "translateY(3px)" : "none",
+            transition: "box-shadow 0.1s ease, transform 0.1s ease",
+          }}
+        >
+          Let's Go
+        </button>
       </div>
     </div>
   );
