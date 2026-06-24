@@ -187,11 +187,12 @@ function ModuleScreen({ selectedModule, onSelectModule, onNext, onBack }) {
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "24px" }}>
-          {modules.map((module) => {
+          {modules.map((module, i) => {
             const locked = isModuleLocked(module.id);
             return (
             <button
               key={module.id}
+              className={locked ? "cardRise" : "cardPop"}
               onClick={() => !locked && onSelectModule(module.id)}
               style={{
                 background: "white",
@@ -203,6 +204,7 @@ function ModuleScreen({ selectedModule, onSelectModule, onNext, onBack }) {
                 textAlign: "left",
                 transition: "all 0.15s",
                 opacity: locked ? 0.6 : 1,
+                animationDelay: `${i * 0.07}s`,
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -217,7 +219,7 @@ function ModuleScreen({ selectedModule, onSelectModule, onNext, onBack }) {
                     {locked ? "🔒 " : ""}{module.name}
                   </p>
                   <p style={{ margin: 0, fontSize: "11px", fontFamily: "'Space Mono', monospace", color: "#666" }}>
-                    {locked ? "Unlock in the Parent Zone after setup" : `${module.description} · Grades ${module.grades}`}
+                    {locked ? "Unlock in the Parent Zone after setup" : `${module.description} · ${module.grades}`}
                   </p>
                 </div>
                 {!locked && selectedModule === module.id && (
@@ -236,15 +238,17 @@ function ModuleScreen({ selectedModule, onSelectModule, onNext, onBack }) {
           })}
 
           {/* Future modules */}
-          {futureModules.map((fm) => (
+          {futureModules.map((fm, j) => (
             <div
               key={fm.id}
+              className="cardRise"
               style={{
                 background: "white",
                 border: "2.5px solid #DDD",
                 borderRadius: "8px",
                 padding: "14px 16px",
                 opacity: 0.5,
+                animationDelay: `${(modules.length + j) * 0.07}s`,
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -324,9 +328,10 @@ function HowItWorksScreen({ onNext, onBack }) {
               <div style={{ flexShrink: 0 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "5px" }}>
                   {Array.from({ length: 12 }).map((_, i) => (
-                    <div key={i} style={{
+                    <div key={i} className="cpaPop" style={{
                       width: 10, height: 10, borderRadius: "50%",
                       background: COLORS.black, opacity: 1,
+                      animationDelay: `${i * 0.05}s`,
                     }} />
                   ))}
                 </div>
@@ -354,9 +359,10 @@ function HowItWorksScreen({ onNext, onBack }) {
               <div style={{ flexShrink: 0 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "5px" }}>
                   {Array.from({ length: 12 }).map((_, i) => (
-                    <div key={i} style={{
+                    <div key={i} className="cpaPopFaint" style={{
                       width: 10, height: 10, borderRadius: "50%",
                       background: COLORS.black, opacity: 0.3,
+                      animationDelay: `${0.3 + i * 0.04}s`,
                     }} />
                   ))}
                 </div>
@@ -381,10 +387,11 @@ function HowItWorksScreen({ onNext, onBack }) {
             borderRadius: "8px", padding: "16px", boxShadow: BRUTAL_SHADOW_SM,
           }}>
             <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
-              <div style={{
+              <div className="cpaPop" style={{
                 flexShrink: 0, width: 50, textAlign: "center",
                 fontFamily: "'Space Mono', monospace", fontSize: "15px",
                 fontWeight: 700, color: COLORS.black, lineHeight: 1.4,
+                animationDelay: "0.2s",
               }}>
                 3×4<br />=12
               </div>

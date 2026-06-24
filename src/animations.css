@@ -4,3 +4,66 @@
   from { transform: translateY(8px); opacity: 0; }
   to   { transform: translateY(0); opacity: 1; }
 }
+
+/* Animated illustration primitives (src/shared/illustrations.jsx). Looping
+   shape motion for neo-brutalist SVG illustrations — pure CSS, zero deps. */
+@keyframes illoCycle {
+  0%, 100% { opacity: 0; transform: scale(0); }
+  12%      { transform: scale(1.12); }
+  20%, 80% { opacity: 1; transform: scale(1); }
+  92%      { opacity: 0; transform: scale(0.5); }
+}
+@keyframes illoDraw {
+  0%, 100% { stroke-dashoffset: 1; }
+  20%, 80% { stroke-dashoffset: 0; }
+}
+@keyframes illoGrowX {
+  0%, 100% { transform: scaleX(0); }
+  16%, 84% { transform: scaleX(1); }
+}
+@keyframes illoGrowY {
+  0%, 100% { transform: scaleY(0); }
+  16%, 84% { transform: scaleY(1); }
+}
+/* Respect reduced-motion: illustrations rest in their fully-drawn state. */
+@media (prefers-reduced-motion: reduce) {
+  .jf-illo * {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}
+
+/* One-shot staggered entrance for the onboarding "How it works" CPA visuals.
+   cpaPop settles fully opaque; cpaPopFaint settles at the faint scaffold tone. */
+@keyframes illoPopIn {
+  0%   { opacity: 0; transform: scale(0); }
+  60%  { transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes illoPopInFaint {
+  0%   { opacity: 0; transform: scale(0); }
+  60%  { transform: scale(1.1); }
+  100% { opacity: 0.3; transform: scale(1); }
+}
+.cpaPop      { animation: illoPopIn 0.45s ease both; }
+.cpaPopFaint { animation: illoPopInFaint 0.45s ease both; }
+
+/* Staggered entrance for list cards (onboarding module picker). Gentle
+   slide + slight scale — a "pop" sized for full-width cards. cardPop fades
+   opaque; cardRise is transform-only so dimmed (locked/future) cards keep
+   their own opacity. */
+@keyframes cardPopIn {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes cardRiseIn {
+  0%   { transform: translateY(10px) scale(0.97); }
+  100% { transform: translateY(0) scale(1); }
+}
+.cardPop  { animation: cardPopIn 0.4s ease both; }
+.cardRise { animation: cardRiseIn 0.4s ease both; }
+@media (prefers-reduced-motion: reduce) {
+  .cpaPop, .cpaPopFaint, .cardPop, .cardRise { animation: none; }
+}
