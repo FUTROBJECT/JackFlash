@@ -18,9 +18,15 @@ export function initData() {
   try {
     const stored = localStorage.getItem(DATA_KEY);
     if (stored) {
-      _data = JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      _data = _normalizeData(parsed);
       _migrateV2Purchases();
-      console.log("[JF] initData: loaded", _data.profiles?.length, "profiles, onboarding:", _data.onboardingComplete);
+      // Heal malformed/partial blobs on disk so the bad shape doesn't persist.
+      if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.profiles)) {
+        console.warn("[JF] initData: repaired malformed stored data");
+        saveData();
+      }
+      console.log("[JF] initData: loaded", _data.profiles.length, "profiles, onboarding:", _data.onboardingComplete);
       return _data;
     } else {
       console.log("[JF] initData: no data found in localStorage for key:", DATA_KEY);
@@ -87,6 +93,27 @@ function _createFreshData() {
     },
     profiles: [],
   };
+}
+
+// Coerce a parsed blob into a complete, valid data object. Guards against
+// partial/corrupted localStorage or older shapes so the app self-heals instead
+// of white-screening (e.g. a blob missing the `profiles` array would otherwise
+// crash anything that iterates profiles).
+function _normalizeData(parsed) {
+  const fresh = _createFreshData();
+  if (!parsed || typeof parsed !== "object") return fresh;
+  const d = { ...fresh, ...parsed };
+  if (!Array.isArray(d.profiles)) d.profiles = [];
+  if (!Array.isArray(d.unlockedModules)) d.unlockedModules = [...fresh.unlockedModules];
+  if (!Array.isArray(d.purchases)) d.purchases = [];
+  if (!d.parentSettings || typeof d.parentSettings !== "object") {
+    d.parentSettings = { ...fresh.parentSettings };
+  }
+  // activeProfileId must point at a real profile, otherwise clear it.
+  if (d.activeProfileId && !d.profiles.some((p) => p && p.id === d.activeProfileId)) {
+    d.activeProfileId = null;
+  }
+  return d;
 }
 
 // One-time migration from legacy localStorage purchase keys into _data
@@ -198,7 +225,7 @@ export function deleteProfile(profileId) {
 
 export function getAllProfiles() {
   initData();
-  return _data.profiles;
+  return _data.profiles || [];
 }
 
 // Mastery Operations
