@@ -60,19 +60,79 @@ List the files as you add them to `docs/icon-golden/`:
 - `[FILL]`
 - `[FILL]`
 
-## 5. Inventory (finalize the counts — this drives production batching)
+## 5. Inventory (confirm & edit — this drives production batching)
 
-- **Avatars — 16**, ids + names already defined in `constants.js` `AVATARS`
-  (schema is `{id, label, emoji}`; the `emoji` field is the placeholder we
-  replace). Confirm all 16 stay, or edit the roster: `[FILL]`
-- **Global achievement icons — ~8**: First Steps 👣, streak 🔥, on-fire 🔥,
-  unstoppable ⚡, week/day 📅, century 💯, speed ⏱️, crown/legendary 👑.
-  Confirm/rename: `[FILL]`
-- **Per-module badges:** each module defines its own (e.g. Table Tamer, Group
-  Clear, Fraction Master…). Produce as generic shapes tinted by module color,
-  or bespoke per badge? `[FILL]`
-- **Module glyphs (optional):** custom marks for multiply/add/fractions/etc.,
-  or keep color-only identity? `[FILL]`
+Everything below is a **Unicode emoji today**, rendered by the OS font — there
+is no custom set yet. Marked ✎ where a decision is yours. Counts finalize the
+batch plan.
+
+### 5a. Avatars — 16 (`src/constants.js` → `AVATARS`)
+
+Schema `{id, label, emoji}`; we replace the placeholder `emoji`. The `id`
+encodes a color hint — a natural source for each character's accent token.
+Bolt & Rusty are both 🤖 today (collision to resolve). ✎ Confirm the roster /
+rename / drop:
+
+| id | name | id color hint | current |
+|----|------|---------------|---------|
+| robot-blue | Bolt | blue | 🤖 |
+| robot-red | Rusty | red | 🤖 |
+| cat-orange | Marmalade | orange | 🐱 |
+| dog-brown | Biscuit | brown | 🐶 |
+| dragon-green | Jade | green | 🐉 |
+| unicorn-pink | Glimmer | pink | 🦄 |
+| bear-brown | Cocoa | brown | 🐻 |
+| fox-orange | Ember | orange | 🦊 |
+| owl-purple | Professor | purple | 🦉 |
+| penguin-blue | Waddle | blue | 🐧 |
+| lion-yellow | Roary | yellow | 🦁 |
+| lightning-yellow | Zap | yellow | ⚡ |
+| star-gold | Twinkle | gold | ⭐ |
+| rocket-red | Blaze | red | 🚀 |
+| alien-green | Blip | green | 👽 |
+| monster-purple | Gus | purple | 👾 |
+
+### 5b. Global achievements — 8 (`src/achievementEngine.js`, top block)
+
+First Steps 👣 · Getting Warm 🔥 · On Fire 🔥 · Unstoppable ⚡ · Week Warrior
+📅 · Month Master 👑 · Century Club 💯 · Speed Demon ⏱️
+✎ Confirm/rename: `[FILL]`
+
+### 5c. Module badges — 37 (`MODULE_ACHIEVEMENT_ICONS`)
+
+- **Multiply — 14:** Table Tamer 2s–10s (9), Group Clear Easy/Medium/Hard (3),
+  Multiply Master, Fact Family Pro
+- **Fractions — 6:** Equal-Parts Expert, Match Maker, Fair Judge, Piece Keeper,
+  Fraction Master, Renamer Pro
+- **Connections — 6:** Bridge Builder, Whole and Parts, Two-Step Thinker, Quick
+  Switch, The Connector, Summit
+- **Add & Subtract — 11:** Bond Boss, Ten Maker, Fact Flash, Family Finder,
+  Mystery Number, Tier Two, Regroup Ranger, Mental Whiz, Bar Builder, Add
+  Master, Bond Pro
+
+> **Scope lever — the 37 badges reuse ~10 concepts today.** 🏆 = all four
+> module "Master" badges; 🔄 = every fact-family badge; ⚡ = every speed badge;
+> ⭐ = the three Group Clears; 2️⃣–9️⃣ = the numbered Table Tamers. So the real
+> choice is **~10–12 badge archetypes tinted by module color** (far less
+> drawing, consistent) vs. **37 bespoke badges** (more work, more character).
+> ✎ Decide: `[FILL — archetypes+tint / bespoke / hybrid]`
+
+### 5d. Decorative UI marks — small set
+
+🔒 locked module · ⭐ + ⚡ stat tiles · 📊 progress · 📋 parent zone · 👋
+onboarding. ✎ Include in the custom set, or leave as-is for v1? `[FILL]`
+
+### 5e. Leave as-is (functional glyphs, NOT icons)
+
+Arrows → ← , operators − ≤ ≥ ∈ ✓, and the mastery dots ○●. These are content/
+typography, out of scope for the icon set.
+
+### 5f. Existing custom art to harmonize with (style anchor)
+
+The lightning bolt is already bespoke SVG (`LightningBolt.jsx`,
+`public/LightningBolt_1A.svg`, `GraphicAssets/JF_LogoMark_01.svg`,
+`AnimatedWordmark.jsx`, `public/icon.svg`). New icons should feel like they
+belong to the same hand.
 
 ---
 
