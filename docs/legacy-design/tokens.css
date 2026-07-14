@@ -1,0 +1,157 @@
+/* =============================================================
+   JackFlash Design Tokens  —  v0.2
+   Foundation extracted from Fauna Robotics' live stylesheet
+   (fauna-robotics.webflow.shared.css) and adapted for JackFlash,
+   a kids' math-practice app.
+
+   Fauna's design language: warm · earthy · friendly · soft ·
+   expressive · safety-first. We keep their exact brand hues and
+   cream/ink neutrals, their very-rounded geometry and minimal
+   shadows — and diverge in ONE place: text on bright fills uses
+   ink (#180102) instead of cream, so buttons clear WCAG AA.
+
+   Single source of truth = tokens.json. This file mirrors it.
+   ============================================================= */
+
+:root {
+  /* ---------- PRIMITIVES ---------- */
+
+  /* Ink — warm near-black (Fauna --black--900) + alpha steps */
+  --ink-900: #180102;
+  --ink-80:  rgba(24,1,2,0.80);
+  --ink-60:  rgba(24,1,2,0.60);
+  --ink-40:  rgba(24,1,2,0.40);
+  --ink-20:  rgba(24,1,2,0.20);
+  --ink-10:  rgba(24,1,2,0.10);
+  --ink-06:  rgba(24,1,2,0.06);
+
+  /* Cream — warm off-white (Fauna --white--900). The base canvas. */
+  --cream:      #f8f0e3;
+  --cream-lift: #fffdf9;  /* slightly whiter, for raised cards */
+
+  /* Clay — warm earthy neutral ramp (Fauna --brown--*) */
+  --clay-50:  #ece4d7;
+  --clay-100: #ded2c0;
+  --clay-200: #aca396;
+  --clay-300: #938a7d;
+  --clay-400: #7a7164;
+  --clay-500: #60574a;
+  --clay-600: #473e31;
+
+  /* Brand hues — exact Fauna --brand--* values */
+  --coral: #f16b46;  /* orange  — energy / primary action / the "Flash" */
+  --teal:  #3dac91;  /* green   — growth / correct */
+  --ocean: #63a4bc;  /* blue    — calm / info / secondary */
+  --clayred:#a7625a; /* terracotta — gentle "not quite" / incorrect */
+  --khaki: #8d8465;  /* olive   — quiet utility */
+  --pink:  #e0a5cf;  /* pink    — playful highlight */
+  --gold:  #dbb154;  /* yellow  — rewards / streaks */
+
+  /* ---------- SEMANTIC ---------- */
+
+  /* Surfaces & lines */
+  --color-bg:            var(--cream);
+  --color-surface:       var(--cream-lift);
+  --color-surface-sunken:var(--clay-50);
+  --color-border:        var(--ink-10);
+  --color-border-strong: var(--ink-20);
+
+  /* Text */
+  --color-ink:        var(--ink-900);
+  --color-ink-muted:  var(--ink-60);
+  --color-ink-subtle: var(--ink-40);
+  --color-on-bright:  var(--ink-900);  /* text on coral/teal/gold/etc. */
+  --color-on-dark:    var(--cream);    /* text on ink / clay-dark fills */
+
+  /* Actions */
+  --color-primary:        var(--coral);
+  --color-primary-hover:  var(--ink-900);   /* Fauna's signature: fades to ink */
+  --color-primary-soft:   #fde6de;
+  --color-secondary:      var(--ocean);
+  --color-secondary-hover:var(--ink-900);
+  --color-secondary-soft: #e2eef3;
+
+  /* Status */
+  --color-success:      var(--teal);
+  --color-success-soft: #e3f4ee;
+  --color-info:         var(--ocean);
+  --color-info-soft:    #e2eef3;
+  --color-warning:      var(--gold);
+  --color-warning-soft: #f7eed5;
+  --color-danger:       var(--clayred);
+  --color-danger-soft:  #f3e3e1;
+
+  /* Practice feedback */
+  --color-correct:       var(--teal);
+  --color-correct-soft:  #e3f4ee;
+  --color-incorrect:     var(--clayred);
+  --color-incorrect-soft:#f3e3e1;
+  --color-streak:        var(--gold);
+
+  /* ---------- TYPOGRAPHY ---------- */
+  /* Fauna ships ABC Maxi (display) + Matter (body) — both licensed.
+     Free stand-ins that match the warm/expressive feel: */
+  --font-display: "Fraunces", "ABC Maxi", Georgia, "Times New Roman", serif;
+  --font-body:    "Hanken Grotesk", "Matter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-numeric: "Hanken Grotesk", "Matter", ui-monospace, "SF Mono", monospace;
+
+  --text-display: clamp(2.5rem, 6vw, 3.75rem);
+  --text-h1:      2.375rem;  /* 38 — Fauna heading size */
+  --text-h2:      2rem;      /* 32 */
+  --text-h3:      1.5rem;    /* 24 */
+  --text-h4:      1.125rem;  /* 18 */
+  --text-body-lg: 1.125rem;  /* 18 */
+  --text-body:    1rem;      /* 16 */
+  --text-sm:      0.875rem;  /* 14 */
+  --text-caption: 0.75rem;   /* 12 */
+
+  --leading-tight:  1.1;
+  --leading-snug:   1.25;
+  --leading-normal: 1.55;
+
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semibold:600;
+  --weight-bold:    700;
+
+  --tracking-tight:  -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.06em;
+
+  /* ---------- SPACING (4px base) ---------- */
+  --space-0:  0;
+  --space-1:  0.25rem;  /* 4  */
+  --space-2:  0.5rem;   /* 8  */
+  --space-3:  0.75rem;  /* 12 */
+  --space-4:  1rem;     /* 16 */
+  --space-5:  1.25rem;  /* 20 */
+  --space-6:  1.5rem;   /* 24 */
+  --space-8:  2rem;     /* 32 */
+  --space-10: 2.5rem;   /* 40 */
+  --space-12: 3rem;     /* 48 */
+  --space-16: 4rem;     /* 64 */
+  --space-20: 5rem;     /* 80 */
+
+  /* ---------- RADII (very rounded, "soft to the touch") ---------- */
+  --radius-sm:    0.5rem;   /* 8  */
+  --radius-md:    1rem;     /* 16 */
+  --radius-lg:    1.5rem;   /* 24 */
+  --radius-xl:    2rem;     /* 32 */
+  --radius-2xl:   2.5rem;   /* 40 */
+  --radius-pill:  100rem;
+  --radius-circle:50%;
+
+  /* ---------- ELEVATION (low, warm, minimal) ---------- */
+  --shadow-xs: 0 0 0 1px var(--ink-06);
+  --shadow-sm: 0 1px 3px var(--ink-10), 0 0 0 1px var(--ink-06);
+  --shadow-md: 0 6px 20px var(--ink-10);
+  --shadow-lg: 0 16px 40px rgba(24,1,2,0.14);
+  --glow-flash: 0 0 80px rgba(241,107,70,0.35);  /* signature hero bloom */
+
+  /* ---------- MOTION (friendly, gentle) ---------- */
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+}

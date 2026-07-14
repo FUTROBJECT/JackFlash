@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JackFlash — Current vs Soft Pop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Shrikhand&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#2b2b2b;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#fff;padding:28px;}
+.page-head{max-width:1080px;margin:0 auto 24px;}
+.page-head h1{font-family:'Fraunces',serif;font-weight:700;font-size:1.9rem;margin:0 0 .35rem;}
+.page-head p{margin:0;color:rgba(255,255,255,.72);max-width:74ch;font-size:.95rem;line-height:1.55;}
+.stage{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:1080px;margin:0 auto;}
+@media(max-width:880px){.stage{grid-template-columns:1fr}}
+.col-label{display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:10px;color:rgba(255,255,255,.82);}
+.col-label .tag{font-family:'Space Mono',monospace;font-size:.62rem;padding:.15rem .5rem;border-radius:6px;
+  background:rgba(255,255,255,.14);letter-spacing:.04em;}
+
+/* ===================== CURRENT (neo-brutalist) ===================== */
+.current{
+  --bg:#FFFBEB; --ink:#1A1A1A; --accent:#FF9F1C; --reward:#FFD43B; --surface:#fff;
+  background:var(--bg);color:var(--ink);border-radius:18px;padding:18px;
+  border:3px solid var(--ink);box-shadow:8px 8px 0 rgba(0,0,0,.35);
+}
+.current .topbar{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.current .logo{display:flex;align-items:center;gap:.3rem;font-family:'Shrikhand',cursive;font-size:1.05rem;margin-right:auto;}
+.current .logo .bolt{display:grid;place-items:center;width:26px;height:26px;border-radius:6px;background:var(--accent);
+  border:2.5px solid var(--ink);box-shadow:3px 3px 0 var(--ink);font-size:.85rem;}
+.current .chip{display:flex;flex-direction:column;align-items:center;padding:6px 10px;background:#fff;
+  border:2.5px solid var(--ink);border-radius:8px;box-shadow:3px 3px 0 var(--ink);min-width:54px;}
+.current .chip b{font-family:'Space Mono',monospace;font-size:15px;line-height:1;}
+.current .chip span{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;opacity:.6;margin-top:3px;}
+.current .tabs{display:flex;gap:8px;margin-bottom:14px;}
+.current .tab{font-family:'Space Mono',monospace;font-weight:700;font-size:12px;padding:7px 14px;border-radius:8px;
+  border:2.5px solid var(--ink);background:#fff;box-shadow:3px 3px 0 var(--ink);}
+.current .tab.on{background:var(--reward);}
+.current .eq-card{background:#fff;border:3px solid var(--ink);border-radius:8px;box-shadow:4px 4px 0 var(--ink);
+  padding:26px 18px;text-align:center;margin-bottom:14px;}
+.current .eq{font-family:'Shrikhand',cursive;font-size:clamp(2.6rem,9vw,3.6rem);line-height:1;display:flex;
+  align-items:center;justify-content:center;gap:.35em;flex-wrap:wrap;}
+.current .ansbox{display:inline-grid;place-items:center;min-width:1.5em;height:1.2em;padding:0 .2em;
+  border:2.5px solid var(--ink);border-radius:6px;background:var(--bg);color:var(--accent);}
+.current .scaffold{display:flex;gap:8px;justify-content:center;margin-bottom:14px;flex-wrap:wrap;}
+.current .sbtn{font-family:'Space Mono',monospace;font-weight:700;font-size:12px;padding:7px 14px;border-radius:8px;
+  border:2.5px solid var(--ink);background:#fff;box-shadow:3px 3px 0 var(--ink);display:flex;gap:.3rem;align-items:center;}
+.current .bond{display:flex;justify-content:center;margin-bottom:16px;}
+.current .check{width:100%;font-family:'Space Mono',monospace;font-weight:700;font-size:16px;padding:14px;border-radius:8px;
+  border:3px solid var(--ink);background:var(--accent);color:var(--ink);box-shadow:4px 4px 0 var(--ink);}
+
+/* ===================== SOFT POP (your colors · Fauna forms) ===================== */
+.softpop{
+  --bg:#FFFBEB; --ink:#1A1A1A; --accent:#FF9F1C; --correct:#06D6A0; --info:#4CC9F0;
+  --reward:#FFD43B; --wrong:#FF5252; --purple:#B388FF; --pink:#FF6B9D; --surface:#fff;
+  /* soft tints */
+  --t-green:#e3faf1; --t-blue:#e3f6fd; --t-yellow:#fff5d1; --t-orange:#ffeede;
+  /* soft blurred shadows (Fauna) */
+  --sh:0 10px 28px rgba(26,26,26,.10); --sh-sm:0 4px 14px rgba(26,26,26,.08);
+  --hair:1px solid rgba(26,26,26,.08);
+  background:var(--bg);color:var(--ink);border-radius:30px;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.4);
+}
+.softpop .topbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.softpop .logo{display:flex;align-items:center;gap:.45rem;font-family:'Fraunces',serif;font-weight:700;font-size:1.15rem;margin-right:auto;}
+.softpop .logo .bolt{display:grid;place-items:center;width:34px;height:34px;border-radius:12px;background:var(--accent);
+  color:var(--ink);font-size:1rem;box-shadow:0 6px 16px rgba(255,159,28,.4);}
+.softpop .chip{display:flex;flex-direction:column;align-items:center;padding:9px 14px;border-radius:18px;
+  box-shadow:var(--sh-sm);min-width:58px;}
+.softpop .chip.m{background:var(--t-green);} .softpop .chip.s{background:var(--t-blue);} .softpop .chip.k{background:var(--t-yellow);}
+.softpop .chip b{font-family:'Hanken Grotesk',sans-serif;font-weight:800;font-size:16px;line-height:1;}
+.softpop .chip span{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.55;margin-top:4px;}
+.softpop .tabs{display:flex;gap:10px;margin-bottom:20px;}
+.softpop .tab{font-family:'Hanken Grotesk',sans-serif;font-weight:700;font-size:13px;padding:9px 18px;border-radius:100px;
+  background:#fff;box-shadow:var(--sh-sm);cursor:pointer;border:var(--hair);}
+.softpop .tab.on{background:var(--reward);border-color:transparent;}
+.softpop .eq-card{background:#fff;border-radius:28px;box-shadow:var(--sh),0 0 0 6px rgba(255,159,28,.06);
+  padding:36px 22px;text-align:center;margin-bottom:20px;}
+.softpop .eq{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(2.8rem,9vw,3.9rem);line-height:1;display:flex;
+  align-items:center;justify-content:center;gap:.32em;flex-wrap:wrap;}
+.softpop .eq .op{opacity:.35;}
+.softpop .ansbox{display:inline-grid;place-items:center;min-width:1.5em;height:1.3em;padding:0 .25em;border-radius:16px;
+  background:var(--t-orange);color:var(--accent);}
+.softpop .scaffold{display:flex;gap:10px;justify-content:center;margin-bottom:20px;flex-wrap:wrap;}
+.softpop .sbtn{font-family:'Hanken Grotesk',sans-serif;font-weight:700;font-size:13px;padding:9px 16px;border-radius:100px;
+  background:#fff;box-shadow:var(--sh-sm);border:var(--hair);display:flex;gap:.35rem;align-items:center;cursor:pointer;}
+.softpop .bond{display:flex;justify-content:center;margin-bottom:22px;}
+.softpop .check{width:100%;font-family:'Hanken Grotesk',sans-serif;font-weight:800;font-size:17px;padding:16px;border-radius:100px;
+  background:var(--accent);color:var(--ink);border:0;box-shadow:0 12px 28px rgba(255,159,28,.42);cursor:pointer;
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s ease;}
+.softpop .check:hover{transform:translateY(-3px);box-shadow:0 18px 36px rgba(255,159,28,.5);}
+
+.caption{max-width:1080px;margin:26px auto 0;display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+@media(max-width:880px){.caption{grid-template-columns:1fr}}
+.caption .box{font-size:.85rem;line-height:1.6;color:rgba(255,255,255,.82);background:rgba(0,0,0,.22);
+  border-radius:14px;padding:14px 16px;}
+.caption b{color:#fff;}
+.caption code{font-family:'Space Mono',monospace;font-size:.78rem;background:rgba(255,255,255,.12);padding:.05em .4em;border-radius:4px;}
+.swatches{display:flex;gap:6px;margin-top:8px;}
+.swatches i{width:22px;height:22px;border-radius:6px;display:block;box-shadow:0 2px 6px rgba(0,0,0,.3);}
+</style>
+</head>
+<body>
+<div class="page-head">
+  <h1>JackFlash · practice screen — Current vs Soft Pop</h1>
+  <p>Your bright, poppy palette stays exactly as-is. What changes is the <b>form language</b>, borrowed from Fauna: pillowy rounded shapes, soft blurred shadows (instead of hard black offsets), hairline-or-no borders, warmer display type (<b>Fraunces</b> + <b>Hanken Grotesk</b>), and airier spacing. Same fun — softer, more polished container. Mockup only; your files are untouched.</p>
+</div>
+
+<div class="stage">
+  <!-- CURRENT -->
+  <div>
+    <div class="col-label">Current <span class="tag">neo-brutalist</span></div>
+    <div class="current">
+      <div class="topbar">
+        <div class="logo"><span class="bolt">⚡</span>JackFlash</div>
+        <div class="chip"><b>⭐12</b><span>Mastered</span></div>
+        <div class="chip"><b>8/10</b><span>Session</span></div>
+        <div class="chip"><b>🔥5</b><span>Streak</span></div>
+      </div>
+      <div class="tabs"><div class="tab on">Pictorial</div><div class="tab">Abstract</div></div>
+      <div class="eq-card"><div class="eq">7 <span style="opacity:.5">×</span> 8 <span style="opacity:.5">=</span> <span class="ansbox">?</span></div></div>
+      <div class="scaffold"><div class="sbtn">🔢 Skip count</div><div class="sbtn">🟦 Array</div><div class="sbtn">💡 Hint</div></div>
+      <div class="bond" id="bond-current"></div>
+      <button class="check">Check answer</button>
+    </div>
+  </div>
+
+  <!-- SOFT POP -->
+  <div>
+    <div class="col-label">Soft Pop <span class="tag">your colors · Fauna forms</span></div>
+    <div class="softpop">
+      <div class="topbar">
+        <div class="logo"><span class="bolt">⚡</span>JackFlash</div>
+        <div class="chip m"><b>⭐12</b><span>Mastered</span></div>
+        <div class="chip s"><b>8/10</b><span>Session</span></div>
+        <div class="chip k"><b>🔥5</b><span>Streak</span></div>
+      </div>
+      <div class="tabs"><div class="tab on">Pictorial</div><div class="tab">Abstract</div></div>
+      <div class="eq-card"><div class="eq">7 <span class="op">×</span> 8 <span class="op">=</span> <span class="ansbox">?</span></div></div>
+      <div class="scaffold"><div class="sbtn">🔢 Skip count</div><div class="sbtn">🟦 Array</div><div class="sbtn">💡 Hint</div></div>
+      <div class="bond" id="bond-softpop"></div>
+      <button class="check">Check answer</button>
+    </div>
+  </div>
+</div>
+
+<div class="caption">
+  <div class="box">
+    <b>What stays</b><br>The whole palette — orange, green, blue, yellow, red, purple, pink, cream. Nothing muted, nothing dropped.
+    <div class="swatches">
+      <i style="background:#FF9F1C"></i><i style="background:#06D6A0"></i><i style="background:#4CC9F0"></i>
+      <i style="background:#FFD43B"></i><i style="background:#FF5252"></i><i style="background:#B388FF"></i><i style="background:#FF6B9D"></i>
+    </div>
+  </div>
+  <div class="box">
+    <b>What changes (form only)</b><br>Hard <code>4px 4px 0</code> shadows → soft blurred + colored glows · thick black borders → hairlines · 8px radii → pillowy 16–30px · Shrikhand/Mono → Fraunces + Hanken · more breathing room.
+  </div>
+</div>
+
+<script>
+// soft number bond — Fauna form: no hard offset twin, soft drop shadow, thin stroke, bright fills kept
+function bond(el,{wholeC,leftC,rightC}){
+  const w=180,h=126, wcx=w/2,wcy=30, lcx=36,lcy=100, rcx=w-36,rcy=100, r1=26,r2=22, ink='#1A1A1A';
+  el.innerHTML=`<svg width="${w}" height="${h}" viewBox="-4 -4 ${w+8} ${h+8}">
+    <defs><filter id="sft" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#1A1A1A" flood-opacity="0.16"/></filter></defs>
+    <line x1="${wcx}" y1="${wcy+r1}" x2="${lcx}" y2="${lcy-r2}" stroke="${ink}" stroke-width="2.5" stroke-opacity=".5"/>
+    <line x1="${wcx}" y1="${wcy+r1}" x2="${rcx}" y2="${rcy-r2}" stroke="${ink}" stroke-width="2.5" stroke-opacity=".5"/>
+    <g filter="url(#sft)">
+      <circle cx="${wcx}" cy="${wcy}" r="${r1}" fill="${wholeC}"/>
+      <circle cx="${lcx}" cy="${lcy}" r="${r2}" fill="${leftC}"/>
+      <circle cx="${rcx}" cy="${rcy}" r="${r2}" fill="${rightC}"/>
+    </g>
+    <text x="${wcx}" y="${wcy+1}" text-anchor="middle" dominant-baseline="central" font-family="'Hanken Grotesk',sans-serif" font-size="18" font-weight="800" fill="${ink}">56</text>
+    <text x="${lcx}" y="${lcy+1}" text-anchor="middle" dominant-baseline="central" font-family="'Hanken Grotesk',sans-serif" font-size="15" font-weight="800" fill="${ink}">7</text>
+    <text x="${wcx}" y="${lcy+1}" text-anchor="middle" dominant-baseline="central" font-family="'Hanken Grotesk',sans-serif" font-size="16" font-weight="700" fill="${ink}" opacity=".5">×</text>
+    <text x="${rcx}" y="${rcy+1}" text-anchor="middle" dominant-baseline="central" font-family="'Hanken Grotesk',sans-serif" font-size="15" font-weight="800" fill="${ink}">8</text>
+  </svg>`;
+}
+// current bond (hard offset twin)
+(function(){const el=document.getElementById('bond-current');const w=170,h=120,wcx=w/2,wcy=28,lcx=34,lcy=96,rcx=w-34,rcy=96,r1=25,r2=21,ink='#1A1A1A';
+el.innerHTML=`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+  <line x1="${wcx}" y1="${wcy+r1}" x2="${lcx}" y2="${lcy-r2}" stroke="${ink}" stroke-width="3"/>
+  <line x1="${wcx}" y1="${wcy+r1}" x2="${rcx}" y2="${rcy-r2}" stroke="${ink}" stroke-width="3"/>
+  <circle cx="${wcx+3}" cy="${wcy+3}" r="${r1}" fill="${ink}"/><circle cx="${wcx}" cy="${wcy}" r="${r1}" fill="#FFD43B" stroke="${ink}" stroke-width="3"/>
+  <text x="${wcx}" y="${wcy+1}" text-anchor="middle" dominant-baseline="central" font-family="'Space Mono',monospace" font-size="16" font-weight="700" fill="${ink}">56</text>
+  <circle cx="${lcx+2}" cy="${lcy+2}" r="${r2}" fill="${ink}"/><circle cx="${lcx}" cy="${lcy}" r="${r2}" fill="#4CC9F0" stroke="${ink}" stroke-width="3"/>
+  <text x="${lcx}" y="${lcy+1}" text-anchor="middle" dominant-baseline="central" font-family="'Space Mono',monospace" font-size="14" font-weight="700" fill="${ink}">7</text>
+  <text x="${wcx}" y="${lcy+1}" text-anchor="middle" dominant-baseline="central" font-family="'Space Mono',monospace" font-size="16" font-weight="700" fill="${ink}">×</text>
+  <circle cx="${rcx+2}" cy="${rcy+2}" r="${r2}" fill="${ink}"/><circle cx="${rcx}" cy="${rcy}" r="${r2}" fill="#06D6A0" stroke="${ink}" stroke-width="3"/>
+  <text x="${rcx}" y="${rcy+1}" text-anchor="middle" dominant-baseline="central" font-family="'Space Mono',monospace" font-size="14" font-weight="700" fill="${ink}">8</text></svg>`;})();
+bond(document.getElementById('bond-softpop'),{wholeC:'#FFD43B',leftC:'#4CC9F0',rightC:'#06D6A0'});
+</script>
+</body>
+</html>

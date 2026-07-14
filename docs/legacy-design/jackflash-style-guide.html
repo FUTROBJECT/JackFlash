@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JackFlash — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============ TOKENS (mirrors tokens.css / tokens.json) ============ */
+:root{
+  --ink-900:#180102; --ink-80:rgba(24,1,2,.8); --ink-60:rgba(24,1,2,.6);
+  --ink-40:rgba(24,1,2,.4); --ink-20:rgba(24,1,2,.2); --ink-10:rgba(24,1,2,.1); --ink-06:rgba(24,1,2,.06);
+  --cream:#f8f0e3; --cream-lift:#fffdf9;
+  --clay-50:#ece4d7; --clay-100:#ded2c0; --clay-200:#aca396; --clay-300:#938a7d;
+  --clay-400:#7a7164; --clay-500:#60574a; --clay-600:#473e31;
+  --coral:#f16b46; --teal:#3dac91; --ocean:#63a4bc; --clayred:#a7625a;
+  --khaki:#8d8465; --pink:#e0a5cf; --gold:#dbb154;
+
+  --color-bg:var(--cream); --color-surface:var(--cream-lift); --color-surface-sunken:var(--clay-50);
+  --color-border:var(--ink-10); --color-border-strong:var(--ink-20);
+  --color-ink:var(--ink-900); --color-ink-muted:var(--ink-60); --color-ink-subtle:var(--ink-40);
+  --color-on-bright:var(--ink-900); --color-on-dark:var(--cream);
+  --color-primary:var(--coral); --color-primary-hover:var(--ink-900);
+  --color-secondary:var(--ocean); --color-success:var(--teal); --color-info:var(--ocean);
+  --color-warning:var(--gold); --color-danger:var(--clayred);
+  --color-correct:var(--teal); --color-correct-soft:#e3f4ee;
+  --color-incorrect:var(--clayred); --color-incorrect-soft:#f3e3e1; --color-streak:var(--gold);
+
+  --font-display:"Fraunces","ABC Maxi",Georgia,serif;
+  --font-body:"Hanken Grotesk","Matter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-numeric:"Hanken Grotesk","Matter",ui-monospace,"SF Mono",monospace;
+
+  --text-display:clamp(2.5rem,6vw,3.75rem); --text-h1:2.375rem; --text-h2:2rem;
+  --text-h3:1.5rem; --text-h4:1.125rem; --text-body-lg:1.125rem; --text-body:1rem;
+  --text-sm:.875rem; --text-caption:.75rem;
+  --leading-tight:1.1; --leading-snug:1.25; --leading-normal:1.55;
+
+  --space-1:.25rem; --space-2:.5rem; --space-3:.75rem; --space-4:1rem; --space-5:1.25rem;
+  --space-6:1.5rem; --space-8:2rem; --space-10:2.5rem; --space-12:3rem; --space-16:4rem; --space-20:5rem;
+
+  --radius-sm:.5rem; --radius-md:1rem; --radius-lg:1.5rem; --radius-xl:2rem; --radius-2xl:2.5rem;
+  --radius-pill:100rem; --radius-circle:50%;
+
+  --shadow-xs:0 0 0 1px var(--ink-06);
+  --shadow-sm:0 1px 3px var(--ink-10),0 0 0 1px var(--ink-06);
+  --shadow-md:0 6px 20px var(--ink-10);
+  --shadow-lg:0 16px 40px rgba(24,1,2,.14);
+  --glow-flash:0 0 80px rgba(241,107,70,.35);
+
+  --ease-out:cubic-bezier(.22,1,.36,1); --ease-spring:cubic-bezier(.34,1.56,.64,1);
+  --dur-fast:120ms; --dur-base:200ms; --dur-slow:320ms;
+}
+
+/* ============ BASE ============ */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--color-bg);color:var(--color-ink);
+  font-family:var(--font-body);font-size:var(--text-body);line-height:var(--leading-normal);
+  -webkit-font-smoothing:antialiased;}
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:600;line-height:var(--leading-tight);
+  letter-spacing:-.02em;margin:0;}
+a{color:inherit}
+code{font-family:var(--font-numeric);font-size:.85em;background:var(--ink-06);
+  padding:.12em .4em;border-radius:var(--radius-sm);}
+
+/* layout */
+.shell{display:grid;grid-template-columns:240px 1fr;max-width:1240px;margin:0 auto;}
+nav{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;padding:var(--space-8) var(--space-5);
+  border-right:1px solid var(--color-border);}
+nav .brand{display:flex;align-items:center;gap:.55rem;font-family:var(--font-display);
+  font-weight:700;font-size:1.35rem;letter-spacing:-.02em;margin-bottom:var(--space-8);}
+nav .bolt{display:grid;place-items:center;width:34px;height:34px;border-radius:var(--radius-md);
+  background:var(--coral);color:var(--ink-900);box-shadow:var(--shadow-sm);}
+nav a{display:block;text-decoration:none;color:var(--color-ink-muted);font-size:var(--text-sm);
+  font-weight:500;padding:.4rem .6rem;border-radius:var(--radius-sm);transition:all var(--dur-fast) var(--ease-out);}
+nav a:hover{color:var(--color-ink);background:var(--ink-06);}
+main{padding:var(--space-12) var(--space-12);min-width:0;}
+section{margin-bottom:var(--space-20);scroll-margin-top:var(--space-8);}
+.eyebrow{font-size:var(--text-caption);font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--coral);font-family:var(--font-body);margin-bottom:var(--space-3);}
+.lead{font-size:var(--text-body-lg);color:var(--color-ink-muted);max-width:60ch;}
+.sec-title{font-size:var(--text-h2);margin-bottom:var(--space-2);}
+.sec-desc{color:var(--color-ink-muted);max-width:62ch;margin-bottom:var(--space-8);}
+.divider{height:1px;background:var(--color-border);border:0;margin:var(--space-12) 0;}
+
+/* hero */
+.hero{padding:var(--space-12);border-radius:var(--radius-2xl);background:var(--ink-900);
+  color:var(--cream);position:relative;overflow:hidden;box-shadow:var(--shadow-lg);}
+.hero::after{content:"";position:absolute;right:-40px;top:-60px;width:260px;height:260px;
+  border-radius:var(--radius-circle);background:var(--coral);filter:blur(10px);opacity:.55;box-shadow:var(--glow-flash);}
+.hero h1{font-size:var(--text-display);color:var(--cream);position:relative;}
+.hero .lead{color:rgba(248,240,227,.78);position:relative;}
+.hero .bolt-lg{font-size:.7em}
+
+/* grids & cards */
+.grid{display:grid;gap:var(--space-5);}
+.cols-2{grid-template-columns:repeat(2,1fr);}
+.cols-3{grid-template-columns:repeat(3,1fr);}
+.cols-4{grid-template-columns:repeat(4,1fr);}
+.card{background:var(--color-surface);border:1px solid var(--color-border);
+  border-radius:var(--radius-lg);padding:var(--space-6);box-shadow:var(--shadow-sm);}
+.principle h4{font-size:var(--text-h4);margin-bottom:var(--space-2);}
+.principle p{margin:0;color:var(--color-ink-muted);font-size:var(--text-sm);}
+.principle .ic{width:44px;height:44px;border-radius:var(--radius-md);display:grid;place-items:center;
+  margin-bottom:var(--space-4);font-size:1.4rem;}
+
+/* swatches */
+.swatch{border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--color-border);
+  cursor:pointer;background:var(--color-surface);transition:transform var(--dur-fast) var(--ease-out);}
+.swatch:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);}
+.swatch .chip{height:88px;}
+.swatch .meta{padding:.6rem .75rem;}
+.swatch .nm{font-weight:600;font-size:var(--text-sm);}
+.swatch .hex{font-family:var(--font-numeric);font-size:var(--text-caption);color:var(--color-ink-muted);text-transform:uppercase;}
+.swatch .var{font-family:var(--font-numeric);font-size:var(--text-caption);color:var(--color-ink-subtle);}
+
+/* type specimens */
+.spec{display:flex;align-items:baseline;gap:var(--space-5);padding:var(--space-4) 0;border-bottom:1px solid var(--color-border);}
+.spec .label{flex:0 0 130px;font-size:var(--text-caption);color:var(--color-ink-subtle);font-family:var(--font-numeric);}
+.spec .sample{font-family:var(--font-display);}
+
+/* spacing scale */
+.sp-row{display:flex;align-items:center;gap:var(--space-4);margin-bottom:var(--space-2);font-size:var(--text-sm);}
+.sp-row .bar{height:16px;background:var(--coral);border-radius:var(--radius-sm);}
+.sp-row .nm{flex:0 0 90px;font-family:var(--font-numeric);color:var(--color-ink-muted);}
+
+/* radii + shadow demo */
+.demo-box{height:96px;background:var(--clay-50);border:1px solid var(--color-border);display:grid;
+  place-items:end center;padding-bottom:.5rem;font-family:var(--font-numeric);font-size:var(--text-caption);color:var(--color-ink-muted);}
+.shadow-box{height:96px;background:var(--color-surface);border-radius:var(--radius-md);display:grid;
+  place-items:end center;padding-bottom:.5rem;font-family:var(--font-numeric);font-size:var(--text-caption);color:var(--color-ink-muted);}
+
+/* buttons */
+.btn{font-family:var(--font-body);font-weight:600;font-size:var(--text-body);border:1.5px solid transparent;
+  border-radius:var(--radius-pill);padding:.7rem 1.5rem;cursor:pointer;transition:all var(--dur-base) var(--ease-out);}
+.btn-primary{background:var(--coral);color:var(--color-on-bright);border-color:var(--coral);}
+.btn-primary:hover{background:var(--ink-900);border-color:var(--ink-900);color:var(--cream);}
+.btn-secondary{background:var(--ocean);color:var(--color-on-bright);border-color:var(--ocean);}
+.btn-secondary:hover{background:var(--ink-900);border-color:var(--ink-900);color:var(--cream);}
+.btn-ghost{background:transparent;color:var(--color-ink);border-color:var(--color-border-strong);}
+.btn-ghost:hover{border-color:var(--ink-900);color:var(--coral);}
+.btn-success{background:var(--teal);color:var(--color-on-bright);border-color:var(--teal);}
+.btn-success:hover{background:var(--ink-900);color:var(--cream);border-color:var(--ink-900);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* pills/badges */
+.pill{display:inline-flex;align-items:center;gap:.4rem;font-size:var(--text-sm);font-weight:600;
+  padding:.3rem .8rem;border-radius:var(--radius-pill);}
+.pill-coral{background:var(--color-primary-soft,#fde6de);color:#a23e22;}
+.pill-teal{background:var(--color-correct-soft);color:#1f6b57;}
+.pill-ocean{background:#e2eef3;color:#346074;}
+.pill-gold{background:#f7eed5;color:#7c6420;}
+.pill-pink{background:#f7e6f2;color:#8a4f78;}
+
+/* input */
+.field label{display:block;font-size:var(--text-sm);font-weight:600;margin-bottom:.4rem;}
+.input{width:100%;font-family:var(--font-body);font-size:var(--text-body);padding:.7rem 1rem;
+  background:var(--color-surface);border:1.5px solid var(--color-border-strong);border-radius:var(--radius-md);
+  transition:border-color var(--dur-base) var(--ease-out);}
+.input:focus{outline:none;border-color:var(--coral);box-shadow:0 0 0 4px var(--color-primary-soft,#fde6de);}
+
+/* flashcard demo */
+.flash{background:var(--ink-900);color:var(--cream);border-radius:var(--radius-2xl);padding:var(--space-12) var(--space-8);
+  text-align:center;position:relative;overflow:hidden;}
+.flash .q{font-family:var(--font-numeric);font-weight:700;font-size:clamp(2.5rem,8vw,4.5rem);
+  font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+.flash .hint{color:rgba(248,240,227,.6);font-size:var(--text-sm);margin-top:var(--space-2);}
+.flash .ans{color:var(--gold);}
+
+/* feedback */
+.feedback{border-radius:var(--radius-lg);padding:var(--space-5) var(--space-6);display:flex;gap:var(--space-4);align-items:center;}
+.fb-correct{background:var(--color-correct-soft);border:1.5px solid var(--teal);}
+.fb-incorrect{background:var(--color-incorrect-soft);border:1.5px solid var(--clayred);}
+.feedback .badge{width:40px;height:40px;border-radius:var(--radius-circle);display:grid;place-items:center;
+  font-weight:700;flex:0 0 40px;color:var(--cream);}
+.feedback strong{display:block;}
+.feedback small{color:var(--color-ink-muted);}
+
+/* progress + streak */
+.progress{height:14px;background:var(--clay-50);border-radius:var(--radius-pill);overflow:hidden;}
+.progress > span{display:block;height:100%;background:var(--teal);border-radius:var(--radius-pill);}
+.streak{display:inline-flex;align-items:center;gap:.5rem;background:var(--ink-900);color:var(--gold);
+  font-weight:700;padding:.5rem 1rem;border-radius:var(--radius-pill);}
+
+/* token-format callout */
+.callout{background:var(--color-surface);border:1.5px solid var(--coral);border-left-width:6px;
+  border-radius:var(--radius-lg);padding:var(--space-6);}
+.note{font-size:var(--text-sm);color:var(--color-ink-muted);background:var(--clay-50);
+  border-radius:var(--radius-md);padding:var(--space-4) var(--space-5);}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--ink-900);color:var(--cream);padding:.6rem 1.2rem;border-radius:var(--radius-pill);
+  font-size:var(--text-sm);opacity:0;pointer-events:none;transition:all var(--dur-base) var(--ease-out);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media(max-width:880px){.shell{grid-template-columns:1fr}nav{display:none}main{padding:var(--space-6)}
+  .cols-2,.cols-3,.cols-4{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav>
+    <div class="brand"><span class="bolt">⚡</span> JackFlash</div>
+    <a href="#overview">Overview</a>
+    <a href="#principles">Principles</a>
+    <a href="#color">Color</a>
+    <a href="#type">Typography</a>
+    <a href="#space">Spacing</a>
+    <a href="#radii">Radii</a>
+    <a href="#elevation">Elevation</a>
+    <a href="#motion">Motion</a>
+    <a href="#buttons">Buttons</a>
+    <a href="#forms">Forms & badges</a>
+    <a href="#patterns">Practice patterns</a>
+    <a href="#tokens">Using the tokens</a>
+  </nav>
+
+  <main>
+    <!-- OVERVIEW -->
+    <section id="overview">
+      <div class="hero">
+        <h1>JackFlash Design System</h1>
+        <p class="lead">A warm, friendly, expressive visual language for kids' math practice — built on the brand foundations of <strong>Fauna Robotics</strong>: soft to the touch, safety-first, and full of character.</p>
+      </div>
+      <p class="note" style="margin-top:var(--space-6)">Colors, neutrals, geometry and type below are lifted from Fauna's live stylesheet and re-mapped to JackFlash's needs. Where Fauna optimizes for bold marketing display, JackFlash optimizes for legibility and encouragement — the one deliberate change is that text on bright fills uses ink (<code>#180102</code>) rather than cream, so every control clears WCAG AA.</p>
+    </section>
+
+    <!-- PRINCIPLES -->
+    <section id="principles">
+      <div class="eyebrow">Foundations</div>
+      <h2 class="sec-title">Design principles</h2>
+      <p class="sec-desc">Four ideas borrowed from Fauna's product language, translated for a learning app a child uses every day.</p>
+      <div class="grid cols-2">
+        <div class="card principle"><div class="ic" style="background:#fde6de">🤲</div><h4>Soft to the touch</h4><p>Generous rounded corners, gentle shadows, warm cream surfaces. Nothing sharp, nothing cold — the interface should feel safe to poke at.</p></div>
+        <div class="card principle"><div class="ic" style="background:var(--color-correct-soft)">🌱</div><h4>Growth, not grading</h4><p>Progress over perfection. Teal celebrates what's right; mistakes are a gentle clay-red "not quite," never an alarming red buzzer.</p></div>
+        <div class="card principle"><div class="ic" style="background:#f7eed5">⚡</div><h4>The flash of delight</h4><p>Coral is the spark — saved for the one action that matters on a screen. Energy used sparingly reads as confidence, not noise.</p></div>
+        <div class="card principle"><div class="ic" style="background:#e2eef3">😊</div><h4>Expressive & human</h4><p>Big friendly display type, playful color, room to breathe. The app has a personality kids want to come back to.</p></div>
+      </div>
+    </section>
+
+    <!-- COLOR -->
+    <section id="color">
+      <div class="eyebrow">Tokens</div>
+      <h2 class="sec-title">Color</h2>
+      <p class="sec-desc">Click any swatch to copy its hex. The seven brand hues are Fauna's exact values; neutrals are their warm cream &amp; clay ramp.</p>
+
+      <h4 style="margin-bottom:var(--space-4)">Brand hues</h4>
+      <div class="grid cols-4" id="brand-swatches"></div>
+
+      <h4 style="margin:var(--space-8) 0 var(--space-4)">Neutrals — ink &amp; cream</h4>
+      <div class="grid cols-4" id="neutral-swatches"></div>
+
+      <h4 style="margin:var(--space-8) 0 var(--space-4)">Clay ramp</h4>
+      <div class="grid cols-4" id="clay-swatches"></div>
+
+      <h4 style="margin:var(--space-8) 0 var(--space-4)">Semantic roles</h4>
+      <div class="grid cols-4" id="semantic-swatches"></div>
+    </section>
+
+    <!-- TYPE -->
+    <section id="type">
+      <div class="eyebrow">Tokens</div>
+      <h2 class="sec-title">Typography</h2>
+      <p class="sec-desc"><strong>Fraunces</strong> (display) + <strong>Hanken Grotesk</strong> (UI &amp; numerals) stand in for Fauna's licensed <code>ABC Maxi</code> + <code>Matter</code>. Math uses tabular figures so digits never shift.</p>
+      <div class="card">
+        <div class="spec"><span class="label">display / 60</span><span class="sample" style="font-size:var(--text-display)">7 × 8</span></div>
+        <div class="spec"><span class="label">h1 / 38</span><span class="sample" style="font-size:var(--text-h1)">Great work today</span></div>
+        <div class="spec"><span class="label">h2 / 32</span><span class="sample" style="font-size:var(--text-h2)">Multiplication</span></div>
+        <div class="spec"><span class="label">h3 / 24</span><span class="sample" style="font-size:var(--text-h3)">Practice set 4</span></div>
+        <div class="spec"><span class="label">body-lg / 18</span><span class="sample" style="font-family:var(--font-body);font-size:var(--text-body-lg)">Tap the answer you think is right.</span></div>
+        <div class="spec"><span class="label">body / 16</span><span class="sample" style="font-family:var(--font-body);font-size:var(--text-body)">You're on a 5-day streak — keep it going!</span></div>
+        <div class="spec" style="border:0"><span class="label">numeric / tabular</span><span class="sample" style="font-family:var(--font-numeric);font-size:var(--text-h2);font-variant-numeric:tabular-nums">0 1 2 3 4 5 6 7 8 9</span></div>
+      </div>
+    </section>
+
+    <!-- SPACING -->
+    <section id="space">
+      <div class="eyebrow">Tokens</div>
+      <h2 class="sec-title">Spacing</h2>
+      <p class="sec-desc">A 4px base scale. Use the named steps, never magic numbers.</p>
+      <div class="card" id="space-scale"></div>
+    </section>
+
+    <!-- RADII -->
+    <section id="radii">
+      <div class="eyebrow">Tokens</div>
+      <h2 class="sec-title">Radii</h2>
+      <p class="sec-desc">Fauna runs very round. JackFlash inherits that pillowy geometry — it's what makes the UI feel soft and friendly.</p>
+      <div class="grid cols-4">
+        <div class="demo-box" style="border-radius:var(--radius-sm)">sm · 8</div>
+        <div class="demo-box" style="border-radius:var(--radius-md)">md · 16</div>
+        <div class="demo-box" style="border-radius:var(--radius-lg)">lg · 24</div>
+        <div class="demo-box" style="border-radius:var(--radius-xl)">xl · 32</div>
+        <div class="demo-box" style="border-radius:var(--radius-2xl)">2xl · 40</div>
+        <div class="demo-box" style="border-radius:var(--radius-pill)">pill</div>
+        <div class="demo-box" style="border-radius:var(--radius-circle)">circle</div>
+      </div>
+    </section>
+
+    <!-- ELEVATION -->
+    <section id="elevation">
+      <div class="eyebrow">Tokens</div>
+      <h2 class="sec-title">Elevation</h2>
+      <p class="sec-desc">Soft, warm, minimal — shadows tint with the ink hue, never pure black.</p>
+      <div class="grid cols-4">
+        <div class="shadow-box" style="box-shadow:var(--shadow-xs)">xs</div>
+        <div class="shadow-box" style="box-shadow:var(--shadow-sm)">sm</div>
+        <div class="shadow-box" style="box-shadow:var(--shadow-md)">md</div>
+        <div class="shadow-box" style="box-shadow:var(--shadow-lg)">lg</div>
+      </div>
+      <p style="margin-top:var(--space-5)"><code>--glow-flash</code> is the one exception: a coral bloom reserved for celebratory hero moments (see the header).</p>
+    </section>
+
+    <!-- MOTION -->
+    <section id="motion">
+      <div class="eyebrow">Tokens</div>
+      <h2 class="sec-title">Motion</h2>
+      <p class="sec-desc">Hover the boxes. Gentle ease-out for everyday transitions; a soft spring for rewards and reveals.</p>
+      <div class="grid cols-3">
+        <div class="card" style="text-align:center"><div class="mv" style="--e:var(--ease-out);--d:var(--dur-base)">ease-out · 200ms</div></div>
+        <div class="card" style="text-align:center"><div class="mv" style="--e:var(--ease-spring);--d:var(--dur-slow)">spring · 320ms</div></div>
+        <div class="card" style="text-align:center"><div class="mv" style="--e:var(--ease-out);--d:var(--dur-fast)">fast · 120ms</div></div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- BUTTONS -->
+    <section id="buttons">
+      <div class="eyebrow">Components</div>
+      <h2 class="sec-title">Buttons</h2>
+      <p class="sec-desc">All pill-shaped. Primary coral is the single hero action per screen; everything bright fades to ink on hover — Fauna's signature move.</p>
+      <div class="card" style="display:flex;flex-wrap:wrap;gap:var(--space-4);align-items:center">
+        <button class="btn btn-primary">Start practice</button>
+        <button class="btn btn-secondary">Review</button>
+        <button class="btn btn-success">Check answer</button>
+        <button class="btn btn-ghost">Skip</button>
+        <button class="btn btn-primary" disabled>Disabled</button>
+      </div>
+    </section>
+
+    <!-- FORMS & BADGES -->
+    <section id="forms">
+      <div class="eyebrow">Components</div>
+      <h2 class="sec-title">Forms &amp; badges</h2>
+      <div class="grid cols-2">
+        <div class="card field">
+          <label for="nm">What's your name?</label>
+          <input class="input" id="nm" placeholder="Type here…" value="">
+          <p style="font-size:var(--text-sm);color:var(--color-ink-muted);margin:.6rem 0 0">Focus the field to see the coral focus ring.</p>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:var(--space-4)">Badges &amp; pills</div>
+          <div style="display:flex;flex-wrap:wrap;gap:.6rem">
+            <span class="pill pill-coral">⚡ New</span>
+            <span class="pill pill-teal">✓ Mastered</span>
+            <span class="pill pill-ocean">In progress</span>
+            <span class="pill pill-gold">🔥 5-day streak</span>
+            <span class="pill pill-pink">Bonus round</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRACTICE PATTERNS -->
+    <section id="patterns">
+      <div class="eyebrow">Components</div>
+      <h2 class="sec-title">Practice patterns</h2>
+      <p class="sec-desc">The pieces that make JackFlash itself — assembled from the same tokens.</p>
+
+      <div class="grid cols-2" style="align-items:start">
+        <div class="flash">
+          <div class="q" id="flashq">7 × 8</div>
+          <div class="hint" id="flashhint">Tap to reveal the answer</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:var(--space-5)">
+          <div class="feedback fb-correct">
+            <div class="badge" style="background:var(--teal)">✓</div>
+            <div><strong>Nice! That's right.</strong><small>+10 points · 3 in a row</small></div>
+          </div>
+          <div class="feedback fb-incorrect">
+            <div class="badge" style="background:var(--clayred)">↻</div>
+            <div><strong>Not quite — let's try once more.</strong><small>The answer was 56. You've got this.</small></div>
+          </div>
+          <div class="card" style="box-shadow:none">
+            <div style="display:flex;justify-content:space-between;font-size:var(--text-sm);margin-bottom:.5rem">
+              <span style="font-weight:600">Set 4 progress</span><span style="color:var(--color-ink-muted)">7 / 10</span>
+            </div>
+            <div class="progress"><span style="width:70%"></span></div>
+            <div style="margin-top:var(--space-4)"><span class="streak">🔥 5-day streak</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- TOKENS -->
+    <section id="tokens">
+      <div class="eyebrow">Handoff</div>
+      <h2 class="sec-title">Using the tokens</h2>
+      <div class="callout">
+        <h4 style="margin-bottom:var(--space-3)">Recommended format: CSS custom properties (+ a JSON source)</h4>
+        <p style="margin:0 0 var(--space-4);color:var(--color-ink-muted)">JackFlash is React 19 / Vite, so plain CSS variables drop in with zero build wiring, theme at runtime, and work in any component whether you use CSS Modules, Tailwind, or styled-components. That mirrors how your AQL token tool already thinks about variables.</p>
+        <p style="margin:0;color:var(--color-ink-muted)">Two files ship alongside this guide:</p>
+        <ul style="color:var(--color-ink-muted)">
+          <li><code>tokens.css</code> — the <code>:root</code> variables. Import once in your entry CSS; reference as <code>var(--color-primary)</code>.</li>
+          <li><code>tokens.json</code> — W3C-style source of truth. Feed it to Style Dictionary to also emit iOS / Android / Tailwind targets as JackFlash grows.</li>
+        </ul>
+        <p style="margin:var(--space-4) 0 0">Keep <code>tokens.json</code> authoritative; generate <code>tokens.css</code> from it so the two never drift.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+const brand=[
+  ["Coral","--coral","#f16b46","Fauna orange · primary"],
+  ["Teal","--teal","#3dac91","Fauna green · correct"],
+  ["Ocean","--ocean","#63a4bc","Fauna blue · info"],
+  ["Clay-red","--clayred","#a7625a","Fauna brown-bright · incorrect"],
+  ["Khaki","--khaki","#8d8465","Fauna khaki"],
+  ["Pink","--pink","#e0a5cf","Fauna pink"],
+  ["Gold","--gold","#dbb154","Fauna yellow · streaks"],
+];
+const neutral=[
+  ["Ink 900","--ink-900","#180102","text · dark fills"],
+  ["Cream","--cream","#f8f0e3","app canvas"],
+  ["Cream lift","--cream-lift","#fffdf9","raised cards"],
+];
+const clay=[
+  ["Clay 50","--clay-50","#ece4d7",""],["Clay 100","--clay-100","#ded2c0",""],
+  ["Clay 200","--clay-200","#aca396",""],["Clay 300","--clay-300","#938a7d",""],
+  ["Clay 400","--clay-400","#7a7164",""],["Clay 500","--clay-500","#60574a",""],
+  ["Clay 600","--clay-600","#473e31",""],
+];
+const semantic=[
+  ["Primary","--color-primary","#f16b46","→ coral"],
+  ["Success / Correct","--color-success","#3dac91","→ teal"],
+  ["Info / Secondary","--color-info","#63a4bc","→ ocean"],
+  ["Warning / Streak","--color-warning","#dbb154","→ gold"],
+  ["Danger / Incorrect","--color-danger","#a7625a","→ clay-red"],
+  ["Surface","--color-surface","#fffdf9","cards"],
+  ["Border","--color-border","rgba(24,1,2,.1)","hairlines"],
+  ["Ink muted","--color-ink-muted","rgba(24,1,2,.6)","secondary text"],
+];
+function lum(hex){if(hex.indexOf('#')<0)return .5;const c=hex.replace('#','');const r=parseInt(c.substr(0,2),16)/255,g=parseInt(c.substr(2,2),16)/255,b=parseInt(c.substr(4,2),16)/255;const f=v=>v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4);return .2126*f(r)+.7152*f(g)+.0722*f(b);}
+function build(id,arr){
+  document.getElementById(id).innerHTML=arr.map(([nm,v,hex,desc])=>{
+    const txt=lum(hex)>.45?'var(--ink-900)':'var(--cream)';
+    return `<div class="swatch" data-copy="${hex}">
+      <div class="chip" style="background:${hex};color:${txt};display:flex;align-items:flex-end;padding:.5rem;font-size:.7rem;font-family:var(--font-numeric)">${desc||''}</div>
+      <div class="meta"><div class="nm">${nm}</div><div class="hex">${hex}</div><div class="var">${v}</div></div>
+    </div>`;}).join('');
+}
+build('brand-swatches',brand);build('neutral-swatches',neutral);
+build('clay-swatches',clay);build('semantic-swatches',semantic);
+
+// spacing scale
+const steps=[["1","4px",4],["2","8px",8],["3","12px",12],["4","16px",16],["5","20px",20],["6","24px",24],["8","32px",32],["10","40px",40],["12","48px",48],["16","64px",64],["20","80px",80]];
+document.getElementById('space-scale').innerHTML=steps.map(([n,px,w])=>
+  `<div class="sp-row"><span class="nm">space-${n}</span><span class="bar" style="width:${w}px"></span><span style="color:var(--color-ink-muted)">${px}</span></div>`).join('');
+
+// motion demo
+document.querySelectorAll('.mv').forEach(el=>{
+  el.style.cssText+=";padding:1.5rem;border-radius:var(--radius-md);background:var(--coral);color:var(--ink-900);font-weight:600;transition:transform var(--d) var(--e),background var(--d) var(--e);";
+  const card=el.closest('.card');
+  card.addEventListener('mouseenter',()=>{el.style.transform='translateY(-10px) scale(1.04)';});
+  card.addEventListener('mouseleave',()=>{el.style.transform='none';});
+});
+
+// flashcard reveal
+const fq=document.getElementById('flashq'),fh=document.getElementById('flashhint');
+let revealed=false;
+document.querySelector('.flash').addEventListener('click',()=>{
+  revealed=!revealed;
+  fq.innerHTML=revealed?'<span class="ans">56</span>':'7 × 8';
+  fh.textContent=revealed?'Tap to flip back':'Tap to reveal the answer';
+});
+
+// copy-to-clipboard
+const toast=document.getElementById('toast');
+document.addEventListener('click',e=>{
+  const s=e.target.closest('[data-copy]');if(!s)return;
+  navigator.clipboard&&navigator.clipboard.writeText(s.dataset.copy);
+  toast.textContent='Copied '+s.dataset.copy;toast.classList.add('show');
+  clearTimeout(window._t);window._t=setTimeout(()=>toast.classList.remove('show'),1400);
+});
+</script>
+</body>
+</html>
