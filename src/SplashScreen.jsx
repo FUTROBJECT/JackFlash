@@ -29,10 +29,21 @@ export default function SplashScreen({ onDone }) {
     const measure = () => {
       const avail = (frameRef.current?.clientWidth || window.innerWidth) - PAD * 2;
       const natural = markRef.current?.offsetWidth || 0;
-      if (natural > 0) setScale(Math.min(1, (avail / natural) * 0.97));
+      // Guard both dimensions: a transient width of ~0 mid-resize (or before
+      // layout settles) must never latch scale to 0 and hide the lockup.
+      if (avail > 0 && natural > 0) setScale(Math.min(1, (avail / natural) * 0.97));
     };
     measure();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+    // Re-fit on viewport changes (orientation, window/preview resize) — without
+    // this, a scale measured for one width sticks forever.
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    if (ro && frameRef.current) ro.observe(frameRef.current);
+    window.addEventListener("resize", measure);
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, []);
 
   // Reveal the CTA a beat after the lockup so it doesn't pop in simultaneously.
