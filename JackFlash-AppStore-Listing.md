@@ -76,7 +76,7 @@ PRIVATE BY DESIGN
 No accounts. No ads. No data collection. Nothing your child does ever leaves the device. JackFlash is COPPA-safe by design — because the best kids' app is the one parents never have to worry about.
 
 FREE TO START
-The Multiply module is free, including the 2s, 5s & 10s table group. Unlock the full module — or future modules as they arrive — with a one-time purchase. No subscriptions, ever.
+The entire Multiply & Divide module is free — every table group, no limits. Want more? Try the Fractions module's Foundations group free, then unlock the rest with a one-time purchase. More modules arrive over time. No subscriptions, ever.
 
 Five minutes of focused practice beats thirty minutes of grinding. JackFlash makes those five minutes count.
 
@@ -88,7 +88,7 @@ Five minutes of focused practice beats thirty minutes of grinding. JackFlash mak
 
 ## What's New  *(version notes — for v1.0)*
 
-> Welcome to JackFlash! This first release includes the Multiply module — multiplication and division fact families for grades 2–4 — with Smart Practice, visual scaffolds, daily streaks, achievements, and multi-child profiles. We'd love your feedback.
+> Welcome to JackFlash! This first release includes two modules — Multiply & Divide (free) and Fractions (with a free Foundations group to try) — for grades 2–4, with Smart Practice, visual scaffolds, daily streaks, achievements, and multi-child profiles. We'd love your feedback.
 
 ---
 
@@ -108,6 +108,7 @@ Short, benefit-led lines to pair with each screenshot:
 ## Notes & Open Decisions
 
 - **App Store privacy label:** JackFlash should qualify for "Data Not Collected" — a genuinely strong differentiator worth leaning on. (Revisit if RevenueCat is added for in-app purchases; that introduces a third-party SDK that may need disclosure.)
-- **Promised modules:** Only the Multiply module exists at launch. The description says "future modules as they arrive" rather than naming firm dates — keep it that way until Add/Fractions/Place Value are real, to stay within Apple's rules on advertising unreleased content.
+- **What ships at launch:** Two modules — Multiply & Divide (entirely free) and Fractions ($3.99, with the Foundations group free to sample). Add, Place Value, and Connections are staged but not wired. The description says "more modules arrive over time" rather than naming firm dates — keep it that way until each is real, to stay within Apple's rules on advertising unreleased content.
+- **Bundle:** The "All Modules" bundle is intentionally hidden until 3+ paid modules are live, so it's an honest discount rather than a pre-sale of unbuilt content. It auto-surfaces in the Parent Zone once the threshold is met. Do not create the bundle IAP product in App Store Connect / Play until then.
 - **Category / age rating:** Education, age rating 4+ (per the build plan).
 - **"Smart Practice" is a branded feature name.** Always capitalized, used as a proper noun — never as a loose adjective ("smart practice"). It names the five-category adaptive engine defined in the build plan. Keep it consistent across the app, this listing, the FAQ, the screenshots, and the landing page so the precise definition stays attached to the name rather than diluting into generic edtech filler.

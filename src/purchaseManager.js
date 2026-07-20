@@ -51,7 +51,7 @@ export const PRODUCTS = {
   "module.fractions.full": {
     id: "module.fractions.full",
     name: "Fractions",
-    description: "Equal parts, equivalent fractions, comparing, fraction arithmetic",
+    description: "Foundations group is free to try. Unlock equivalent fractions, comparing & ordering, and fraction add & subtract.",
     gradeRange: "Grades 2–4",
     price: "$3.99",
     priceValue: 3.99,
@@ -97,13 +97,6 @@ function moduleUnlockProducts() {
   return Object.values(PRODUCTS).filter((p) => p.type === "module_unlock");
 }
 
-// ⚠️ TEMP PLAY-TEST BYPASS — REMOVE BEFORE SHIPPING ⚠️
-// When true, the Connections capstone is treated as fully unlocked (both the
-// purchase layer AND the Multiply/Divide/Fractions mastery layer) so the screens
-// can be exercised without grinding three modules to mastery first.
-// Set back to false to restore the real gate. Search "CONNECTIONS_GATE_BYPASS".
-const CONNECTIONS_GATE_BYPASS = false;
-
 // ============================================================================
 // ENTITLEMENT CACHE (synchronous, local)
 // ----------------------------------------------------------------------------
@@ -128,7 +121,6 @@ export function isContentAccessible(moduleId, groupId) {
 // it shouldn't be selectable in onboarding, profile creation, or the module
 // picker until a parent unlocks it in the Parent Zone.
 export function isModuleLocked(moduleId) {
-  if (CONNECTIONS_GATE_BYPASS && moduleId === "connections") return false; // TEMP play-test bypass
   if (isModuleFullyUnlocked(moduleId)) return false;
   const mod = getModule(moduleId);
   return !(mod?.freeContent?.length > 0);
@@ -182,10 +174,6 @@ function _checkFractionsMastered(fractionsMastery) {
 }
 
 export function getConnectionsPrereqStatus(profileId) {
-  // ⚠️ TEMP PLAY-TEST BYPASS — REMOVE BEFORE SHIPPING ⚠️
-  if (CONNECTIONS_GATE_BYPASS) {
-    return { unlocked: true, purchaseOk: true, multiplyMastered: true, divideMastered: true, fractionsMastered: true };
-  }
   // Null-guard: profileId may be undefined/null during rendering of new profiles
   if (!profileId) {
     return { unlocked: false, purchaseOk: false, multiplyMastered: false, divideMastered: false, fractionsMastered: false };

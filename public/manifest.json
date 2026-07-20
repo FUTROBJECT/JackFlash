@@ -1,7 +1,7 @@
 {
-  "name": "JackFlash – Multiplication & Division Practice",
+  "name": "JackFlash – Math Practice",
   "short_name": "JackFlash",
-  "description": "Multiplication & division practice aligned with Singapore Math",
+  "description": "Adaptive math practice aligned with Singapore Math — multiplication, division, fractions, and more.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

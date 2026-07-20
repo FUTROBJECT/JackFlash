@@ -930,9 +930,12 @@ const fractionsModule = {
     },
   ],
 
-  // No free tier — the whole module is gated behind the Parent Zone purchase
-  // (module.fractions.full or the bundle).
-  freeContent: [],
+  // Free sample tier: Foundations (F1–F4) is playable free so families can try
+  // the module's conceptual entry point before buying. Equivalent, Compare, and
+  // Add & Subtract stay gated behind the Parent Zone purchase
+  // (module.fractions.full or the bundle) — the practice screen locks them and
+  // shows an "Ask a parent to unlock this group!" prompt.
+  freeContent: ["foundations"],
 
   // Skill focus labels in kid-friendly language
   skillLabels: {
