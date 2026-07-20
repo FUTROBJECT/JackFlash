@@ -45,7 +45,7 @@ definition carries: `id, name, groups, freeContent, skillLabels, pool` (or
 | Module | id | State |
 |---|---|---|
 | Multiply & Divide | `multiply` | shipped — **the free module** (all groups free) |
-| Fractions | `fractions` | shipped — $3.99, no free tier |
+| Fractions | `fractions` | shipped — $3.99, **Foundations group free** (sample to drive conversion) |
 | Add & Subtract | `add` | built, **not wired** (imports commented in App.jsx) — v1.1 |
 | Connections (capstone word problems) | `connections` | built, **not wired** — v1.2 |
 | Place Value | `placeValue` | not built (spec pattern: docs/fractions-spec.md) |
@@ -80,7 +80,28 @@ bundle $9.99) → synchronous entitlement cache → async provider (simulated on
 web via `window.confirm`; native provider is a stub until RevenueCat/StoreKit).
 Gating helpers: `isContentAccessible(moduleId, groupId)` and
 `isModuleLocked(moduleId)` (no `freeContent` + not purchased = locked
-everywhere: onboarding, profile creation, home ModulePicker).
+everywhere: onboarding, profile creation, home ModulePicker). The **All-Modules
+bundle card is hidden until 3+ paid modules are `available`** (ParentZone
+`BUNDLE_MIN_PAID_MODULES`) so it's an honest discount, not a pre-sale — it
+auto-surfaces later; don't re-enable it earlier.
+
+## Launch (App Store / Play)
+
+Full runbook: **`docs/LAUNCH-native-setup.md`** (native scaffold → RevenueCat →
+submission). Read it before any store-facing work. Key state:
+
+- **Launch shape:** Multiply (free) + Fractions ($3.99, Foundations free). Bundle
+  and the other modules stay off until they ship.
+- **Web is ready; native is not.** Capacitor deps + `capacitor.config.json` are
+  in, but `ios/`/`android/` aren't generated (needs Xcode/CocoaPods/Android
+  Studio — absent on the build machine as of this writing).
+- **IAP is scaffolded, not live.** RevenueCat keys are `…__TODO`; create
+  `module.fractions.full` in both stores + a RevenueCat `fractions` entitlement.
+- **Store URLs:** `public/privacy.html` + `public/support.html` → live at the
+  gh-pages URLs after `npm run deploy`. Contact = Laser Lab Studios /
+  adamlaserlab@gmail.com (confirm before submitting).
+- **Icons/splash:** source assets ready in `assets/` — `npx capacitor-assets
+  generate` after platforms exist. See `assets/README.md`.
 
 ## Vocabulary
 

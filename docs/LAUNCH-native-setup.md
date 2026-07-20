@@ -48,15 +48,19 @@ Build artifacts (Pods/, .gradle/, build/) are already covered by `.gitignore`.
 
 ## 3. App icons & splash screen  ⏳
 
-Generate the full icon/splash set from a source image:
+**The source assets already exist** in `assets/` (see `assets/README.md`) —
+icon, Android adaptive foreground/background, and light + dark splashes, all at
+the resolutions `@capacitor/assets` expects. So this step is just:
 
 ```
 npm i -D @capacitor/assets
-npx capacitor-assets generate --iconBackgroundColor '#FFD43B' --splashBackgroundColor '#FFF8E7'
+npx capacitor-assets generate    # reads assets/*, writes into ios/ and android/
 ```
 
-Put a 1024×1024 icon at `assets/icon.png` and a splash at `assets/splash.png`
-first. (Brand yellow `#FFD43B`, cream `#FFF8E7` — matches `capacitor.config.json`.)
+Run it **after** the platforms exist (step 2). It picks up `icon-only.png`,
+`icon-foreground.png`, `icon-background.png`, `splash.png`, and `splash-dark.png`
+automatically — no flags needed. To restyle the mark, edit the `.svg` masters in
+`assets/` and re-rasterize (instructions in `assets/README.md`).
 
 ## 4. Signing & store accounts  🔑
 
