@@ -73,6 +73,11 @@ automatically — no flags needed. To restyle the mark, edit the `.svg` masters 
 
 ## 5. In-app purchases (RevenueCat)  🔑 ⏳
 
+**→ Full step-by-step: [`docs/LAUNCH-revenuecat-setup.md`](LAUNCH-revenuecat-setup.md)**
+(App Store Connect + Play product creation, RevenueCat entitlement/offering,
+key wiring, sandbox testing, troubleshooting). The summary below is the shape;
+follow that doc to actually do it.
+
 The purchase code is written and provider-agnostic; it just needs live products.
 See the "TO GO LIVE" block in `src/purchaseManager.js` for the code-side notes.
 
