@@ -97,6 +97,8 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   });
   const [mode, setMode] = useState("pictorial");
   const [operation, setOperation] = useState(mod?.defaultOperation || "mixed");
+  // Per-group operation tab in the progress grid ({ [groupId]: "multiply" | "divide" }).
+  const [groupOp, setGroupOp] = useState({});
   const [currentFact, setCurrentFact] = useState(null);
   const [userAnswer, setUserAnswer] = useState("");
   const [feedback, setFeedback] = useState(null);
@@ -415,17 +417,8 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     || currentTables.length === 0) : false;
 
   // groupColor removed — controls bar no longer in practice view
-
-  // Calculate group progress
-  const getGroupProgress = useCallback((tables) => {
-    if (!mod) return { total: 0, mastered: 0 };
-    const gf = mod.generateFacts({ tables, operation });
-    const masteryThreshold = DEFAULT_MASTERY_THRESHOLD;
-    return {
-      total: gf.length,
-      mastered: gf.filter((f) => getMasteryLevel(f.factKey) >= masteryThreshold).length,
-    };
-  }, [mod, operation, getMasteryLevel]);
+  // (per-group progress is now computed inline in the progress grid, per
+  //  the selected Multiply/Divide tab.)
 
   // Get the ScaffoldComponent and HintComponent from the module
   // Use DivisionScaffoldComponent (bar model) for divide, DotArray for multiply
@@ -687,8 +680,19 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
 
             {/* Mastery Grids by Group */}
             {mod.groups.map((group) => {
-              const prog = getGroupProgress(group.tables);
               const accessible = isContentAccessible(moduleId, group.id);
+              const op = groupOp[group.id] || "multiply";
+              // Distinct facts for this group + selected operation. Dedupe symmetric
+              // division facts (e.g. "4÷2" is generated twice) so cells and the
+              // count stay clean.
+              const seen = new Set();
+              const facts = mod.generateFacts({ tables: group.tables, operation: op }).filter((f) => {
+                if (seen.has(f.factKey)) return false;
+                seen.add(f.factKey);
+                return true;
+              });
+              const totalCount = facts.length;
+              const masteredCount = facts.filter((f) => getMasteryLevel(f.factKey) >= DEFAULT_MASTERY_THRESHOLD).length;
               return (
                 <div key={group.id} style={{
                   backgroundColor: "white", borderRadius: "12px", padding: "18px",
@@ -701,45 +705,71 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                       {accessible ? "" : "🔒 "}{group.label}
                     </h3>
                     <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "13px", fontWeight: 700 }}>
-                      {prog.mastered}/{prog.total}
+                      {masteredCount}/{totalCount}
                     </span>
                   </div>
                   {accessible ? (
                     <>
+                      {/* Multiply / Divide tabs — same group, both operations */}
+                      <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
+                        {[
+                          { id: "multiply", label: "Multiply", sym: "×" },
+                          { id: "divide", label: "Divide", sym: "÷" },
+                        ].map((tab) => {
+                          const active = op === tab.id;
+                          return (
+                            <button
+                              key={tab.id}
+                              onClick={() => setGroupOp((prev) => ({ ...prev, [group.id]: tab.id }))}
+                              style={{
+                                flex: 1, padding: "9px 10px", borderRadius: "8px",
+                                border: BRUTAL_BORDER_SM,
+                                backgroundColor: active ? group.color : "white",
+                                color: COLORS.black,
+                                fontFamily: "'Space Grotesk', sans-serif", fontSize: "13px",
+                                fontWeight: 700, cursor: "pointer",
+                                boxShadow: active ? `3px 3px 0px ${COLORS.black}` : "none",
+                                opacity: active ? 1 : 0.55,
+                                transition: "all 0.15s ease",
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                              }}
+                            >
+                              <span style={{ fontFamily: "'Space Mono', monospace", fontSize: "15px" }}>{tab.sym}</span>
+                              {tab.label}
+                            </button>
+                          );
+                        })}
+                      </div>
                       <div style={{
                         height: 12, borderRadius: 6, backgroundColor: "#EEE",
                         border: BRUTAL_BORDER_SM, overflow: "hidden", marginBottom: "14px",
                       }}>
                         <div style={{
-                          height: "100%", width: `${(prog.mastered / prog.total) * 100}%`,
+                          height: "100%", width: `${totalCount > 0 ? (masteredCount / totalCount) * 100 : 0}%`,
                           backgroundColor: group.color, transition: "width 0.5s ease",
                         }} />
                       </div>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "6px", marginBottom: "14px" }}>
-                        {group.tables.map((t) =>
-                          Array.from({ length: 10 }, (_, i) => i + 1).map((b) => {
-                            const factKey = `${t}x${b}`;
-                            const level = getMasteryLevel(factKey);
-                            const masteryThreshold = DEFAULT_MASTERY_THRESHOLD;
-                            const mastered = level >= masteryThreshold;
-                            return (
-                              <div key={factKey} style={{
-                                padding: "6px 4px", borderRadius: "6px",
-                                backgroundColor: mastered ? group.color : "#F8F8F8",
-                                border: mastered ? BRUTAL_BORDER_SM : "2px solid #E0E0E0",
-                                textAlign: "center", fontSize: "11px",
-                                fontFamily: "'Space Mono', monospace",
-                                fontWeight: mastered ? 700 : 400,
-                                boxShadow: mastered ? "2px 2px 0px " + COLORS.black : "none",
-                              }}>
-                                {t}×{b}
-                                <div style={{ marginTop: "3px", display: "flex", justifyContent: "center" }}>
-                                  <MasteryDots level={Math.min(level, masteryThreshold)} max={masteryThreshold} />
-                                </div>
+                        {facts.map((f) => {
+                          const level = getMasteryLevel(f.factKey);
+                          const mastered = level >= DEFAULT_MASTERY_THRESHOLD;
+                          return (
+                            <div key={f.factKey} style={{
+                              padding: "6px 4px", borderRadius: "6px",
+                              backgroundColor: mastered ? group.color : "#F8F8F8",
+                              border: mastered ? BRUTAL_BORDER_SM : "2px solid #E0E0E0",
+                              textAlign: "center", fontSize: "11px",
+                              fontFamily: "'Space Mono', monospace",
+                              fontWeight: mastered ? 700 : 400,
+                              boxShadow: mastered ? "2px 2px 0px " + COLORS.black : "none",
+                            }}>
+                              {f.display.replace(/\s/g, "")}
+                              <div style={{ marginTop: "3px", display: "flex", justifyContent: "center" }}>
+                                <MasteryDots level={Math.min(level, DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
                               </div>
-                            );
-                          })
-                        )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </>
                   ) : (
