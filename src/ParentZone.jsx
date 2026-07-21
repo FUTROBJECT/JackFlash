@@ -41,7 +41,6 @@ function ToggleSwitch({ on, onChange }) {
         backgroundColor: on ? COLORS.green : "#CCCCCC",
         border: `2px solid ${COLORS.black}`,
         borderRadius: "13px",
-        padding: 0,
         cursor: "pointer",
         position: "relative",
         transition: "background-color 0.2s",
@@ -1019,6 +1018,14 @@ export function ParentZone({
               const paidNow = getProductsWithStatus().filter(p => p.type === "module_unlock" && p.available !== false);
               const indivTotal = paidNow.reduce((s, p) => s + (p.priceValue || 0), 0);
               const bundleSavings = indivTotal - (bundleProduct.priceValue || 0);
+              // The bundle only appears once it's an honest discount — i.e. once
+              // enough paid modules ship that buying them individually costs more
+              // than the bundle. At launch (Fractions only) it stays hidden so we
+              // never sell "all future modules" against a single available one.
+              // Auto-surfaces when the 3rd paid module flips available:true.
+              const BUNDLE_MIN_PAID_MODULES = 3;
+              const showBundle = isPurchased || paidNow.length >= BUNDLE_MIN_PAID_MODULES;
+              if (!showBundle) return null;
               return (
                 <div
                   style={{

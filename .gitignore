@@ -1,2 +1,17 @@
 node_modules
 dist
+
+# Capacitor native build artifacts (the native project SOURCES are committed;
+# only generated build output / dependency caches are ignored). These paths are
+# also covered by the per-platform .gitignore files Capacitor writes into
+# ios/ and android/, listed here as belt-and-suspenders.
+ios/App/Pods/
+ios/App/build/
+ios/App/output/
+ios/DerivedData/
+*.xcuserstate
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/capacitor-cordova-android-plugins/
