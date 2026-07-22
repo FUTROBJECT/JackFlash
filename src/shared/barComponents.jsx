@@ -161,14 +161,10 @@ export function FractionBar({
           );
         })}
       </div>
-      {!compact && (
-        <div style={{
-          textAlign: "center", fontFamily: "'Space Mono', monospace",
-          fontSize: 11, fontWeight: 700, marginTop: 4, opacity: 0.5, color: COLORS.black,
-        }}>
-          {shaded}/{d}
-        </div>
-      )}
+      {/* No auto "n/d" caption under the bar: on "name the shaded fraction"
+          questions (fractions F1, Connections "Which fraction is it?") it printed
+          the answer. Callers that genuinely want the value labelled pass `label`,
+          which renders above the bar. */}
     </div>
   );
 }

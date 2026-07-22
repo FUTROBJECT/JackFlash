@@ -108,17 +108,10 @@ export function FractionBar({
           );
         })}
       </div>
-      {!compact && (
-        <div style={{
-          textAlign: "center",
-          fontFamily: "'Space Mono', monospace",
-          fontSize: 11, fontWeight: 700,
-          marginTop: 4, opacity: 0.5,
-          color: COLORS.black,
-        }}>
-          {shaded}/{d}
-        </div>
-      )}
+      {/* No auto "n/d" caption under the bar: on "name the shaded fraction"
+          questions (F1 "Name it!") it printed the answer directly beneath the
+          picture. Callers that genuinely want the value labelled pass `label`,
+          which renders above the bar. */}
     </div>
   );
 }
@@ -188,7 +181,10 @@ export function AddBarsScaffold({ a, b, result, isSubtract = false, opacity = 1,
  * NumberLineScaffold – shows a 0–1 number line partitioned into d parts with the
  * fraction n/d marked.
  */
-export function NumberLineScaffold({ n, d, opacity = 1, animate = false }) {
+// `showValue` prints the fraction above the marker. It defaults to OFF because
+// E4 asks "What fraction is marked?" — printing it in the question would answer
+// it. Callers turn it on once the child has answered (or when teaching).
+export function NumberLineScaffold({ n, d, opacity = 1, animate = false, showValue = false }) {
   const W = 300, H = 60, padL = 18, padR = 18;
   const lineW = W - padL - padR;
   const tickH = 10, lineY = 38;
@@ -219,11 +215,13 @@ export function NumberLineScaffold({ n, d, opacity = 1, animate = false }) {
           style={{ animation: animate ? "dotPop 0.4s ease both" : "none" }} />
         <circle cx={markerX} cy={lineY} r={9} fill={COLORS.purple} stroke={COLORS.black} strokeWidth={2.5}
           style={{ animation: animate ? "dotPop 0.4s ease both" : "none" }} />
-        {/* Label above marker */}
-        <text x={markerX} y={lineY - 14} textAnchor="middle"
-          fontFamily="'Shrikhand', cursive" fontSize={14} fill={COLORS.purple}>
-          {n}/{d}
-        </text>
+        {/* Label above marker — only once the answer may be shown (see showValue) */}
+        {showValue && (
+          <text x={markerX} y={lineY - 14} textAnchor="middle"
+            fontFamily="'Shrikhand', cursive" fontSize={14} fill={COLORS.purple}>
+            {n}/{d}
+          </text>
+        )}
       </svg>
     </div>
   );

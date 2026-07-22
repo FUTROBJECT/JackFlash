@@ -362,7 +362,7 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
   if (skill === "E4") {
     return (
       <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-        <NumberLineScaffold n={item.n} d={item.d} opacity={opacity} animate={showScaffold} />
+        <NumberLineScaffold n={item.n} d={item.d} opacity={opacity} animate={showScaffold} showValue={showScaffold} />
       </div>
     );
   }
@@ -502,7 +502,7 @@ function gcd(a, b) {
 // Question Display (the big fraction or equation)
 // ---------------------------------------------------------------------------
 
-function QuestionDisplay({ item }) {
+function QuestionDisplay({ item, feedback }) {
   const skill = item.skill;
 
   // F1: "What fraction is shaded?"
@@ -613,7 +613,9 @@ function QuestionDisplay({ item }) {
         <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#666" }}>
           {item.questionText}
         </div>
-        <NumberLineScaffold n={item.n} d={item.d} opacity={1} animate={false} />
+        {/* Marker value stays hidden until the child has answered — the question
+            is "What fraction is marked?" */}
+        <NumberLineScaffold n={item.n} d={item.d} opacity={1} animate={false} showValue={!!feedback} />
       </div>
     );
   }
@@ -1359,7 +1361,7 @@ export default function FractionsPractice({
                   </div>
 
                   {/* Question */}
-                  <QuestionDisplay item={currentItem} />
+                  <QuestionDisplay item={currentItem} feedback={feedback} />
 
                   {/* Answer input */}
                   {!feedback && currentItem.answerType === "buildBar" && mode === "concrete" ? (
