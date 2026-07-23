@@ -632,7 +632,14 @@ export default function ConnectionsPractice({
   // ---- All state (no conditional hooks) ----
   const [localMastery, setLocalMastery] = useState({});
   // Seeded from the child's saved choice so it survives leaving practice.
-  const [mode, setMode] = useState(() => getPreferredMode(profileId, moduleId) || "pictorial");
+  const [pickedMode, setPickedMode] = useState(() => getPreferredMode(profileId, moduleId) || "pictorial");
+  // Once the child has explicitly chosen a mode, per-group defaults stop
+  // overriding it. A ref (not state) so the item-selection callback always
+  // reads the current value without needing it in its dependency list.
+  const hasExplicitModeRef = useRef(!!getPreferredMode(profileId, moduleId));
+  // A parent lock (Parent Zone → Lock CPA Mode) overrides the child's choice.
+  const lockedMode = getProfile(profileId)?.settings?.lockedMode || null;
+  const mode = lockedMode || pickedMode;
   const [activeGroups, setActiveGroups] = useState(null); // null = all
   const [currentItem, setCurrentItem] = useState(null);
   const [feedback, setFeedback] = useState(null);
@@ -800,9 +807,12 @@ export default function ConnectionsPractice({
     setOrderSubmitted(false);
     // Reset concrete state for I-group
     setConcreteState({ splitDone: false, selectedParts: selected?.numerator || null });
-    // Set default mode based on group
-    if (selected?.group === "integration") {
-      setMode("concrete");
+    // Set default mode based on group — but only until the child has made an
+    // explicit choice, which then sticks across groups. Automatic default, so
+    // it isn't persisted; a parent lock still wins regardless, since the
+    // effective mode is `lockedMode || pickedMode`.
+    if (!hasExplicitModeRef.current && selected?.group === "integration") {
+      setPickedMode("concrete");
     }
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [activePools, getMasteryData, currentItem]);
@@ -1152,13 +1162,17 @@ export default function ConnectionsPractice({
                     { id: "pictorial", label: "Pictorial", sub: "See it fade" },
                     { id: "abstract", label: "Abstract", sub: "Symbols only" },
                   ].map(m => (
-                    <button key={m.id} onClick={() => { setMode(m.id); setPreferredMode(profileId, moduleId, m.id); }}
+                    <button key={m.id}
+                      disabled={!!lockedMode}
+                      onClick={() => { if (lockedMode) return; hasExplicitModeRef.current = true; setPickedMode(m.id); setPreferredMode(profileId, moduleId, m.id); }}
                       style={{
                         flex: 1, padding: "10px 6px", borderRadius: 10, border: BRUTAL_BORDER_SM,
                         backgroundColor: mode === m.id ? AMBER : "white",
                         color: COLORS.black,
                         fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
-                        cursor: "pointer", boxShadow: mode === m.id ? "none" : BRUTAL_SHADOW_SM,
+                        cursor: lockedMode ? "default" : "pointer",
+                        opacity: lockedMode && mode !== m.id ? 0.45 : 1,
+                        boxShadow: mode === m.id ? "none" : BRUTAL_SHADOW_SM,
                         transition: "all 0.15s ease",
                       }}>
                       {m.label}
@@ -1166,6 +1180,11 @@ export default function ConnectionsPractice({
                     </button>
                   ))}
                 </div>
+                {lockedMode && (
+                  <p style={{ margin: "10px 0 0", fontSize: 11, color: "#888", fontFamily: "'Space Mono', monospace" }}>
+                    🔒 Locked by a parent in Parent Zone
+                  </p>
+                )}
               </div>
 
               {/* Start Practice */}

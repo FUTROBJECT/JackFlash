@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, DEFAULT_MASTERY_THRESHOLD, AVATARS } from "./constants.js";
 import multiplyModule from "./modules/multiply.jsx";
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
-import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordSession, getProfile, updateChildSettings } from "./dataManager.js";
+import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordSession, getProfile, updateChildSettings, getPreferredMode, setPreferredMode } from "./dataManager.js";
 import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
@@ -95,7 +95,11 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     }
     return null;
   });
-  const [mode, setMode] = useState("pictorial");
+  // CPA mode: the child's saved pick (persisted per module), unless a parent
+  // has locked it in Parent Zone. `mode` drives scaffoldOpacity below.
+  const [pickedMode, setPickedMode] = useState(() => getPreferredMode(profileId, moduleId) || "pictorial");
+  const lockedMode = getProfile(profileId)?.settings?.lockedMode || null;
+  const mode = lockedMode || pickedMode;
   const [operation, setOperation] = useState(mod?.defaultOperation || "mixed");
   // Per-group operation tab in the progress grid ({ [groupId]: "multiply" | "divide" }).
   const [groupOp, setGroupOp] = useState({});
@@ -661,6 +665,45 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               }}>
                 Tap to toggle sets on/off — your choices are saved
               </p>
+            </div>
+
+            {/* CPA Mode selector — drives how much scaffold shows during practice */}
+            <div style={{
+              backgroundColor: "white", borderRadius: "12px", padding: "18px",
+              marginBottom: "14px", border: BRUTAL_BORDER, boxShadow: BRUTAL_SHADOW,
+            }}>
+              <h3 style={{ margin: "0 0 14px", fontSize: "16px", fontWeight: 700, fontFamily: "'Shrikhand', cursive" }}>
+                Practice Mode
+              </h3>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {[
+                  { id: "concrete", label: "Concrete", sub: "Touch the math" },
+                  { id: "pictorial", label: "Pictorial", sub: "See it fade" },
+                  { id: "abstract", label: "Abstract", sub: "Symbols only" },
+                ].map(m => (
+                  <button key={m.id}
+                    disabled={!!lockedMode}
+                    onClick={() => { if (lockedMode) return; setPickedMode(m.id); setPreferredMode(profileId, moduleId, m.id); }}
+                    style={{
+                      flex: 1, padding: "10px 6px", borderRadius: "10px", border: BRUTAL_BORDER_SM,
+                      backgroundColor: mode === m.id ? COLORS.green : "white",
+                      color: COLORS.black,
+                      fontFamily: "'Space Mono', monospace", fontSize: "11px", fontWeight: 700,
+                      cursor: lockedMode ? "default" : "pointer",
+                      opacity: lockedMode && mode !== m.id ? 0.45 : 1,
+                      boxShadow: mode === m.id ? "none" : BRUTAL_SHADOW_SM,
+                      transition: "all 0.15s ease",
+                    }}>
+                    {m.label}
+                    <div style={{ fontSize: "9px", opacity: 0.7, marginTop: "3px" }}>{m.sub}</div>
+                  </button>
+                ))}
+              </div>
+              {lockedMode && (
+                <p style={{ margin: "10px 0 0", fontSize: "11px", color: "#888", fontFamily: "'Space Mono', monospace" }}>
+                  🔒 Locked by a parent in Parent Zone
+                </p>
+              )}
             </div>
 
             {/* Start Practice button */}

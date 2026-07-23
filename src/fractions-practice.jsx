@@ -721,7 +721,11 @@ export default function FractionsPractice({
   const [localMastery, setLocalMastery] = useState({});
   // Seed from the child's saved choice so it survives leaving practice and
   // coming back (component state alone resets on remount).
-  const [mode, setMode] = useState(() => getPreferredMode(profileId, moduleId) || "pictorial");
+  const [pickedMode, setPickedMode] = useState(() => getPreferredMode(profileId, moduleId) || "pictorial");
+  // A parent lock (Parent Zone → Lock CPA Mode) overrides the child's choice.
+  // Read during render so a lock set mid-session applies on the next render.
+  const lockedMode = getProfile(profileId)?.settings?.lockedMode || null;
+  const mode = lockedMode || pickedMode;
   const [activeGroups, setActiveGroups] = useState(null); // null = all accessible
   const [focusSkill, setFocusSkill] = useState(null);
   const [currentItem, setCurrentItem] = useState(null);
@@ -1207,13 +1211,17 @@ export default function FractionsPractice({
                     { id: "pictorial", label: "Pictorial", sub: "See it fade" },
                     { id: "abstract", label: "Abstract", sub: "Symbols only" },
                   ].map(m => (
-                    <button key={m.id} onClick={() => { setMode(m.id); setPreferredMode(profileId, moduleId, m.id); }}
+                    <button key={m.id}
+                      disabled={!!lockedMode}
+                      onClick={() => { if (lockedMode) return; setPickedMode(m.id); setPreferredMode(profileId, moduleId, m.id); }}
                       style={{
                         flex: 1, padding: "10px 6px", borderRadius: 10, border: BRUTAL_BORDER_SM,
                         backgroundColor: mode === m.id ? COLORS.purple : "white",
                         color: mode === m.id ? "white" : COLORS.black,
                         fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
-                        cursor: "pointer", boxShadow: mode === m.id ? "none" : BRUTAL_SHADOW_SM,
+                        cursor: lockedMode ? "default" : "pointer",
+                        opacity: lockedMode && mode !== m.id ? 0.45 : 1,
+                        boxShadow: mode === m.id ? "none" : BRUTAL_SHADOW_SM,
                         transition: "all 0.15s ease",
                       }}>
                       {m.label}
@@ -1221,6 +1229,11 @@ export default function FractionsPractice({
                     </button>
                   ))}
                 </div>
+                {lockedMode && (
+                  <p style={{ margin: "10px 0 0", fontSize: 11, color: "#888", fontFamily: "'Space Mono', monospace" }}>
+                    🔒 Locked by a parent in Parent Zone
+                  </p>
+                )}
               </div>
 
               {/* Start Practice */}
