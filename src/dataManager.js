@@ -463,6 +463,35 @@ export function updateChildSettings(profileId, updates) {
   return profile.settings;
 }
 
+// ---------------------------------------------------------------------------
+// Preferred CPA mode (per profile, per module)
+// ---------------------------------------------------------------------------
+// Remembers the mode the child picked so it survives leaving practice and
+// coming back (the practice screens keep `mode` in component state, which
+// resets on remount). Stored per module so each module keeps its own default
+// until the child chooses. Separate from `lockedMode`, which is a parent lock.
+
+export function getPreferredMode(profileId, moduleId) {
+  initData();
+  const profile = getProfile(profileId);
+  const pref = profile?.settings?.preferredMode;
+  if (!pref || typeof pref !== "object") return null;
+  return pref[moduleId] || null;
+}
+
+export function setPreferredMode(profileId, moduleId, mode) {
+  initData();
+  const profile = getProfile(profileId);
+  if (!profile || !moduleId) return null;
+  // Older profiles predate this setting — create it on demand.
+  if (!profile.settings.preferredMode || typeof profile.settings.preferredMode !== "object") {
+    profile.settings.preferredMode = {};
+  }
+  profile.settings.preferredMode[moduleId] = mode;
+  saveData();
+  return profile.settings.preferredMode;
+}
+
 // Onboarding Operations
 export function isOnboardingComplete() {
   initData();

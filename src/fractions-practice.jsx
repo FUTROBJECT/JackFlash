@@ -28,7 +28,7 @@ import fractionsModule, {
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
 import {
   initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch,
-  recordSession, getProfile,
+  recordSession, getProfile, getPreferredMode, setPreferredMode,
 } from "./dataManager.js";
 import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
@@ -719,7 +719,9 @@ export default function FractionsPractice({
 
   // ---- All state (no conditional hooks) ----
   const [localMastery, setLocalMastery] = useState({});
-  const [mode, setMode] = useState("pictorial");
+  // Seed from the child's saved choice so it survives leaving practice and
+  // coming back (component state alone resets on remount).
+  const [mode, setMode] = useState(() => getPreferredMode(profileId, moduleId) || "pictorial");
   const [activeGroups, setActiveGroups] = useState(null); // null = all accessible
   const [focusSkill, setFocusSkill] = useState(null);
   const [currentItem, setCurrentItem] = useState(null);
@@ -1205,7 +1207,7 @@ export default function FractionsPractice({
                     { id: "pictorial", label: "Pictorial", sub: "See it fade" },
                     { id: "abstract", label: "Abstract", sub: "Symbols only" },
                   ].map(m => (
-                    <button key={m.id} onClick={() => setMode(m.id)}
+                    <button key={m.id} onClick={() => { setMode(m.id); setPreferredMode(profileId, moduleId, m.id); }}
                       style={{
                         flex: 1, padding: "10px 6px", borderRadius: 10, border: BRUTAL_BORDER_SM,
                         backgroundColor: mode === m.id ? COLORS.purple : "white",

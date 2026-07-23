@@ -26,7 +26,7 @@ import addModule, {
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
 import {
   initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch,
-  recordSession, getProfile,
+  recordSession, getProfile, getPreferredMode, setPreferredMode,
 } from "./dataManager.js";
 import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
@@ -796,7 +796,8 @@ export default function AddPractice({
 
   // ---- All state (no conditional hooks) ----
   const [localMastery, setLocalMastery] = useState({});
-  const [mode, setMode] = useState("concrete"); // default concrete for N group
+  // Child's saved choice wins; otherwise concrete (the N-group default).
+  const [mode, setMode] = useState(() => getPreferredMode(profileId, moduleId) || "concrete");
   const [currentItem, setCurrentItem] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [userAnswer, setUserAnswer] = useState(""); // for "number" and "barChoice"
@@ -1283,7 +1284,7 @@ export default function AddPractice({
                     { id: "pictorial", label: "Pictorial", sub: "See it fade" },
                     { id: "abstract", label: "Abstract", sub: "Symbols only" },
                   ].map(m => (
-                    <button key={m.id} onClick={() => setMode(m.id)}
+                    <button key={m.id} onClick={() => { setMode(m.id); setPreferredMode(profileId, moduleId, m.id); }}
                       style={{
                         flex: 1, padding: "10px 6px", borderRadius: 10, border: BRUTAL_BORDER_SM,
                         backgroundColor: mode === m.id ? moduleColor : "white",

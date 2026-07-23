@@ -63,6 +63,10 @@ export const DEFAULT_CHILD_SETTINGS = {
   lockedMode: null,
   lockedGroup: null,
   lockedOperation: null,
+  // The CPA mode the child last chose, per module id ({ fractions: "concrete" }).
+  // Distinct from lockedMode (a parent lock): this just remembers their choice so
+  // it survives leaving practice and coming back.
+  preferredMode: {},
   enabledTables: null, // null = all accessible tables; array like [2,5,10] = only those
 };
 
