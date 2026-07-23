@@ -108,6 +108,9 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   const [feedback, setFeedback] = useState(null);
   const [showScaffold, setShowScaffold] = useState(false);
   const [userHidScaffold, setUserHidScaffold] = useState(false);
+  // Concrete-mode builder: groups built (multiply) / groups made (divide) for
+  // the current fact. Reset on every new fact and on CPA mode change.
+  const [builderGroups, setBuilderGroups] = useState(0);
   const [showSkipCount, setShowSkipCount] = useState(false);
   const [showNumberBond, setShowNumberBond] = useState(false);
   const [sessionStats, setSessionStats] = useState({ correct: 0, total: 0 });
@@ -279,6 +282,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     setShowScaffold(false);
     setUserHidScaffold(false);
     setShowNumberBond(false);
+    setBuilderGroups(0);
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [facts, getMasteryData, currentFact]);
 
@@ -428,6 +432,13 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   // Use DivisionScaffoldComponent (bar model) for divide, DotArray for multiply
   const MultiplyScaffold = mod?.ScaffoldComponent;
   const DivisionScaffold = mod?.DivisionScaffoldComponent;
+  // Concrete-mode interactive builders (docs/multiply-concrete-spec.md)
+  const ConcreteMultiply = mod?.ConcreteMultiplyComponent;
+  const ConcreteDivide = mod?.ConcreteDivideComponent;
+  const reducedMotion = useMemo(
+    () => typeof window !== "undefined" && !!window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    []
+  );
   const HintComponent = mod?.HintComponent;
 
   // Guard: if module somehow not found, show message (all hooks already called above)
@@ -683,7 +694,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                 ].map(m => (
                   <button key={m.id}
                     disabled={!!lockedMode}
-                    onClick={() => { if (lockedMode) return; setPickedMode(m.id); setPreferredMode(profileId, moduleId, m.id); }}
+                    onClick={() => { if (lockedMode) return; setPickedMode(m.id); setPreferredMode(profileId, moduleId, m.id); setBuilderGroups(0); }}
                     style={{
                       flex: 1, padding: "10px 6px", borderRadius: "10px", border: BRUTAL_BORDER_SM,
                       backgroundColor: mode === m.id ? COLORS.green : "white",
@@ -958,8 +969,34 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                 );
               })()}
 
-              {/* Scaffold (bar model / dot array) below the input */}
-              {mode !== "abstract" && (
+              {/* Concrete: interactive builder — the tap gesture IS the operation
+                  (docs/multiply-concrete-spec.md). Pictorial: passive scaffold that
+                  fades with mastery. Abstract: nothing (unchanged). */}
+              {mode === "concrete" && ConcreteMultiply && ConcreteDivide ? (
+                <div style={{ marginTop: "16px", display: "flex", justifyContent: "center" }}>
+                  {currentFact.operation === "divide" ? (
+                    <ConcreteDivide
+                      dividend={currentFact.a}
+                      divisor={currentFact.b}
+                      groupsMade={builderGroups}
+                      onMakeGroup={() => setBuilderGroups((g) => Math.min(g + 1, currentFact.answer))}
+                      onUndoGroup={() => setBuilderGroups((g) => Math.max(0, g - 1))}
+                      revealed={showScaffold}
+                      reducedMotion={reducedMotion}
+                    />
+                  ) : (
+                    <ConcreteMultiply
+                      a={currentFact.a}
+                      b={currentFact.b}
+                      groupsBuilt={builderGroups}
+                      onAddGroup={() => setBuilderGroups((g) => Math.min(g + 1, currentFact.a))}
+                      onRemoveGroup={() => setBuilderGroups((g) => Math.max(0, g - 1))}
+                      revealed={showScaffold}
+                      reducedMotion={reducedMotion}
+                    />
+                  )}
+                </div>
+              ) : mode !== "abstract" && (
                 <div style={{ marginTop: "16px", display: "flex", justifyContent: "center" }}>
                   {(showScaffold || (!userHidScaffold && scaffoldOpacity > 0)) && (
                     currentFact.operation === "divide" && DivisionScaffold ? (
@@ -980,7 +1017,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                   )}
                 </div>
               )}
-              {mode !== "abstract" && !userHidScaffold && scaffoldOpacity > 0 && (
+              {mode === "pictorial" && !userHidScaffold && scaffoldOpacity > 0 && (
                 <div style={{ marginTop: "6px", fontSize: "11px", fontFamily: "'Space Mono', monospace", opacity: 0.45, fontWeight: 700 }}>
                   {currentFact.operation === "divide"
                     ? `${currentFact.a} split into groups of ${currentFact.b}`
