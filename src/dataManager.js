@@ -5,6 +5,12 @@ import { saveDurable } from "./storage.js";
 const DATA_KEY = "jackflash_data";
 const OLD_DATA_KEY = "jackflash_mastery";
 
+// Live-session tracking: a gap longer than this splits sittings into separate
+// history entries, and each answer only credits a capped amount of "active"
+// time (so backgrounding/sleeping the device doesn't inflate durations).
+const SESSION_GAP_MS = 30 * 60 * 1000;
+const SESSION_ACTIVE_CAP_MS = 2 * 60 * 1000;
+
 // In-memory cache
 let _data = null;
 
@@ -26,6 +32,32 @@ export function initData() {
         console.warn("[JF] initData: repaired malformed stored data");
         saveData();
       }
+
+      // Recover any liveSession left dangling by a killed app, and clamp
+      // implausible historic durations (e.g. from the old wall-clock bug
+      // where a backgrounded/sleeping device inflated durations to hours).
+      let repaired = false;
+      const MAX_HISTORIC_DURATION_MS = 2 * 60 * 60 * 1000; // 2 hours
+      (_data.profiles || []).forEach((profile) => {
+        if (!profile) return;
+        if (profile.liveSession) {
+          _finalizeLiveSessionOn(profile);
+          repaired = true;
+        }
+        if (Array.isArray(profile.sessionHistory)) {
+          profile.sessionHistory.forEach((entry) => {
+            if (entry && entry.duration > MAX_HISTORIC_DURATION_MS) {
+              entry.duration = MAX_HISTORIC_DURATION_MS;
+              repaired = true;
+            }
+          });
+        }
+      });
+      if (repaired) {
+        console.warn("[JF] initData: repaired dangling liveSession(s) and/or clamped implausible durations");
+        saveData();
+      }
+
       console.log("[JF] initData: loaded", _data.profiles.length, "profiles, onboarding:", _data.onboardingComplete);
       return _data;
     } else {
@@ -393,6 +425,99 @@ export function recordSession(profileId, sessionData) {
 
   saveData();
   return session;
+}
+
+// ---------------------------------------------------------------------------
+// Live session tracking (persist-per-answer)
+// ---------------------------------------------------------------------------
+// Sessions used to be recorded only in a React unmount cleanup, keyed off
+// wall-clock time since mount. That silently lost sessions when the app was
+// killed (no unmount ever ran) and could merge multiple real sittings into
+// one giant entry if the webview stayed alive across a break. Instead, we
+// persist a `liveSession` on the profile after every single answer, and only
+// convert it into a `sessionHistory` entry once the sitting is over (a real
+// gap, a day boundary, a module switch, or an explicit finalize call). This
+// makes recovery on next launch possible and keeps active-time honest.
+
+function _sameLocalDay(tsA, tsB) {
+  const a = new Date(tsA);
+  const b = new Date(tsB);
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+// Converts profile.liveSession (if any and non-empty) into a sessionHistory
+// entry, using the live session's own lastAnswerAt as recordedAt so a
+// late-recovered session still lands on the date it actually happened.
+// Does not save — callers are responsible for calling saveData().
+function _finalizeLiveSessionOn(profile) {
+  const live = profile.liveSession;
+  if (live && live.total > 0) {
+    profile.sessionHistory.unshift({
+      moduleId: live.moduleId,
+      correct: live.correct,
+      total: live.total,
+      duration: live.activeMs,
+      recordedAt: new Date(live.lastAnswerAt).toISOString(),
+    });
+
+    if (profile.sessionHistory.length > SESSION_HISTORY_CAP) {
+      profile.sessionHistory = profile.sessionHistory.slice(0, SESSION_HISTORY_CAP);
+    }
+  }
+  delete profile.liveSession;
+}
+
+// Call once per answered problem. Persists immediately so a killed app never
+// loses the in-progress sitting.
+export function recordAnswerInSession(profileId, moduleId, isCorrect) {
+  initData();
+  const profile = getProfile(profileId);
+  if (!profile) return null;
+
+  const now = Date.now();
+  let live = profile.liveSession;
+
+  if (
+    live &&
+    (now - live.lastAnswerAt > SESSION_GAP_MS ||
+      !_sameLocalDay(live.lastAnswerAt, now) ||
+      live.moduleId !== moduleId)
+  ) {
+    _finalizeLiveSessionOn(profile);
+    live = null;
+  }
+
+  if (!live) {
+    live = { moduleId, correct: 0, total: 0, startedAt: now, lastAnswerAt: now, activeMs: 0 };
+    profile.liveSession = live;
+  } else {
+    live.activeMs += Math.min(now - live.lastAnswerAt, SESSION_ACTIVE_CAP_MS);
+    live.lastAnswerAt = now;
+  }
+
+  live.total += 1;
+  if (isCorrect) live.correct += 1;
+
+  saveData();
+  return live;
+}
+
+// Call on unmount/navigation-away to close out the current sitting. Cheap
+// no-op if there's nothing live.
+export function finalizeLiveSession(profileId) {
+  initData();
+  const profile = getProfile(profileId);
+  if (!profile) return null;
+
+  if (profile.liveSession) {
+    _finalizeLiveSessionOn(profile);
+    saveData();
+  }
+  return true;
 }
 
 // Achievements Operations

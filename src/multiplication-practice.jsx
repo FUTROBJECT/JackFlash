@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, DEFAULT_MASTERY_THRESHOLD, AVATARS } from "./constants.js";
 import multiplyModule from "./modules/multiply.jsx";
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
-import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordSession, getProfile, updateChildSettings, getPreferredMode, setPreferredMode } from "./dataManager.js";
+import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordAnswerInSession, finalizeLiveSession, getProfile, updateChildSettings, getPreferredMode, setPreferredMode } from "./dataManager.js";
 import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
@@ -139,27 +139,13 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     }
   }, [profileId]);
 
-  // Record session on unmount — use refs so the cleanup only fires ONCE
-  // (previous version had sessionStats in deps, causing a phantom session to be
-  // recorded on every answered question with inflated cumulative totals)
-  const sessionStatsRef = useRef(sessionStats);
-  useEffect(() => { sessionStatsRef.current = sessionStats; }, [sessionStats]);
-  const moduleIdRef = useRef(moduleId);
-  useEffect(() => { moduleIdRef.current = moduleId; }, [moduleId]);
-
+  // Sessions are now persisted per-answer in the data layer (see
+  // recordAnswerInSession below), so they survive the app being killed and
+  // don't merge separate sittings together. This unmount effect just closes
+  // out the current live session when the child navigates away.
   useEffect(() => {
-    return () => {
-      const stats = sessionStatsRef.current;
-      if (profileId && stats.total > 0) {
-        recordSession(profileId, {
-          moduleId: moduleIdRef.current,
-          correct: stats.correct,
-          total: stats.total,
-          duration: Date.now() - sessionStartTime,
-        });
-      }
-    };
-  }, [profileId, sessionStartTime]);
+    return () => { if (profileId) finalizeLiveSession(profileId); };
+  }, [profileId]);
 
   // Get mastery data (either from profile via data manager, or local state)
   const getMasteryData = useCallback(() => {
@@ -337,6 +323,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     // Update mastery via data manager if profileId exists, otherwise via local state
     if (profileId) {
       updateMastery(profileId, moduleId, currentFact.factKey, isCorrect);
+      recordAnswerInSession(profileId, moduleId, isCorrect);
     } else {
       setLocalMastery((prev) => ({
         ...prev,

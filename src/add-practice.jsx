@@ -26,7 +26,7 @@ import addModule, {
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
 import {
   initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch,
-  recordSession, getProfile, getPreferredMode, setPreferredMode,
+  recordAnswerInSession, finalizeLiveSession, getProfile, getPreferredMode, setPreferredMode,
 } from "./dataManager.js";
 import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
@@ -833,22 +833,13 @@ export default function AddPractice({
     }
   }, [profileId]);
 
-  // Session recording on unmount
-  const sessionStatsRef = useRef(sessionStats);
-  useEffect(() => { sessionStatsRef.current = sessionStats; }, [sessionStats]);
+  // Sessions are now persisted per-answer in the data layer (see
+  // recordAnswerInSession below), so they survive the app being killed and
+  // don't merge separate sittings together. This unmount effect just closes
+  // out the current live session when the child navigates away.
   useEffect(() => {
-    return () => {
-      const stats = sessionStatsRef.current;
-      if (profileId && stats.total > 0) {
-        recordSession(profileId, {
-          moduleId,
-          correct: stats.correct,
-          total: stats.total,
-          duration: Date.now() - sessionStartTime,
-        });
-      }
-    };
-  }, [profileId, sessionStartTime, moduleId]);
+    return () => { if (profileId) finalizeLiveSession(profileId); };
+  }, [profileId]);
 
   // Mastery helpers
   const getMasteryData = useCallback(() => {
@@ -1015,6 +1006,7 @@ export default function AddPractice({
 
     if (profileId) {
       updateMastery(profileId, moduleId, currentItem.itemKey, isCorrect);
+      recordAnswerInSession(profileId, moduleId, isCorrect);
     } else {
       setLocalMastery(prev => ({
         ...prev,
