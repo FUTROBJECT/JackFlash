@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, DEFAULT_MASTERY_THRESHOLD, AVATARS } from "./constants.js";
+import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, DEFAULT_MASTERY_THRESHOLD, AVATARS, FLUENCY_MS_MULTIPLY, FLUENCY_MS_DIVIDE } from "./constants.js";
 import multiplyModule from "./modules/multiply.jsx";
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
 import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordAnswerInSession, finalizeLiveSession, getProfile, updateChildSettings, getPreferredMode, setPreferredMode } from "./dataManager.js";
@@ -125,6 +125,9 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   const [achievementQueue, setAchievementQueue] = useState([]);
   const [sessionStartTime] = useState(Date.now());
   const inputRef = useRef(null);
+  // Fluency timing: when the current fact became answerable (set on focus, not
+  // on render — render/focus latency isn't billed to the child).
+  const factShownAtRef = useRef(0);
 
   // Initialize data manager
   useEffect(() => {
@@ -269,8 +272,20 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     setUserHidScaffold(false);
     setShowNumberBond(false);
     setBuilderGroups(0);
-    setTimeout(() => inputRef.current?.focus(), 100);
-  }, [facts, getMasteryData, currentFact]);
+
+    // Finish-line on-ramp: at threshold−1 in pictorial (and not parent-locked),
+    // start the scaffold hidden behind "Show me" — a non-punitive invitation
+    // to retrieve.
+    const rec = getMasteryData()[selected?.factKey];
+    if (selected && mode === "pictorial" && !lockedMode && (rec?.correct || 0) === DEFAULT_MASTERY_THRESHOLD - 1) {
+      setUserHidScaffold(true);
+    }
+
+    setTimeout(() => {
+      inputRef.current?.focus();
+      factShownAtRef.current = Date.now();
+    }, 100);
+  }, [facts, getMasteryData, currentFact, mode, lockedMode]);
 
   // Trigger pickNewFact when enabled tables, focus number, operation, or facts change
   useEffect(() => {
@@ -322,9 +337,19 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
 
     // Update mastery via data manager if profileId exists, otherwise via local state
     if (profileId) {
-      updateMastery(profileId, moduleId, currentFact.factKey, isCorrect);
+      const responseMs = factShownAtRef.current ? Date.now() - factShownAtRef.current : undefined;
+      // Scaffolded = a mathematically informative visual VISIBLE at submit time.
+      // Pictorial with the scaffold tapped-hidden (userHidScaffold) counts as
+      // UNSCAFFOLDED — that's the on-ramp.
+      const scaffolded = mode === "concrete" || (mode === "pictorial" && !userHidScaffold) || showScaffold === true;
+      const masteryGatesExempt = lockedMode === "concrete" || lockedMode === "pictorial";
+      const fluencyLimitMs = currentFact.operation === "divide" ? FLUENCY_MS_DIVIDE : FLUENCY_MS_MULTIPLY;
+      if (import.meta.env.DEV) console.debug("[JF] responseMs", currentFact.factKey, responseMs);
+      updateMastery(profileId, moduleId, currentFact.factKey, isCorrect, { responseMs, fluencyLimitMs, scaffolded, masteryGatesExempt });
       recordAnswerInSession(profileId, moduleId, isCorrect);
     } else {
+      // Anonymous practice (no profileId) is legacy-ungated: a dev-only path,
+      // since the shipped app always passes a profile.
       setLocalMastery((prev) => ({
         ...prev,
         [currentFact.factKey]: {
@@ -383,7 +408,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       setFeedback("incorrect");
       setShowScaffold(true);
     }
-  }, [currentFact, userAnswer, profileId, moduleId, pickNewFact, streak, sessionStats, sessionStartTime, mod]);
+  }, [currentFact, userAnswer, profileId, moduleId, pickNewFact, streak, sessionStats, sessionStartTime, mod, mode, lockedMode, userHidScaffold, showScaffold]);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
@@ -1009,6 +1034,13 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                   {currentFact.operation === "divide"
                     ? `${currentFact.a} split into groups of ${currentFact.b}`
                     : `${currentFact.a} rows × ${currentFact.b} columns`}
+                </div>
+              )}
+              {mode === "pictorial" && userHidScaffold && !feedback && (
+                <div style={{ marginTop: "12px", textAlign: "center" }}>
+                  <BrutalButton small onClick={() => setUserHidScaffold(false)} bg={COLORS.cream}>
+                    Show me
+                  </BrutalButton>
                 </div>
               )}
 

@@ -73,6 +73,11 @@ export const DEFAULT_CHILD_SETTINGS = {
 // Mastery threshold default
 export const DEFAULT_MASTERY_THRESHOLD = 3;
 
+// Fluency-gated mastery: max response time (ms) that credits mastery progress.
+// Divide is mediated by the inverse fact — one step longer than multiply.
+export const FLUENCY_MS_MULTIPLY = 6000;
+export const FLUENCY_MS_DIVIDE = 8000;
+
 // Streak minimum problems to count a day
 export const STREAK_MIN_PROBLEMS = 10;
 

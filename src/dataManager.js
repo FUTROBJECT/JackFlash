@@ -1,5 +1,5 @@
 // Data Manager for JackFlash - Multi-profile storage with migration support
-import { DEFAULT_CHILD_SETTINGS, DEFAULT_MASTERY_THRESHOLD, STREAK_MIN_PROBLEMS, SESSION_HISTORY_CAP } from "./constants.js";
+import { DEFAULT_CHILD_SETTINGS, DEFAULT_MASTERY_THRESHOLD, STREAK_MIN_PROBLEMS, SESSION_HISTORY_CAP, FLUENCY_MS_MULTIPLY, FLUENCY_MS_DIVIDE } from "./constants.js";
 import { saveDurable } from "./storage.js";
 
 const DATA_KEY = "jackflash_data";
@@ -269,7 +269,7 @@ export function getMastery(profileId, moduleId) {
   return profile.mastery[moduleId] || null;
 }
 
-export function updateMastery(profileId, moduleId, factKey, isCorrect) {
+export function updateMastery(profileId, moduleId, factKey, isCorrect, opts = {}) {
   initData();
   const profile = getProfile(profileId);
   if (!profile) return null;
@@ -295,11 +295,32 @@ export function updateMastery(profileId, moduleId, factKey, isCorrect) {
   fact.attempts = (fact.attempts || 0) + 1;
 
   if (isCorrect) {
-    fact.correct += 1;
-    // Record when mastery was first achieved
-    if (fact.correct >= DEFAULT_MASTERY_THRESHOLD && !fact.masteredAt) {
-      fact.masteredAt = new Date().toISOString();
+    // Fluency-gated mastery: a correct answer only *credits* the counter if it
+    // clears the speed gate (recall, not finger-counting) and, on the
+    // threshold-crossing step, the retrieval finish-line gate (unscaffolded).
+    // Evaluate "crossing" BEFORE incrementing.
+    const crossing = fact.correct === DEFAULT_MASTERY_THRESHOLD - 1;
+    let credited = true;
+    if (!opts.masteryGatesExempt) {
+      // Gate 1 (speed): waived when responseMs is undefined (legacy callers,
+      // conceptual modules that don't pass timing).
+      if (opts.responseMs !== undefined) {
+        credited = opts.responseMs <= (opts.fluencyLimitMs ?? FLUENCY_MS_MULTIPLY);
+      }
+      // Gate 2 (retrieval finish line): only on the threshold-crossing step.
+      if (credited && crossing && opts.scaffolded === true) credited = false;
     }
+    if (credited) {
+      fact.correct += 1;
+      // Record when mastery was first achieved
+      if (fact.correct >= DEFAULT_MASTERY_THRESHOLD && !fact.masteredAt) {
+        fact.masteredAt = new Date().toISOString();
+      }
+    }
+    // Not credited: fact.correct unchanged; attempts/lastSeen still update below.
+    fact.lastSeen = new Date().toISOString();
+    saveData();
+    return { ...fact, credited };
   } else {
     fact.correct = Math.max(0, fact.correct - 1);
     // Dropped below mastery — clear masteredAt so it resets when re-mastered

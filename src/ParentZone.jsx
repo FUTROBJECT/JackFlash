@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, MODULE_COLORS, DEFAULT_CHILD_SETTINGS, AVATARS } from "./constants.js";
+import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, MODULE_COLORS, DEFAULT_CHILD_SETTINGS, DEFAULT_MASTERY_THRESHOLD, AVATARS } from "./constants.js";
 import { getModuleList, getModule } from "./modules/moduleRegistry.js";
 import { PRODUCTS, purchaseProduct, restorePurchases, getProductsWithStatus } from "./purchaseManager.js";
 import { getAllAchievementsForProfile } from "./achievementEngine.js";
@@ -231,11 +231,21 @@ function ProgressReport({ profile }) {
   const masteredFacts = allItems.filter(it => (mastery[it.key]?.correct || 0) >= masteryThreshold).length;
   const masteryPercent = totalFacts > 0 ? Math.round((masteredFacts / totalFacts) * 100) : 0;
 
-  // Weakest items — both attempted-but-not-mastered and never-attempted
+  // Weakest items — both attempted-but-not-mastered and never-attempted.
+  // Excludes threshold−1 items: those are "Ready to try unaided" below, not
+  // "needs practice" — a fact should never appear in both lists at once.
   const weakFacts = allItems
     .map(it => ({ ...it, level: mastery[it.key]?.correct || 0 }))
-    .filter(it => it.level < masteryThreshold)
+    .filter(it => it.level < masteryThreshold - 1)
     .sort((a, b) => a.level - b.level)
+    .slice(0, 10);
+
+  // Fluency-gated mastery: items sitting at threshold−1 (2/3) are one
+  // unscaffolded, fast correct answer away from mastered — visible to a
+  // parent as "ready to try unaided."
+  const readyToTry = allItems
+    .map(it => ({ ...it, level: mastery[it.key]?.correct || 0 }))
+    .filter(it => it.level === DEFAULT_MASTERY_THRESHOLD - 1)
     .slice(0, 10);
 
   // Session history
@@ -329,6 +339,22 @@ function ProgressReport({ profile }) {
           <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "13px", fontWeight: 600, marginBottom: "8px" }}>Needs Practice</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {weakFacts.map(f => (
+              <span key={f.key} style={{
+                padding: "4px 8px", background: COLORS.cream, border: BRUTAL_BORDER_SM,
+                borderRadius: "4px", fontSize: "12px", fontFamily: "'Space Mono', monospace",
+              }}>{f.display}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Ready to try unaided — items one fast, unscaffolded correct answer
+          away from mastered (fluency-gated mastery finish line). */}
+      {readyToTry.length > 0 && (
+        <div style={{ marginBottom: "16px" }}>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "13px", fontWeight: 600, marginBottom: "8px" }}>Ready to try unaided</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+            {readyToTry.map(f => (
               <span key={f.key} style={{
                 padding: "4px 8px", background: COLORS.cream, border: BRUTAL_BORDER_SM,
                 borderRadius: "4px", fontSize: "12px", fontFamily: "'Space Mono', monospace",
