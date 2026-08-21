@@ -810,7 +810,7 @@ export default function ConnectionsPractice({
     if (!hasExplicitModeRef.current && selected?.group === "integration") {
       setPickedMode("concrete");
     }
-    setTimeout(() => inputRef.current?.focus(), 100);
+    setTimeout(() => { inputRef.current?.focus({ preventScroll: true }); window.scrollTo(0, 0); }, 100); // preventScroll: keep the sticky header out from behind the Dynamic Island
   }, [activePools, getMasteryData, currentItem]);
 
   useEffect(() => {

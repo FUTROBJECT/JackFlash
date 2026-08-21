@@ -108,7 +108,7 @@ function ColumnInput({ item, value, onChange, onSubmit, disabled }) {
     onChange(next);
     // Auto-advance
     if (ch && i < numDigits - 1) {
-      fieldRefs.current[i + 1]?.focus();
+      fieldRefs.current[i + 1]?.focus({ preventScroll: true });
     }
     // Auto-submit if all filled
     if (ch && next.every(d => d !== "")) {
@@ -119,7 +119,7 @@ function ColumnInput({ item, value, onChange, onSubmit, disabled }) {
 
   function handleKeyDown(i, e) {
     if (e.key === "Backspace" && !digits[i] && i > 0) {
-      fieldRefs.current[i - 1]?.focus();
+      fieldRefs.current[i - 1]?.focus({ preventScroll: true });
     }
     if (e.key === "Enter" && digits.every(d => d !== "")) {
       onSubmit(digits);
@@ -960,7 +960,7 @@ export default function AddPractice({
       const defaultMode = mod.defaultModeByGroup[selected.group] || "pictorial";
       setPickedMode(defaultMode);
     }
-    setTimeout(() => inputRef.current?.focus(), 100);
+    setTimeout(() => { inputRef.current?.focus({ preventScroll: true }); window.scrollTo(0, 0); }, 100); // preventScroll: keep the sticky header out from behind the Dynamic Island
   }, [activePool, getMasteryData, currentItem, mod]);
 
   useEffect(() => {

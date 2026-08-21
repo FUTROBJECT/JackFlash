@@ -867,7 +867,10 @@ export default function FractionsPractice({
     }
 
     setTimeout(() => {
-      inputRef.current?.focus();
+      // preventScroll + scroll home: keeps iOS keyboard-avoidance from shoving
+      // the sticky header behind the Dynamic Island on every new item.
+      inputRef.current?.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
       factShownAtRef.current = Date.now();
     }, 100);
   }, [activePools, getMasteryData, currentItem, mode, lockedMode]);

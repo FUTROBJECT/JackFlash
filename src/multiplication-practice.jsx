@@ -282,7 +282,11 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     }
 
     setTimeout(() => {
-      inputRef.current?.focus();
+      // preventScroll + scroll home: iOS keyboard-avoidance scrolls the page on
+      // focus even when the input is already visible, which shoves the sticky
+      // header's safe-area zone up behind the Dynamic Island on every new fact.
+      inputRef.current?.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
       factShownAtRef.current = Date.now();
     }, 100);
   }, [facts, getMasteryData, currentFact, mode, lockedMode]);
