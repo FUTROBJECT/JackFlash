@@ -22,10 +22,13 @@ function Root() {
 // On native, restore the data blob from durable storage (in case WKWebView purged
 // localStorage) BEFORE the first render — the synchronous data layer reads it during
 // render. On web this resolves immediately, so render isn't delayed.
+console.log('[JF] main.jsx: module loaded, hydrating…')
 hydrateFromDurable().finally(() => {
+  console.log('[JF] main.jsx: hydrate settled, rendering')
   createRoot(document.getElementById('root')).render(
     <StrictMode>
       <Root />
     </StrictMode>,
   )
+  console.log('[JF] main.jsx: render called')
 })

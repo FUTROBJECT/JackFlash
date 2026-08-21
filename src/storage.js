@@ -26,13 +26,18 @@ function isNative() {
     && window.Capacitor.isNativePlatform();
 }
 
-let _prefs = null;
+// NOTE: resolve to a WRAPPER, never the plugin proxy itself. Returning the
+// proxy from an async function triggers thenable assimilation — the JS engine
+// probes `.then` on it, Capacitor's proxy fabricates a native "then()" method,
+// and the await hangs forever ("Preferences.then() is not implemented on ios"
+// + a white screen, since main.jsx gates the first render on hydrate).
+let _prefsMod = null;
 async function getPreferences() {
-  if (!_prefs) {
+  if (!_prefsMod) {
     const mod = await import("@capacitor/preferences");
-    _prefs = mod.Preferences || (mod.default && mod.default.Preferences) || mod.default;
+    _prefsMod = { Preferences: mod.Preferences || (mod.default && mod.default.Preferences) || mod.default };
   }
-  return _prefs;
+  return _prefsMod;
 }
 
 // Mirror the latest data blob into durable native storage. Fire-and-forget from
@@ -40,7 +45,7 @@ async function getPreferences() {
 export async function saveDurable(json) {
   if (!isNative()) return;
   try {
-    const Preferences = await getPreferences();
+    const { Preferences } = await getPreferences();
     await Preferences.set({ key: KEY, value: json });
   } catch (err) {
     console.error("[JF] saveDurable failed:", err);
@@ -61,7 +66,7 @@ export async function hydrateFromDurable() {
       saveDurable(local);
       return;
     }
-    const Preferences = await getPreferences();
+    const { Preferences } = await getPreferences();
     const { value } = await Preferences.get({ key: KEY });
     if (value) {
       localStorage.setItem(KEY, value); // repair the sync layer for this session

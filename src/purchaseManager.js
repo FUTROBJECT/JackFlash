@@ -329,11 +329,16 @@ const RC_ENTITLEMENT_TO_PRODUCT = {
 };
 
 // Lazy-loaded on first use; static specifier so the bundler includes the plugin.
+// NOTE: resolves to a WRAPPER, never the plugin proxy itself — returning the
+// proxy from an async function triggers thenable assimilation (the engine
+// probes `.then`, Capacitor's proxy fabricates a native "then()" method, and
+// the await hangs forever with an UNIMPLEMENTED rejection). Same fix as
+// getPreferences() in storage.js.
 let _rc = null;
 async function loadRevenueCat() {
   if (!_rc) {
     const mod = await import("@revenuecat/purchases-capacitor");
-    _rc = mod.Purchases || (mod.default && mod.default.Purchases) || mod.default;
+    _rc = { Purchases: mod.Purchases || (mod.default && mod.default.Purchases) || mod.default };
   }
   return _rc;
 }
@@ -351,7 +356,7 @@ const nativeProvider = {
   id: "native",
 
   async init() {
-    const Purchases = await loadRevenueCat();
+    const { Purchases } = await loadRevenueCat();
     const platform = (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform()) || "ios";
     const apiKey = platform === "android" ? REVENUECAT_KEYS.android : REVENUECAT_KEYS.ios;
     await Purchases.configure({ apiKey });
@@ -366,7 +371,7 @@ const nativeProvider = {
     if (product.available === false) return { status: "error", productId, error: "This product isn't available yet." };
     if (isProductOwned(productId)) return { status: "already_owned", productId };
 
-    const Purchases = await loadRevenueCat();
+    const { Purchases } = await loadRevenueCat();
     const offerings = await Purchases.getOfferings();
     const pkgs = (offerings && offerings.current && offerings.current.availablePackages) || [];
     const pkg = pkgs.find((p) => p.product && p.product.identifier === productId);
@@ -386,7 +391,7 @@ const nativeProvider = {
   },
 
   async restore() {
-    const Purchases = await loadRevenueCat();
+    const { Purchases } = await loadRevenueCat();
     const { customerInfo } = await Purchases.restorePurchases();
     applyActiveEntitlements(customerInfo);
     const restored = Object.keys((customerInfo && customerInfo.entitlements && customerInfo.entitlements.active) || {}).length;

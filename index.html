@@ -11,6 +11,18 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="icon" type="image/svg+xml" href="icon.svg" />
     <!-- Fonts are self-hosted and bundled via src/fonts.css (offline-safe for the native app) -->
+    <script>
+      // Surface uncaught errors via console.* — Capacitor's native console bridge
+      // only forwards console calls, so without this, a crash during module init
+      // is a silent white screen in the native shell.
+      window.addEventListener("error", function (e) {
+        console.error("[JF] uncaught:", e.message, "@", e.filename + ":" + e.lineno);
+      });
+      window.addEventListener("unhandledrejection", function (e) {
+        var r = e.reason || {};
+        console.error("[JF] unhandled rejection:", r.message || String(r), "| code:", r.code, "| stack:", r.stack);
+      });
+    </script>
     <title>JackFlash</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
