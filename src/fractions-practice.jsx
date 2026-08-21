@@ -1080,8 +1080,10 @@ export default function FractionsPractice({
 
       {/* ========= HEADER ========= */}
       <div style={{
-        background: COLORS.yellow, padding: "14px clamp(12px,4vw,20px) 10px",
+        background: COLORS.yellow,
+        padding: "calc(env(safe-area-inset-top, 0px) + 14px) clamp(12px,4vw,20px) 10px",
         borderBottom: `4px solid ${COLORS.black}`,
+        position: "sticky", top: 0, zIndex: 50,
       }}>
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
