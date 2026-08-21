@@ -207,14 +207,17 @@ export function HelpFAQ({ onBack }) {
         <p style={{ margin: "0 0 8px" }}>
           Your child works on problems that genuinely tie the ideas together: finding a fraction of a quantity (½ of 12), two-step word problems, and a shuffle drill that mixes all three so they have to decide <em>which</em> operation to use — a skill that single-topic drilling never builds.
         </p>
-        <p style={{ margin: 0 }}>
+        <p style={{ margin: "0 0 8px" }}>
           It's deliberately the last stop: it assumes the foundations are already solid and rewards your child for putting them all together.
+        </p>
+        <p style={{ margin: 0 }}>
+          <strong>Connections is coming soon</strong> — it's in final play-testing now.
         </p>
       </AccordionItem>
 
-      <AccordionItem title="How does my child unlock Connections?">
+      <AccordionItem title="How will my child unlock Connections?">
         <p style={{ margin: "0 0 8px" }}>
-          Two things both have to be true — and one of them can't be bought:
+          When it launches, two things will both have to be true — and one of them can't be bought:
         </p>
         <p style={{ margin: "0 0 8px" }}>
           <strong>1. It's unlocked in the Parent Zone</strong> — either purchased on its own or included in the All-Modules bundle.
@@ -223,10 +226,10 @@ export function HelpFAQ({ onBack }) {
           <strong>2. Your child has mastered the foundations</strong> — all of Multiplication, Division, <em>and</em> Fractions.
         </p>
         <p style={{ margin: "0 0 8px" }}>
-          <strong>Buying it is not enough on its own.</strong> Even after purchase, Connections stays locked until your child has mastered all three foundation skills — they earn their way in. Until then the module card shows a checklist of what's still left to master, filling in as each one is conquered.
+          <strong>Buying it won't be enough on its own.</strong> Even after purchase, Connections will stay locked until your child has mastered all three foundation skills — they earn their way in. Until then the module card will show a checklist of what's still left to master, filling in as each one is conquered.
         </p>
         <p style={{ margin: 0 }}>
-          (Mastering Fractions, in turn, requires the Fractions module to be unlocked in the Parent Zone — so the foundations have to be in place first.)
+          (Mastering Fractions, in turn, requires the Fractions module to be unlocked in the Parent Zone — so the foundations have to be in place first. Mastering them now means Connections opens the moment it arrives.)
         </p>
       </AccordionItem>
 

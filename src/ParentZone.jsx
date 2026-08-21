@@ -875,10 +875,12 @@ export function ParentZone({
               const isPurchased = product.purchased;
               const isAvailable = product.available !== false;
               const isFree = product.free === true;
-              // The Connections capstone gets emphasis treatment instead of the
-              // generic grayed "coming soon" card — it's the goal kids work toward.
-              // Rainbow highlight uses the brand palette (exploratory — refine later).
-              const isCapstone = product.moduleId === "connections";
+              // The Connections capstone gets emphasis treatment (rainbow band, cyan
+              // accents, "unlocks after mastering" footer) — but only once it ships.
+              // While available:false it renders as a plain grayed "coming soon" card
+              // like the other unshipped modules; flipping `available` to true in
+              // purchaseManager.js restores the capstone treatment automatically.
+              const isCapstone = product.moduleId === "connections" && isAvailable;
               const isComingSoon = !isAvailable && !isFree && !isCapstone;
               const rainbow = [COLORS.red, COLORS.orange, COLORS.yellow, COLORS.green, COLORS.blue, COLORS.purple];
               // Cyan accent for the capstone chip, pill, and footer (rainbow stays as the top band).
