@@ -76,6 +76,8 @@ export default function SplashScreen({ onDone }) {
         opacity: leaving ? 0 : 1,
         transition: "opacity 0.42s ease",
         padding: PAD,
+        paddingTop: `calc(env(safe-area-inset-top, 0px) + ${PAD}px)`,
+        paddingBottom: `calc(env(safe-area-inset-bottom, 0px) + ${PAD}px)`,
       }}
     >
       <div ref={markRef} style={{ transform: `scale(${scale})`, transformOrigin: "center" }}>

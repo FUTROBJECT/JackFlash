@@ -3,9 +3,6 @@
   "appName": "JackFlash",
   "webDir": "dist",
   "backgroundColor": "#FFF8E7",
-  "ios": {
-    "contentInset": "always"
-  },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 800,

@@ -102,6 +102,8 @@ export function ParentGate({ onPass, onCancel }) {
       // Rotating solid brand color behind the box
       backgroundColor: bgColor,
       padding: "20px",
+      paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)",
+      paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)",
       fontFamily: "'Space Grotesk', sans-serif",
       display: "flex",
       flexDirection: "column",
@@ -501,6 +503,7 @@ export function ParentZone({
       minHeight: "100vh",
       backgroundColor: "#FFFFFF",
       padding: "20px",
+      paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)",
       fontFamily: "'Space Grotesk', sans-serif",
       display: "flex",
       flexDirection: "column",

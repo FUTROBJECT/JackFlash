@@ -83,6 +83,7 @@ function WelcomeScreen({ onNext }) {
       justifyContent: "center",
       alignItems: "center",
       padding: "20px",
+      paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)",
       fontFamily: "'Space Grotesk', sans-serif",
     }}>
       <div style={{ textAlign: "center", maxWidth: 500 }}>
@@ -162,6 +163,7 @@ function ModuleScreen({ selectedModule, onSelectModule, onNext, onBack }) {
       minHeight: "100vh",
       background: GRID_BG,
       padding: "40px 20px",
+      paddingTop: "calc(env(safe-area-inset-top, 0px) + 40px)",
       fontFamily: "'Space Grotesk', sans-serif",
       display: "flex",
       flexDirection: "column",
@@ -294,6 +296,7 @@ function HowItWorksScreen({ onNext, onBack }) {
       minHeight: "100vh",
       background: GRID_BG,
       padding: "40px 20px",
+      paddingTop: "calc(env(safe-area-inset-top, 0px) + 40px)",
       fontFamily: "'Space Grotesk', sans-serif",
       display: "flex",
       flexDirection: "column",
@@ -481,6 +484,7 @@ function HandOverScreen({ onComplete, onBack }) {
       minHeight: "100vh",
       background: GRID_BG,
       padding: "40px 20px",
+      paddingTop: "calc(env(safe-area-inset-top, 0px) + 40px)",
       fontFamily: "'Space Grotesk', sans-serif",
       display: "flex",
       flexDirection: "column",

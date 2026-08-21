@@ -420,6 +420,7 @@ export function ProfilePicker({
       minHeight: "100vh",
       background: GRID_BG,
       padding: "20px",
+      paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)",
       paddingBottom: "110px",
       fontFamily: "'Space Grotesk', sans-serif",
     }}>
