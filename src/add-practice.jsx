@@ -1120,7 +1120,7 @@ export default function AddPractice({
       minHeight: "100vh",
       background: `repeating-linear-gradient(0deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), repeating-linear-gradient(90deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), ${COLORS.bg}`,
       fontFamily: "'Space Grotesk', sans-serif",
-      padding: 0, overflow: "auto",
+      padding: 0,
     }}>
       <style>{`
         * { box-sizing: border-box; }
