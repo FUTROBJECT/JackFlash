@@ -12,12 +12,11 @@
 // in-render layer; Preferences is a durable backup.
 //
 // SAFE ON WEB: every function below is a no-op unless running in a native shell
-// (window.Capacitor). The plugin is loaded via a lazy, @vite-ignore'd dynamic
-// import keyed by a variable, so Vite never bundles or resolves it — the web
-// build stays green even before @capacitor/preferences is installed.
+// (window.Capacitor). The plugin import is a STATIC specifier so Vite bundles
+// the plugin JS for the native build (flipped from the pre-install @vite-ignore
+// scaffold once @capacitor/preferences was installed — see launch checklist).
 // ============================================================================
 
-const PREFS_MODULE_ID = "@capacitor/preferences";
 const KEY = "jackflash_data"; // must match DATA_KEY in dataManager.js
 
 function isNative() {
@@ -30,7 +29,7 @@ function isNative() {
 let _prefs = null;
 async function getPreferences() {
   if (!_prefs) {
-    const mod = await import(/* @vite-ignore */ PREFS_MODULE_ID);
+    const mod = await import("@capacitor/preferences");
     _prefs = mod.Preferences || (mod.default && mod.default.Preferences) || mod.default;
   }
   return _prefs;
