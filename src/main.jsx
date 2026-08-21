@@ -5,6 +5,16 @@ import './animations.css' // app-wide shared keyframes (fadeSlideUp, etc.)
 import App from './App'
 import SplashScreen from './SplashScreen.jsx'
 import { hydrateFromDurable } from './storage.js'
+import { SafeArea } from '@capacitor-community/safe-area'
+
+// WKWebView doesn't reliably expose env(safe-area-inset-*) to CSS (measured 0
+// on device despite viewport-fit=cover), so this plugin injects the REAL native
+// insets as --safe-area-inset-* CSS variables, live-updated on rotation. All
+// safe-area styles use var(--safe-area-inset-*, env(safe-area-inset-*, 0px)) so
+// web/gh-pages (where the plugin maps to env()) behaves identically.
+// enable() drives Android system-bar styling; on iOS the plugin auto-injects
+// the CSS variables at load and enable() reports UNIMPLEMENTED — expected.
+SafeArea.enable({ config: { customColorsForSystemBars: false } }).catch(() => {})
 
 // The app, with the opening splash overlaid for one page-load (once per launch).
 // The splash is position:fixed over App, so App mounts underneath and is ready

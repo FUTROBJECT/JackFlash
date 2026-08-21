@@ -86,7 +86,7 @@ function BottomNav({ activeTab, onTabChange }) {
       justifyContent: "center",
       zIndex: 100,
       padding: "0 12px",
-      paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))",
+      paddingBottom: "calc(16px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))",
       pointerEvents: "none",
     }}>
       <div style={{
@@ -169,7 +169,7 @@ function ModulePicker({ profile, modules, onConfirm, onCancel }) {
         justifyContent: "center",
         zIndex: 200,
         padding: "0 16px",
-        paddingBottom: "calc(24px + env(safe-area-inset-bottom, 0px))",
+        paddingBottom: "calc(24px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))",
       }}
     >
       <div
@@ -420,7 +420,7 @@ export function ProfilePicker({
       minHeight: "100vh",
       background: GRID_BG,
       padding: "20px",
-      paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)",
+      paddingTop: "calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 20px)",
       paddingBottom: "110px",
       fontFamily: "'Space Grotesk', sans-serif",
     }}>

@@ -1081,7 +1081,7 @@ export default function FractionsPractice({
       {/* ========= HEADER ========= */}
       <div style={{
         background: COLORS.yellow,
-        padding: "calc(env(safe-area-inset-top, 0px) + 14px) clamp(12px,4vw,20px) 10px",
+        padding: "calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 14px) clamp(12px,4vw,20px) 10px",
         borderBottom: `4px solid ${COLORS.black}`,
         position: "sticky", top: 0, zIndex: 50,
       }}>

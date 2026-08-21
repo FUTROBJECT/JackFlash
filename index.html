@@ -22,6 +22,16 @@
         var r = e.reason || {};
         console.error("[JF] unhandled rejection:", r.message || String(r), "| code:", r.code, "| stack:", r.stack);
       });
+      window.addEventListener("DOMContentLoaded", function () {
+        var probe = document.createElement("div");
+        probe.style.cssText = "position:absolute;visibility:hidden;padding-top:var(--safe-area-inset-top, env(safe-area-inset-top, 0px))";
+        document.body.appendChild(probe);
+        console.log("[JF] safe-area-top (t=0) =", getComputedStyle(probe).paddingTop);
+        setTimeout(function () {
+          console.log("[JF] safe-area-top (t=2s) =", getComputedStyle(probe).paddingTop);
+          probe.remove();
+        }, 2000);
+      });
     </script>
     <title>JackFlash</title>
     <style>
