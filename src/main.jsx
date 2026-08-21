@@ -16,6 +16,13 @@ import { SafeArea } from '@capacitor-community/safe-area'
 // the CSS variables at load and enable() reports UNIMPLEMENTED — expected.
 SafeArea.enable({ config: { customColorsForSystemBars: false } }).catch(() => {})
 
+// Hide iOS's keyboard accessory bar (the ∧ ∨ / ✓ "form assistant"): the arrows
+// are useless with one answer field, and the ✓ reads like "check my answer" to
+// a child but actually just dismisses the keyboard. No-op on web/Android.
+import('@capacitor/keyboard')
+  .then(({ Keyboard }) => Keyboard.setAccessoryBarVisible({ isVisible: false }))
+  .catch(() => {})
+
 // The app, with the opening splash overlaid for one page-load (once per launch).
 // The splash is position:fixed over App, so App mounts underneath and is ready
 // the moment the splash fades out.
