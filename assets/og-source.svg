@@ -1,4 +1,4 @@
-<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg"><style>@font-face{font-family:Galindo;src:url("./fonts/galindo-400.woff2") format("woff2")}@font-face{font-family:"Space Mono";font-weight:700;src:url("./fonts/space-mono-700.woff2") format("woff2")}@font-face{font-family:"Space Grotesk";src:url("./fonts/space-grotesk-400.woff2") format("woff2")}</style>
   <rect width="1200" height="630" fill="#FFF8E7"/>
   <rect x="30" y="30" width="1140" height="570" rx="28" fill="#1A1A1A"/>
   <rect x="22" y="22" width="1140" height="570" rx="28" fill="#FFFBEB" stroke="#1A1A1A" stroke-width="6"/>
@@ -15,11 +15,11 @@
         <path d="M323.29,107.1c7.45-.13,14.98-.11,22.44-.15-13.61,41.14-30.86,82.1-44.51,123.4-7.94,24.01-16.48,48.98-26.22,72.25l-22.32-.34c3.72-12.74,9.56-27.85,14.09-40.56l24.56-68.88,16.96-47.72c4.4-12.42,8.95-26.43,15.01-38Z" fill="#4CC9F0"/>
         <path d="M300.75,850.56c.93,3.37.23,2.54,2.36,4.5,1.87.17,2.6.21,4.47.11-2.81,4.96-8.34,12.64-11.68,17.58l4.85-22.19Z" fill="#eac68e"/>
   </g>
-  <text x="340" y="245" font-family="Arial Rounded MT Bold, Helvetica, sans-serif" font-weight="bold" font-size="120" fill="#1A1A1A">JackFlash</text>
+  <text x="340" y="245" font-family="Galindo" font-size="120" fill="#1A1A1A">JackFlash</text>
   <rect x="336" y="285" width="590" height="66" rx="10" fill="#fbca52" stroke="#1A1A1A" stroke-width="4"/>
-  <text x="631" y="333" text-anchor="middle" font-family="Arial Rounded MT Bold, Helvetica, sans-serif" font-weight="bold" font-size="40" fill="#1A1A1A">Math fluency, the right way.</text>
-  <text x="340" y="405" font-family="Helvetica, Arial, sans-serif" font-size="28" fill="#444">Real Singapore Math practice — built by a dad for his son Jack.</text>
-  <g font-family="Courier, monospace" font-weight="bold" font-size="22" fill="#1A1A1A">
+  <text x="631" y="333" text-anchor="middle" font-family="Galindo" font-size="40" fill="#1A1A1A">Math fluency, the right way.</text>
+  <text x="340" y="405" font-family="Space Grotesk" font-size="28" fill="#444">Real Singapore Math — built by a dad for his son Jack.</text>
+  <g font-family="Space Mono" font-weight="700" font-size="22" fill="#1A1A1A">
     <rect x="90" y="470" width="400" height="64" rx="14" fill="#a7e8c0" stroke="#1A1A1A" stroke-width="4"/>
     <text x="290" y="510" text-anchor="middle">MULTIPLY &amp; DIVIDE: FREE</text>
     <rect x="520" y="470" width="340" height="64" rx="14" fill="#7ad0ee" stroke="#1A1A1A" stroke-width="4"/>
