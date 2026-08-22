@@ -317,7 +317,7 @@ const simulatedProvider = {
 //      Capacitor API has shifted across majors; adjust the destructuring if needed.
 // ----------------------------------------------------------------------------
 const REVENUECAT_KEYS = {
-  ios: "REVENUECAT_IOS_PUBLIC_SDK_KEY__TODO",
+  ios: "appl_sRLrdUZymZzlfvSGfJmmJDegBeo",
   android: "REVENUECAT_ANDROID_PUBLIC_SDK_KEY__TODO",
 };
 
