@@ -17,7 +17,7 @@
 - **Add & Subtract, Place Value, Connections (capstone)** — built/staged, `available:false`, shown as grayed "Coming Soon" teasers
 - **Bundle ($9.99)** — auto-hidden until 3+ paid modules are `available` (honest-discount rule, `BUNDLE_MIN_PAID_MODULES`); surfaces by itself later
 - **Restore Purchases** — present (Apple requirement)
-- App id: `com.laserlabstudios.jackflash`
+- App id: `com.laserlabstudio.jackflash`
 
 ---
 

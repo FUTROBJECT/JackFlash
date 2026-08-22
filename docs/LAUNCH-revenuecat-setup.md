@@ -20,7 +20,7 @@ them **exactly** — a typo here is the #1 cause of "product not found."
 |---|---|---|
 | Store product id (both stores) | `module.fractions.full` | `PRODUCTS`, and offering match `p.product.identifier === productId` |
 | RevenueCat entitlement id | `fractions` | `RC_ENTITLEMENT_TO_PRODUCT` |
-| App bundle / package id | `com.laserlabstudios.jackflash` | `capacitor.config.json` |
+| App bundle / package id | `com.laserlabstudio.jackflash` | `capacitor.config.json` |
 
 How the code uses them at runtime (native provider):
 1. `Purchases.configure({ apiKey })` — public SDK key per platform.
@@ -41,10 +41,10 @@ and **one Offering marked current**, in each store + RevenueCat.
 ## 1. Prerequisites  🔑
 
 - Paid **Apple Developer** account + the app record created in App Store Connect
-  (bundle id `com.laserlabstudios.jackflash`). Sign the "Paid Applications"
+  (bundle id `com.laserlabstudio.jackflash`). Sign the "Paid Applications"
   agreement (Business → Agreements) or **no IAP will load** — common gotcha.
 - **Google Play Console** account + the app created (package
-  `com.laserlabstudios.jackflash`), with at least one build uploaded to the
+  `com.laserlabstudio.jackflash`), with at least one build uploaded to the
   **Internal testing** track (Play won't surface IAPs until a build exists).
 - A **RevenueCat** account (free tier is fine at this scale).
 
@@ -94,10 +94,10 @@ notifications). Have both handy for step 4.
 
 **a. Project + apps**
 1. Create a **Project** named `JackFlash`.
-2. **+ New app → App Store:** bundle id `com.laserlabstudios.jackflash`; paste the
+2. **+ New app → App Store:** bundle id `com.laserlabstudio.jackflash`; paste the
    **App-Specific Shared Secret** (and the App Store Connect API key if you made
    one). Copy the **public SDK key** — it starts with **`appl_`**.
-3. **+ New app → Play Store:** package `com.laserlabstudios.jackflash`; upload the
+3. **+ New app → Play Store:** package `com.laserlabstudio.jackflash`; upload the
    **service-account JSON**. Copy the **public SDK key** — starts with **`goog_`**.
 
 **b. Product**

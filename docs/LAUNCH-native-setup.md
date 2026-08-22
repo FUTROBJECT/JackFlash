@@ -13,7 +13,7 @@ Status legend: ✅ done in-repo · ⏳ needs a toolchain/account · 🔑 credent
 ## 0. What's already done (in this repo)
 
 - ✅ Capacitor deps installed (`@capacitor/core`, `cli`, `ios`, `android`, `preferences` — v8).
-- ✅ `capacitor.config.json` — appId `com.laserlabstudios.jackflash`, `webDir: dist`, splash config. (Converted from `.ts` so the CLI reads it without adding TypeScript.)
+- ✅ `capacitor.config.json` — appId `com.laserlabstudio.jackflash`, `webDir: dist`, splash config. (Converted from `.ts` so the CLI reads it without adding TypeScript.)
 - ✅ `npm run build:cap` produces a native-relative web build; `npm run cap:sync` / `cap:ios` / `cap:android` scripts exist.
 - ✅ Durable storage bridge (`storage.js`) and RevenueCat provider scaffold (`purchaseManager.js`) — both lazy-load native plugins so the web build stays green.
 - ✅ Privacy Policy (`public/privacy.html`) and Support (`public/support.html`) pages — hosted at the gh-pages URLs below once deployed.
@@ -65,7 +65,7 @@ automatically — no flags needed. To restyle the mark, edit the `.svg` masters 
 ## 4. Signing & store accounts  🔑
 
 - **Apple:** enrol in the **Apple Developer Program** ($99/yr). In Xcode, set the
-  team + bundle id `com.laserlabstudios.jackflash`, let Xcode manage signing.
+  team + bundle id `com.laserlabstudio.jackflash`, let Xcode manage signing.
 - **Google:** create a **Play Console** account ($25 one-time). Generate an
   upload keystore and keep it safe (losing it blocks future updates).
 
