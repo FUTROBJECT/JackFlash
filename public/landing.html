@@ -14,6 +14,44 @@
    JackFlash landing — single-file, zero-JS, zero external requests.
    Brand tokens from src/constants.js / JackFlash-Brand-Spec.md.
    ============================================================ */
+/* Self-hosted brand fonts (same files the app bundles, ./fonts/ is
+   copied from src/fonts/ — relative same-origin, no CDN). Only the
+   weights this page uses. */
+@font-face{
+  font-family:'Galindo';
+  font-style:normal;
+  font-weight:400;
+  font-display:swap;
+  src:url('./fonts/galindo-400.woff2') format('woff2');
+}
+@font-face{
+  font-family:'Space Grotesk';
+  font-style:normal;
+  font-weight:400;
+  font-display:swap;
+  src:url('./fonts/space-grotesk-400.woff2') format('woff2');
+}
+@font-face{
+  font-family:'Space Grotesk';
+  font-style:normal;
+  font-weight:700;
+  font-display:swap;
+  src:url('./fonts/space-grotesk-700.woff2') format('woff2');
+}
+@font-face{
+  font-family:'Space Mono';
+  font-style:normal;
+  font-weight:400;
+  font-display:swap;
+  src:url('./fonts/space-mono-400.woff2') format('woff2');
+}
+@font-face{
+  font-family:'Space Mono';
+  font-style:normal;
+  font-weight:700;
+  font-display:swap;
+  src:url('./fonts/space-mono-700.woff2') format('woff2');
+}
 :root{
   --bg:#FFF8E7;          /* cream page ground */
   --panel:#FFFBEB;       /* nested warm panel */
@@ -29,11 +67,11 @@
   --shadow-sm:3px 3px 0 var(--ink);
   --border:3px solid var(--ink);
   --border-sm:2.5px solid var(--ink);
-  /* System stand-ins for the brand faces (real app self-hosts Galindo /
-     Space Grotesk / Space Mono; this page must make no requests). */
-  --display:ui-rounded,"Arial Rounded MT Bold","Hiragino Maru Gothic ProN","Varela Round",system-ui,sans-serif;
-  --body:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
-  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  /* Real brand faces, self-hosted in ./fonts/ (same files the app bundles).
+     Same-origin only — the page still makes no external requests. */
+  --display:"Galindo","Arial Rounded MT Bold",ui-rounded,"Varela Round",system-ui,sans-serif;
+  --body:"Space Grotesk","Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"Space Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -55,6 +93,9 @@ h2{
   margin-bottom:28px;
   letter-spacing:-0.01em;
 }
+/* Galindo ships in 400 only (matching the app) — keep every display-font
+   element at 400 so the browser never fakes a bold. */
+h2,h3,.lockup,.price-line strong,.shot figcaption strong{font-weight:400}
 .kicker{
   display:inline-block;
   font-family:var(--mono);
@@ -89,7 +130,7 @@ h2{
   font-size:clamp(44px,11vw,92px);
   line-height:1;
   letter-spacing:-0.02em;
-  font-weight:700;
+  font-weight:400;
   color:var(--ink);
   user-select:none;
 }
