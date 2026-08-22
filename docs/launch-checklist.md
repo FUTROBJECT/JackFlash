@@ -56,8 +56,8 @@ Cleanup nits (optional, non-blocking): `debugGetAllData()` export in `dataManage
 - [ ] Xcode: Team, bundle id, + In-App Purchase capability; run on simulator + device
 
 ### 3. Store wiring — runbook: `LAUNCH-revenuecat-setup.md`
-- [ ] App Store Connect app record + IAP `module.fractions.full` ($3.99 tier)
-- [ ] RevenueCat: `fractions` entitlement → that product; current Offering; paste iOS public key into `REVENUECAT_KEYS`
+- [x] App Store Connect app record + IAP `module.fractions.full` ($3.99 tier) — done 2026-08-22; Paid Apps agreement Active
+- [x] RevenueCat: `fractions` entitlement → that product; `default` Offering current; iOS public key wired (commit faf184a)
 - [ ] Do **not** create bundle/other products yet (staged)
 - [ ] `npm run deploy` so privacy/support URLs are live; confirm contact email
 - [ ] Metadata, screenshots, age rating, "data not collected", review notes (explain the parental math gate)
@@ -72,7 +72,8 @@ Cleanup nits (optional, non-blocking): `debugGetAllData()` export in `dataManage
 - [ ] **Tune fluency constants:** watch `[JF] responseMs` in the dev console during Jack's real practice; adjust `FLUENCY_MS_MULTIPLY`/`_DIVIDE` from his median/90th percentile before submit
 - [ ] Airplane mode: launch + fonts + practice all work
 - [ ] Store: Multiply Included / Fractions $3.99 / 3 Coming Soon / Restore — **no bundle card**
-- [ ] Sandbox purchase + Restore (after store wiring)
+- [x] Sandbox purchase — passed on device 2026-08-22 (Sandbox sheet, $3.99, entitlement unlocked)
+- [ ] Restore Purchases round-trip: delete app → reinstall from Xcode → Restore → Fractions returns without payment
 
 ### 5. Comps / free access (unchanged policy: store-native only)
 - [ ] App Store promo codes per IAP (up to 100/batch) and/or RevenueCat promotional entitlements; TestFlight for pre-launch testers
