@@ -356,9 +356,16 @@ const nativeProvider = {
   id: "native",
 
   async init() {
-    const { Purchases } = await loadRevenueCat();
     const platform = (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform()) || "ios";
     const apiKey = platform === "android" ? REVENUECAT_KEYS.android : REVENUECAT_KEYS.ios;
+    // Pre-launch guard: until the real public SDK key is pasted in, don't
+    // configure at all — the placeholder just earns a wall of 401s from
+    // RevenueCat on every device launch. Purchases stay cleanly unavailable.
+    if (!apiKey || apiKey.includes("__TODO")) {
+      console.warn("[JF] RevenueCat key not set for", platform, "— store purchases disabled this build");
+      return;
+    }
+    const { Purchases } = await loadRevenueCat();
     await Purchases.configure({ apiKey });
     // Pull whatever the store already knows for this user (covers reinstalls).
     const { customerInfo } = await Purchases.getCustomerInfo();
