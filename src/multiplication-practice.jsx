@@ -498,7 +498,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                 </svg>
               </button>
             )}
-            <LogoLockup size="medium" style={{ flex: 1 }} />
+            <LogoLockup size="medium" boltVariant="rev" style={{ flex: 1 }} />
             {profileAvatar && (
               <div style={{
                 width: "44px", height: "44px",

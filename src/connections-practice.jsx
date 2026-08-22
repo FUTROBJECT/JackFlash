@@ -1023,7 +1023,7 @@ export default function ConnectionsPractice({
                 </svg>
               </button>
             )}
-            <LogoLockup size="medium" style={{ flex: 1 }} />
+            <LogoLockup size="medium" boltVariant="rev" style={{ flex: 1 }} />
             {/* Capstone badge */}
             <span style={{
               fontFamily: "'Space Mono', monospace", fontSize: 10, fontWeight: 700,

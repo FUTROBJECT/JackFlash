@@ -1104,7 +1104,7 @@ export default function FractionsPractice({
                 </svg>
               </button>
             )}
-            <LogoLockup size="medium" style={{ flex: 1 }} />
+            <LogoLockup size="medium" boltVariant="rev" style={{ flex: 1 }} />
             {profileAvatar && (
               <div style={{
                 width: 44, height: 44, borderRadius: "50%", border: BRUTAL_BORDER_SM,
