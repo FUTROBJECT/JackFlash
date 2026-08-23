@@ -75,5 +75,12 @@ Cleanup nits (optional, non-blocking): `debugGetAllData()` export in `dataManage
 - [x] Sandbox purchase — passed on device 2026-08-22 (Sandbox sheet, $3.99, entitlement unlocked)
 - [ ] Restore Purchases round-trip: delete app → reinstall from Xcode → Restore → Fractions returns without payment
 
+### 📌 PINNED — TestFlight (ready to execute, ~1 day lead time)
+All prerequisites verified 2026-08-22: encryption key in Info.plist, privacy URL live,
+Test Information values chosen (feedback email adamlaserlab@gmail.com). When ready:
+Any iOS Device → Product → Archive → Distribute → wait for processing → TestFlight tab →
+Test Information → External group "Friends" → add build → Beta App Review (~1 day) → public link.
+First upload also replaces the placeholder icon on the ASC page.
+
 ### 5. Comps / free access (unchanged policy: store-native only)
 - [ ] App Store promo codes per IAP (up to 100/batch) and/or RevenueCat promotional entitlements; TestFlight for pre-launch testers
