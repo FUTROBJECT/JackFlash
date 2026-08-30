@@ -1,5 +1,5 @@
 // Data Manager for JackFlash - Multi-profile storage with migration support
-import { DEFAULT_CHILD_SETTINGS, DEFAULT_MASTERY_THRESHOLD, STREAK_MIN_PROBLEMS, SESSION_HISTORY_CAP, FLUENCY_MS_MULTIPLY, FLUENCY_MS_DIVIDE } from "./constants.js";
+import { DEFAULT_CHILD_SETTINGS, DEFAULT_MASTERY_THRESHOLD, STREAK_MIN_PROBLEMS, SESSION_HISTORY_CAP, FLUENCY_MS_MULTIPLY, FLUENCY_MS_DIVIDE, AVATARS } from "./constants.js";
 import { saveDurable } from "./storage.js";
 
 const DATA_KEY = "jackflash_data";
@@ -239,6 +239,20 @@ export function updateProfile(profileId, updates) {
   if (!profile) return null;
 
   Object.assign(profile, updates);
+  saveData();
+  return profile;
+}
+
+// Change a profile's avatar (child self-service, from the Profile Picker).
+// Validates avatarId against the known set so a bad/typoed id can never get
+// persisted and later fail to render.
+export function setProfileAvatar(profileId, avatarId) {
+  initData();
+  const profile = getProfile(profileId);
+  if (!profile) return null;
+  if (!AVATARS.some((a) => a.id === avatarId)) return null;
+
+  profile.avatar = avatarId;
   saveData();
   return profile;
 }

@@ -386,6 +386,156 @@ function ModulePicker({ profile, modules, onConfirm, onCancel }) {
   );
 }
 
+/* ─── Avatar Change Overlay ─── */
+function AvatarPicker({ profile, onSelect, onCancel }) {
+  return (
+    <div
+      onClick={onCancel}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.55)",
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        zIndex: 200,
+        padding: "0 16px",
+        paddingBottom: "calc(24px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: COLORS.cream,
+          border: BRUTAL_BORDER,
+          boxShadow: BRUTAL_SHADOW,
+          borderRadius: "16px",
+          padding: "24px 20px 20px",
+          width: "100%",
+          maxWidth: "420px",
+          maxHeight: "80vh",
+          overflowY: "auto",
+          fontFamily: "'Space Grotesk', sans-serif",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "6px" }}>
+          <h2 style={{
+            fontFamily: "'Shrikhand', cursive",
+            fontSize: "24px",
+            fontWeight: 400,
+            margin: 0,
+            color: COLORS.black,
+            flex: 1,
+            textAlign: "center",
+          }}>
+            Pick a new look!
+          </h2>
+        </div>
+        <p style={{
+          margin: "0 0 18px 0",
+          fontSize: "13px",
+          color: "#888",
+          textAlign: "center",
+          fontFamily: "'Space Mono', monospace",
+        }}>
+          {profile.name}
+        </p>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))",
+            gap: "12px",
+            marginBottom: "18px",
+          }}
+        >
+          {AVATARS.map((avatar) => {
+            const isCurrent = profile.avatar === avatar.id;
+            return (
+              <button
+                key={avatar.id}
+                onClick={() => onSelect(profile.id, avatar.id)}
+                style={{
+                  background: "white",
+                  border: isCurrent ? `3px solid ${COLORS.orange}` : BRUTAL_BORDER_SM,
+                  boxShadow: BRUTAL_SHADOW_SM,
+                  borderRadius: "12px",
+                  padding: "12px",
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "8px",
+                  minHeight: "100px",
+                  transition: "all 0.15s",
+                }}
+                onMouseDown={(e) => {
+                  if (!isCurrent) {
+                    e.currentTarget.style.transform = "translate(1px, 1px)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = "translate(0, 0)";
+                  e.currentTarget.style.boxShadow = BRUTAL_SHADOW_SM;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translate(0, 0)";
+                  e.currentTarget.style.boxShadow = BRUTAL_SHADOW_SM;
+                }}
+              >
+                <div style={{ fontSize: "40px" }}>{avatar.emoji}</div>
+                <p
+                  style={{
+                    fontSize: "10px",
+                    fontFamily: "'Space Mono', monospace",
+                    margin: 0,
+                    color: COLORS.black,
+                    textAlign: "center",
+                    fontWeight: 600,
+                  }}
+                >
+                  {avatar.label}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={onCancel}
+          style={{
+            width: "100%",
+            padding: "14px",
+            background: "white",
+            border: BRUTAL_BORDER,
+            boxShadow: BRUTAL_SHADOW_SM,
+            borderRadius: "8px",
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontWeight: 700,
+            fontSize: "16px",
+            cursor: "pointer",
+          }}
+          onMouseDown={(e) => {
+            e.currentTarget.style.transform = "translate(3px, 3px)";
+            e.currentTarget.style.boxShadow = "none";
+          }}
+          onMouseUp={(e) => {
+            e.currentTarget.style.transform = "translate(0, 0)";
+            e.currentTarget.style.boxShadow = BRUTAL_SHADOW_SM;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translate(0, 0)";
+            e.currentTarget.style.boxShadow = BRUTAL_SHADOW_SM;
+          }}
+        >
+          Never mind
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Profile Picker (Players Tab) ─── */
 export function ProfilePicker({
   profiles,
@@ -393,12 +543,17 @@ export function ProfilePicker({
   onAddProfile,
   onOpenParentZone,
   onViewProgress,
+  onSetAvatar,
   activeTab = "players",
   onTabChange,
   masteryData = {},
   streakData = {},
 }) {
   const [pendingProfile, setPendingProfile] = useState(null);
+  const [avatarEditProfileId, setAvatarEditProfileId] = useState(null);
+  const avatarEditProfile = avatarEditProfileId
+    ? profiles.find((p) => p.id === avatarEditProfileId) || null
+    : null;
   const modules = getModuleList();
   const multiModule = modules.length > 1;
 
@@ -413,6 +568,11 @@ export function ProfilePicker({
   const handleModuleConfirm = (profileId, moduleId) => {
     setPendingProfile(null);
     onSelectProfile(profileId, moduleId);
+  };
+
+  const handleAvatarSelect = (profileId, avatarId) => {
+    onSetAvatar?.(profileId, avatarId);
+    setAvatarEditProfileId(null);
   };
 
   return (
@@ -455,95 +615,144 @@ export function ProfilePicker({
             return (
               <div key={profile.id} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 {/* Main avatar card — tap to play / pick module */}
-                <button
-                  onClick={() => handleCardTap(profile)}
-                  style={{
-                    background: "white",
-                    border: BRUTAL_BORDER,
-                    boxShadow: BRUTAL_SHADOW,
-                    borderRadius: "12px",
-                    padding: "16px 12px 14px",
-                    cursor: "pointer",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: "6px",
-                    transition: "all 0.1s",
-                  }}
-                  onMouseDown={(e) => {
-                    e.currentTarget.style.transform = "translate(2px, 2px)";
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
-                  onMouseUp={(e) => {
-                    e.currentTarget.style.transform = "translate(0, 0)";
-                    e.currentTarget.style.boxShadow = BRUTAL_SHADOW;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "translate(0, 0)";
-                    e.currentTarget.style.boxShadow = BRUTAL_SHADOW;
-                  }}
-                >
-                  <div style={{ fontSize: "48px" }}>
-                    {AVATARS.find((a) => a.id === profile.avatar)?.emoji || "🤖"}
-                  </div>
-                  <p style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    fontSize: "15px",
-                    fontWeight: 600,
-                    margin: 0,
-                    color: COLORS.black,
-                    textAlign: "center",
-                    wordBreak: "break-word",
-                  }}>
-                    {profile.name}
-                  </p>
-                  {/* Active module badge — only shown when multiple modules registered */}
-                  {multiModule && (
-                    <span style={{
-                      fontSize: "10px",
-                      fontFamily: "'Space Mono', monospace",
-                      fontWeight: 700,
-                      background: MODULE_COLORS[profile.activeModule] || COLORS.yellow,
-                      color: COLORS.black,
-                      border: `2px solid ${COLORS.black}`,
-                      borderRadius: "4px",
-                      padding: "2px 6px",
-                      letterSpacing: "0.02em",
-                    }}>
-                      {modules.find((m) => m.id === profile.activeModule)?.name || profile.activeModule}
-                    </span>
-                  )}
-                  {/* Mastery bar */}
-                  <div style={{ width: "100%", padding: "0 4px" }}>
-                    <div style={{
-                      height: 6,
-                      borderRadius: 3,
-                      backgroundColor: "#E8E8E8",
-                      overflow: "hidden",
-                      border: "1.5px solid " + COLORS.black,
-                    }}>
-                      <div style={{
-                        height: "100%",
-                        width: `${masteryPct}%`,
-                        backgroundColor: COLORS.green,
-                        borderRadius: 2,
-                        transition: "width 0.5s ease",
-                      }} />
-                    </div>
-                    <div style={{
+                <div style={{ position: "relative" }}>
+                  <button
+                    onClick={() => handleCardTap(profile)}
+                    style={{
+                      background: "white",
+                      border: BRUTAL_BORDER,
+                      boxShadow: BRUTAL_SHADOW,
+                      borderRadius: "12px",
+                      padding: "16px 12px 14px",
+                      cursor: "pointer",
                       display: "flex",
-                      justifyContent: "space-between",
-                      marginTop: "3px",
-                      fontSize: "9px",
-                      fontFamily: "'Space Mono', monospace",
-                      color: "#888",
-                      fontWeight: 600,
-                    }}>
-                      <span>{masteryPct}%</span>
-                      {streak.current > 0 && <span>{"🔥"} {streak.current}</span>}
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: "6px",
+                      width: "100%",
+                      boxSizing: "border-box",
+                      transition: "all 0.1s",
+                    }}
+                    onMouseDown={(e) => {
+                      e.currentTarget.style.transform = "translate(2px, 2px)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                    onMouseUp={(e) => {
+                      e.currentTarget.style.transform = "translate(0, 0)";
+                      e.currentTarget.style.boxShadow = BRUTAL_SHADOW;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translate(0, 0)";
+                      e.currentTarget.style.boxShadow = BRUTAL_SHADOW;
+                    }}
+                  >
+                    <div style={{ fontSize: "48px" }}>
+                      {AVATARS.find((a) => a.id === profile.avatar)?.emoji || "🤖"}
                     </div>
-                  </div>
-                </button>
+                    <p style={{
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      margin: 0,
+                      color: COLORS.black,
+                      textAlign: "center",
+                      wordBreak: "break-word",
+                    }}>
+                      {profile.name}
+                    </p>
+                    {/* Active module badge — only shown when multiple modules registered */}
+                    {multiModule && (
+                      <span style={{
+                        fontSize: "10px",
+                        fontFamily: "'Space Mono', monospace",
+                        fontWeight: 700,
+                        background: MODULE_COLORS[profile.activeModule] || COLORS.yellow,
+                        color: COLORS.black,
+                        border: `2px solid ${COLORS.black}`,
+                        borderRadius: "4px",
+                        padding: "2px 6px",
+                        letterSpacing: "0.02em",
+                      }}>
+                        {modules.find((m) => m.id === profile.activeModule)?.name || profile.activeModule}
+                      </span>
+                    )}
+                    {/* Mastery bar */}
+                    <div style={{ width: "100%", padding: "0 4px" }}>
+                      <div style={{
+                        height: 6,
+                        borderRadius: 3,
+                        backgroundColor: "#E8E8E8",
+                        overflow: "hidden",
+                        border: "1.5px solid " + COLORS.black,
+                      }}>
+                        <div style={{
+                          height: "100%",
+                          width: `${masteryPct}%`,
+                          backgroundColor: COLORS.green,
+                          borderRadius: 2,
+                          transition: "width 0.5s ease",
+                        }} />
+                      </div>
+                      <div style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginTop: "3px",
+                        fontSize: "9px",
+                        fontFamily: "'Space Mono', monospace",
+                        color: "#888",
+                        fontWeight: 600,
+                      }}>
+                        <span>{masteryPct}%</span>
+                        {streak.current > 0 && <span>{"🔥"} {streak.current}</span>}
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Edit-avatar chip — overlaps the card's top-right corner. Stops
+                      propagation so it never triggers the card's own tap/select
+                      behavior, and opens the avatar-change overlay instead. */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAvatarEditProfileId(profile.id);
+                    }}
+                    aria-label={`Change ${profile.name}'s avatar`}
+                    style={{
+                      position: "absolute",
+                      top: "-10px",
+                      right: "-10px",
+                      width: "40px",
+                      height: "40px",
+                      borderRadius: "50%",
+                      background: COLORS.yellow,
+                      border: BRUTAL_BORDER_SM,
+                      boxShadow: BRUTAL_SHADOW_SM,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "16px",
+                      lineHeight: 1,
+                      cursor: "pointer",
+                      padding: 0,
+                      zIndex: 5,
+                      transition: "all 0.1s",
+                    }}
+                    onMouseDown={(e) => {
+                      e.currentTarget.style.transform = "translate(1px, 1px)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                    onMouseUp={(e) => {
+                      e.currentTarget.style.transform = "translate(0, 0)";
+                      e.currentTarget.style.boxShadow = BRUTAL_SHADOW_SM;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translate(0, 0)";
+                      e.currentTarget.style.boxShadow = BRUTAL_SHADOW_SM;
+                    }}
+                  >
+                    ✏️
+                  </button>
+                </div>
 
                 {/* Progress button — separate from the card */}
                 <button
@@ -644,6 +853,15 @@ export function ProfilePicker({
           modules={modules}
           onConfirm={handleModuleConfirm}
           onCancel={() => setPendingProfile(null)}
+        />
+      )}
+
+      {/* Avatar change overlay — shown when a profile card's edit chip is tapped */}
+      {avatarEditProfile && (
+        <AvatarPicker
+          profile={avatarEditProfile}
+          onSelect={handleAvatarSelect}
+          onCancel={() => setAvatarEditProfileId(null)}
         />
       )}
     </div>
