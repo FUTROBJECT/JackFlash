@@ -29,7 +29,7 @@ export default function SmartPracticeExplainer() {
           { label: "New", desc: "Only 2–3 unseen facts introduced at a time, so nothing gets overwhelming.", color: COLORS.blue },
           { label: "Learning", desc: "Seen before but not yet mastered. Shown often.", color: COLORS.yellow },
           { label: "Struggling", desc: "Missed repeatedly. Top priority.", color: COLORS.pink },
-          { label: "Mastered", desc: "3 correct in a row. Moves into long-term review.", color: COLORS.green },
+          { label: "Mastered", desc: "3 fast, unaided correct answers. Moves into long-term review.", color: COLORS.green },
           { label: "Review-due", desc: "Mastered facts whose review window has come up.", color: COLORS.orange },
         ].map((row) => (
           <div key={row.label} style={{
@@ -70,7 +70,7 @@ export default function SmartPracticeExplainer() {
         Mastery isn't permanent
       </h4>
       <p style={{ margin: "0 0 12px" }}>
-        A fact becomes mastered after 3 correct answers. If your child misses a mastered fact during review, it drops back into learning — the standard stays honest.
+        A fact becomes mastered after 3 correct answers that count — and an answer only counts when it comes quickly (recall, not finger-counting) with no hints on screen for the final one. The time limit is fair: it stretches for longer answers and for division, and your child never sees a timer or a "too slow" — slow answers still celebrate, they just don't advance the meter yet. If your child misses a mastered fact during review, it drops back into learning — the standard stays honest.
       </p>
 
       <h4 style={{
