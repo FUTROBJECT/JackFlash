@@ -7,6 +7,7 @@ import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEng
 import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
+import { computeSelection, tickErrorWindow, markErrorPriority, clearErrorPriority } from "./factSelectionPolicy.js";
 
 
 // Register the multiply module on first load
@@ -128,6 +129,9 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   // Fluency timing: when the current fact became answerable (set on focus, not
   // on render — render/focus latency isn't billed to the child).
   const factShownAtRef = useRef(0);
+  // Error-priority window (docs/fact-selection-policy.md §8): in-memory only,
+  // { [factKey]: drawsRemaining }. Not persisted, discarded on unmount.
+  const errorWindowRef = useRef({});
 
   // Initialize data manager
   useEffect(() => {
@@ -186,11 +190,12 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     return masteryData[factKey]?.correct || 0;
   }, [getMasteryData]);
 
-  // Spaced-repetition review intervals (days) — Leitner-inspired
-  // Index = number of correct answers beyond mastery threshold
-  const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
-
-  // Pick a new fact using spaced repetition + Singapore Math spiral review
+  // Pick a new fact using the fact-selection policy: category budgets +
+  // within-category weights, a gated introduction frontier, an anti-repeat
+  // guard, a per-fact ceiling, and an in-memory error-priority window.
+  // See docs/fact-selection-policy.md — the pipeline itself lives in
+  // src/factSelectionPolicy.js so it can be driven by both this component
+  // and the Node acceptance-criteria simulation.
   const pickNewFact = useCallback(() => {
     if (facts.length === 0) {
       setCurrentFact(null);
@@ -198,72 +203,20 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     }
 
     const masteryThreshold = DEFAULT_MASTERY_THRESHOLD;
-    const now = Date.now();
     const masteryData = getMasteryData();
-    const MAX_NEW_FACTS = 3; // Introduce at most 3 unseen facts at a time
 
-    // Categorize every fact in the current pool
-    const scored = facts.map((f) => {
-      const record = masteryData[f.factKey];
-      const level = record?.correct || 0;
-      const attempts = record?.attempts || 0;
-      const lastSeen = record?.lastSeen ? new Date(record.lastSeen).getTime() : 0;
-      const daysSince = lastSeen ? (now - lastSeen) / (1000 * 60 * 60 * 24) : Infinity;
+    // Error-priority window: decrement before this draw so a missed fact's
+    // elevated priority (spec §8) fades out over roughly its next 10 draws.
+    tickErrorWindow(errorWindowRef);
 
-      if (level >= masteryThreshold) {
-        // MASTERED — check if review is due
-        const reviewsAfterMastery = level - masteryThreshold;
-        const intervalDays = REVIEW_INTERVALS[Math.min(reviewsAfterMastery, REVIEW_INTERVALS.length - 1)];
-        const reviewDue = daysSince >= intervalDays;
-        return { fact: f, weight: reviewDue ? 4 : 1, category: reviewDue ? "review" : "mastered" };
-      }
-
-      if (attempts === 0 && !record?.lastSeen) {
-        // NEVER SEEN — will be capped below
-        // (check lastSeen too for backward compat with old records that lack attempts)
-        return { fact: f, weight: 3, category: "new" };
-      }
-
-      if (level === 0) {
-        // STRUGGLING — seen but nothing sticking
-        return { fact: f, weight: 6, category: "struggling" };
-      }
-
-      // LEARNING — partially mastered, weight inversely proportional to progress
-      return { fact: f, weight: (masteryThreshold - level + 1) * 2, category: "learning" };
+    const { selected } = computeSelection({
+      facts,
+      masteryData,
+      prevKey: currentFact?.factKey,
+      operation,
+      errorWindow: errorWindowRef.current,
+      threshold: masteryThreshold,
     });
-
-    // Singapore Math principle: don't overwhelm — limit new-fact introductions
-    // Only allow MAX_NEW_FACTS unseen facts into the weighted pool at a time
-    let newCount = 0;
-    let pool = scored.filter((s) => {
-      if (s.category === "new") {
-        newCount++;
-        return newCount <= MAX_NEW_FACTS;
-      }
-      return true;
-    });
-
-    // Anti-repeat guard: never show the same fact twice in a row as long as
-    // there is at least one other fact available. Prevents the weighted-random
-    // algorithm from picking a dominant-weight fact back-to-back.
-    const previousKey = currentFact?.factKey;
-    if (previousKey && pool.length > 1) {
-      const withoutPrevious = pool.filter((s) => s.fact.factKey !== previousKey);
-      if (withoutPrevious.length > 0) pool = withoutPrevious;
-    }
-
-    // Weighted random selection
-    const totalWeight = pool.reduce((sum, s) => sum + s.weight, 0);
-    let r = Math.random() * totalWeight;
-    let selected = pool[0]?.fact || null;
-    for (const entry of pool) {
-      r -= entry.weight;
-      if (r <= 0) {
-        selected = entry.fact;
-        break;
-      }
-    }
 
     setCurrentFact(selected);
     setUserAnswer("");
@@ -289,7 +242,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       window.scrollTo(0, 0);
       factShownAtRef.current = Date.now();
     }, 100);
-  }, [facts, getMasteryData, currentFact, mode, lockedMode]);
+  }, [facts, getMasteryData, currentFact, mode, lockedMode, operation]);
 
   // Trigger pickNewFact when enabled tables, focus number, operation, or facts change
   useEffect(() => {
@@ -338,6 +291,15 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
 
     const isCorrect = parseInt(userAnswer) === currentFact.answer;
     const masteryThreshold = DEFAULT_MASTERY_THRESHOLD;
+
+    // Error-priority window (docs/fact-selection-policy.md §8): a missed fact
+    // returns within ~6 draws via a ×4 within-category weight boost; a correct
+    // answer clears it immediately rather than waiting for the window to expire.
+    if (isCorrect) {
+      clearErrorPriority(errorWindowRef, currentFact.factKey);
+    } else {
+      markErrorPriority(errorWindowRef, currentFact.factKey);
+    }
 
     // Update mastery via data manager if profileId exists, otherwise via local state
     if (profileId) {
