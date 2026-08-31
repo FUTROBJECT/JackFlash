@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, DEFAULT_MASTERY_THRESHOLD, AVATARS, FLUENCY_MS_MULTIPLY, FLUENCY_MS_DIVIDE } from "./constants.js";
+import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, DEFAULT_MASTERY_THRESHOLD, AVATARS, fluencyLimitMs as computeFluencyLimitMs } from "./constants.js";
 import multiplyModule from "./modules/multiply.jsx";
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
 import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordAnswerInSession, finalizeLiveSession, getProfile, updateChildSettings, getPreferredMode, setPreferredMode } from "./dataManager.js";
@@ -7,7 +7,7 @@ import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEng
 import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
-import { computeSelection, tickErrorWindow, markErrorPriority, clearErrorPriority } from "./factSelectionPolicy.js";
+import { computeSelection, tickErrorWindow, markErrorPriority, clearErrorPriority, dedupeFacts } from "./factSelectionPolicy.js";
 
 
 // Register the multiply module on first load
@@ -309,7 +309,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       // UNSCAFFOLDED — that's the on-ramp.
       const scaffolded = mode === "concrete" || (mode === "pictorial" && !userHidScaffold) || showScaffold === true;
       const masteryGatesExempt = lockedMode === "concrete" || lockedMode === "pictorial";
-      const fluencyLimitMs = currentFact.operation === "divide" ? FLUENCY_MS_DIVIDE : FLUENCY_MS_MULTIPLY;
+      const fluencyLimitMs = computeFluencyLimitMs(currentFact.operation, currentFact.answer);
       if (import.meta.env.DEV) console.debug("[JF] responseMs", currentFact.factKey, responseMs);
       updateMastery(profileId, moduleId, currentFact.factKey, isCorrect, { responseMs, fluencyLimitMs, scaffolded, masteryGatesExempt });
       recordAnswerInSession(profileId, moduleId, isCorrect);
@@ -479,8 +479,12 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
           {/* Stats row — always visible, shows cumulative + session progress */}
           {(() => {
             const masteryData = getMasteryData();
-            const totalFacts = facts.length;
-            const masteredFacts = totalFacts > 0 ? facts.filter(f => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length : 0;
+            // Count DISTINCT facts — generateFacts emits symmetric division facts
+            // twice (e.g. "4÷2"), which inflated this stat's numerator and
+            // denominator (the group grids below already dedupe).
+            const distinctFacts = dedupeFacts(facts);
+            const totalFacts = distinctFacts.length;
+            const masteredFacts = totalFacts > 0 ? distinctFacts.filter(f => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length : 0;
             const masteryPct = totalFacts > 0 ? Math.round((masteredFacts / totalFacts) * 100) : 0;
             return (
               <div style={{ display: "flex", gap: "6px", alignItems: "stretch", marginBottom: "8px", minHeight: "56px" }}>

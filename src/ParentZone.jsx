@@ -209,10 +209,16 @@ function ProgressReport({ profile }) {
   // (fractions) expose a flat item pool grouped by group id.
   let allItems, groupStats;
   if (typeof mod.generateFacts === "function") {
-    const facts = mod.generateFacts({ tables: mod.focusTables, operation: "mixed" });
+    // Dedupe by factKey — generateFacts emits symmetric division facts twice
+    // (e.g. "4÷2"), which would inflate every count on this screen.
+    const distinct = (facts) => {
+      const seen = new Set();
+      return facts.filter(f => !seen.has(f.factKey) && seen.add(f.factKey));
+    };
+    const facts = distinct(mod.generateFacts({ tables: mod.focusTables, operation: "mixed" }));
     allItems = facts.map(f => ({ key: f.factKey, display: f.display }));
     groupStats = mod.groups.map(group => {
-      const groupFacts = mod.generateFacts({ tables: group.tables, operation: "mixed" });
+      const groupFacts = distinct(mod.generateFacts({ tables: group.tables, operation: "mixed" }));
       const groupMastered = groupFacts.filter(f => (mastery[f.factKey]?.correct || 0) >= masteryThreshold).length;
       return { ...group, total: groupFacts.length, mastered: groupMastered };
     });
