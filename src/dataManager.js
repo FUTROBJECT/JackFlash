@@ -1,5 +1,5 @@
 // Data Manager for JackFlash - Multi-profile storage with migration support
-import { DEFAULT_CHILD_SETTINGS, DEFAULT_MASTERY_THRESHOLD, STREAK_MIN_PROBLEMS, SESSION_HISTORY_CAP, FLUENCY_MS_MULTIPLY, FLUENCY_MS_DIVIDE, AVATARS } from "./constants.js";
+import { DEFAULT_CHILD_SETTINGS, DEFAULT_MASTERY_THRESHOLD, STREAK_MIN_PROBLEMS, SESSION_HISTORY_CAP, FLUENCY_BASE_MS_MULTIPLY, FLUENCY_MS_PER_DIGIT, AVATARS } from "./constants.js";
 import { saveDurable } from "./storage.js";
 
 const DATA_KEY = "jackflash_data";
@@ -319,7 +319,9 @@ export function updateMastery(profileId, moduleId, factKey, isCorrect, opts = {}
       // Gate 1 (speed): waived when responseMs is undefined (legacy callers,
       // conceptual modules that don't pass timing).
       if (opts.responseMs !== undefined) {
-        credited = opts.responseMs <= (opts.fluencyLimitMs ?? FLUENCY_MS_MULTIPLY);
+        // Fallback for callers that pass timing without a limit: the 2-digit
+        // multiply limit (the calibration anchor — see constants.js).
+        credited = opts.responseMs <= (opts.fluencyLimitMs ?? FLUENCY_BASE_MS_MULTIPLY + 2 * FLUENCY_MS_PER_DIGIT);
       }
       // Gate 2 (retrieval finish line): only on the threshold-crossing step.
       if (credited && crossing && opts.scaffolded === true) credited = false;

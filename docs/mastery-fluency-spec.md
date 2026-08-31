@@ -154,3 +154,26 @@ ParentZone's Progress Report additionally shows a "Ready to try unaided" chips r
 
 - **Rev. 1** (2026-08-19): original spec.
 - **Rev. 2** (2026-08-19): curriculum-review amendments folded in before implementation — split fluency constants by operation (multiply 6s / divide 8s); fractions excluded from the speed gate entirely (conceptual module; gate 2 retained); parent-lock exemption widened to waive both gates (`masteryGatesExempt`); response clock starts when the item is answerable (focus callback); §4.5 finish-line on-ramp added (required) with a ParentZone "Ready to try unaided" row; §1 reconstruction-vs-retrieval wording corrected; QA additions (responseMs instrumentation, pictorial-plateau regression). Code-verification corrections: §4.3 localMastery "mirror" dropped (it is the profile-less fallback, not a mirror); `credited` returned on a copy, never the persisted object. Deferred as fast-follows: parent-facing "mastery = fast and unaided" note; per-answerType speed limits if fractions ever gets a speed gate; Parent Zone configurable FLUENCY_MS.
+
+---
+
+## Amendment (2026-08-31): digit-scaled fluency limits
+
+The flat constants `FLUENCY_MS_MULTIPLY = 6000` / `FLUENCY_MS_DIVIDE = 8000` are replaced by a
+digit-scaled formula (curriculum ruling — see the rationale in `src/constants.js`):
+
+```
+fluencyLimitMs(operation, answer) =
+  (operation === "divide" ? 6000 : 4000) + 1200 × digits(answer)
+```
+
+Multiply: 5200 / 6400 / 7600 ms for 1/2/3-digit answers. Divide: 7200 / 8400 ms.
+Calibration anchor: the 2-digit multiply case (6400ms) sits within noise of the flat 6000ms the
+real learner beat 149 times. Retrieval demand is constant across facts; typing on a touch keypad
+is not — the per-digit term spends the generosity where the variance actually is.
+
+Re-tuning signals (check once telemetry exists):
+- **Too tight:** facts with `attempts ≥ 8` still at `correct ≤ 2` growing across sessions while
+  session accuracy stays ≥85%; median attempts-to-master above ~8.
+- **Too loose:** wrong-answer rate on review-due facts above ~15–20%.
+- Target: ~80th percentile of correct response times on already-mastered facts per digit length.

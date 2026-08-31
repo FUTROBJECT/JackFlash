@@ -74,9 +74,22 @@ export const DEFAULT_CHILD_SETTINGS = {
 export const DEFAULT_MASTERY_THRESHOLD = 3;
 
 // Fluency-gated mastery: max response time (ms) that credits mastery progress.
-// Divide is mediated by the inverse fact — one step longer than multiply.
-export const FLUENCY_MS_MULTIPLY = 6000;
-export const FLUENCY_MS_DIVIDE = 8000;
+// Digit-scaled (curriculum ruling, 2026-08-31): the clock includes typing the
+// answer on a touch keypad, so the limit grows with answer length — retrieval
+// demand is identical for 6×1 and 10×10, but 1 vs 3 taps is not. Divide is
+// mediated by the inverse multiplication fact — the +2000 lives on the base,
+// not the per-digit term, because the extra cost is recall, not keystrokes.
+// Calibration anchor: 2-digit multiply = 6400ms, within noise of the 6000ms
+// flat limit the real learner beat 149 times before this change.
+export const FLUENCY_BASE_MS_MULTIPLY = 4000;
+export const FLUENCY_BASE_MS_DIVIDE = 6000;
+export const FLUENCY_MS_PER_DIGIT = 1200;
+
+// Max response time (ms) that credits mastery for one answer.
+export function fluencyLimitMs(operation, answer) {
+  const base = operation === "divide" ? FLUENCY_BASE_MS_DIVIDE : FLUENCY_BASE_MS_MULTIPLY;
+  return base + FLUENCY_MS_PER_DIGIT * String(answer).length;
+}
 
 // Streak minimum problems to count a day
 export const STREAK_MIN_PROBLEMS = 10;
