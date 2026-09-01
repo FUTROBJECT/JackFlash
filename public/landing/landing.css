@@ -377,11 +377,25 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
    RESPONSIVE
    =================================================================== */
 
-/* 768–1099px: 3-col grids → 2-col; section/hero padding tightens */
+/* 768–1099px: section/hero padding tightens.
+   The three-card text grids (pillars, CPA) deliberately STAY three-across
+   here: they hold three parallel points that are meant to be read as one
+   row, and at 2 columns the third card orphans onto a second row. Only the
+   six-item screenshot grid drops to 2 columns, where an even count means
+   no orphan. Below 768px both go single-column — three text cards on a
+   phone would be ~100px wide. */
 @media (max-width:1099px){
-  .section{padding:40px 28px;}
-  .hero{padding:52px 28px 48px;}
-  .pillars-grid,.cpa-grid,.shots-grid{grid-template-columns:repeat(2,1fr);}
+  .page{padding:32px;}
+  .section{padding:40px 24px;}
+  .hero{padding:52px 24px 48px;}
+  .shots-grid{grid-template-columns:repeat(2,1fr);}
+  /* Claw back horizontal room so three-across stays readable this far down:
+     without these the cards fall to a ~126px text measure at 768px. */
+  .pillars-grid,.cpa-grid{gap:14px;}
+  .card{padding:20px 16px 22px;}
+  .cpa-card{padding:18px 14px;}
+  .card-h3{font-size:19px;}
+  .card-p{font-size:14.5px;}
 }
 
 /* <768px: single column everywhere, smaller type */
