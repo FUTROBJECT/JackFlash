@@ -195,3 +195,95 @@
     }
   });
 })();
+
+/* ===================================================================
+   Widont — no single-word last lines
+   ===================================================================
+   CSS text-wrap:balance/pretty (see landing.css) handles most cases and is
+   the no-JS fallback, but at narrow measures neither has room to pull a word
+   down, so short headings ("No subscription. Ever.") and long FAQ answers
+   still orphan. This binds the final space of each text block with a
+   non-breaking space so the last two words can never be split.
+
+   Guarded: joining two long words can overflow a narrow container, so each
+   change is reverted if it makes the element overflow. Re-runs on resize
+   because what fits is width-dependent.
+   =================================================================== */
+(function () {
+  "use strict";
+
+  var SELECTOR = [
+    "p", "h1", "h2", "h3", "h4",
+    ".card-h3", ".cpa-title", ".cpa-label", ".cpa-desc", ".cpa-note",
+    ".section-lede", ".faq-q", ".faq-a", ".founder-p", ".tagline",
+    ".sp-row-caption", ".sp-bubble-caption", ".price-row"
+  ].join(",");
+
+  var NBSP = " ";
+  var tracked = [];
+
+  // Last text node in the element that ends with a real word.
+  function lastTextNode(el) {
+    var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    var node = null, n;
+    while ((n = walker.nextNode())) {
+      if (n.textContent.replace(/\s/g, "").length) node = n;
+    }
+    return node;
+  }
+
+  function collect() {
+    var els = document.querySelectorAll(SELECTOR);
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
+      var node = lastTextNode(el);
+      if (!node) continue;
+      // Needs a trailing space to convert, and at least two words overall.
+      if (!/\S\s+\S/.test(node.textContent)) continue;
+      if (el.textContent.trim().split(/\s+/).length < 3) continue;
+      tracked.push({ el: el, node: node, original: node.textContent });
+    }
+  }
+
+  // Nearest ANCESTOR that reports layout width. Must start above el: an
+  // element never overflows itself, so measuring el would never detect that
+  // its own joined token no longer fits the space its parent gives it.
+  function blockAncestor(el) {
+    var n = el.parentElement;
+    while (n && n !== document.body) {
+      if (n.clientWidth > 0) return n;
+      n = n.parentElement;
+    }
+    return document.body;
+  }
+
+  function apply() {
+    for (var i = 0; i < tracked.length; i++) {
+      var t = tracked[i];
+      // Reset first so resizing re-evaluates from the original text.
+      t.node.textContent = t.original;
+      // Replace the LAST run of whitespace between two words with an NBSP.
+      var replaced = t.original.replace(/\s+(\S+)(\s*)$/, function (m, word, tail) {
+        return NBSP + word + tail;
+      });
+      if (replaced === t.original) continue;
+      t.node.textContent = replaced;
+      // Revert if the join pushed content past its container. Measure the
+      // nearest BLOCK ancestor: scrollWidth/clientWidth are always 0 on inline
+      // elements (.faq-q is a span), so testing t.el directly never fires.
+      var box = blockAncestor(t.el);
+      if (box && box.scrollWidth > box.clientWidth + 1) {
+        t.node.textContent = t.original;
+      }
+    }
+  }
+
+  collect();
+  apply();
+
+  var resizeTimer = null;
+  window.addEventListener("resize", function () {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(apply, 120);
+  }, { passive: true });
+})();
