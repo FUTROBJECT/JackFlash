@@ -149,7 +149,14 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
 }
 .mark-yellow{background:var(--yellow);}
 .mark-green{background:var(--green);}
-.hero-sub{max-width:560px;margin:16px auto 0;color:var(--text2);font-size:17px;line-height:21px;}
+/* text-wrap:balance evens the line lengths of this short block so no line is
+   left with a lone word; the &nbsp; binding "son Jack." in the markup is the
+   fallback for browsers without it. Both are needed — balance is ignored
+   silently where unsupported. */
+.hero-sub{
+  max-width:620px;margin:30px auto 0;color:var(--text2);
+  font-size:19px;line-height:1.5;text-wrap:balance;
+}
 .cta-row{display:flex;gap:18px;justify-content:center;margin-top:34px;flex-wrap:wrap;}
 
 .btn-store,.btn-browser{
