@@ -216,7 +216,7 @@
     "p", "h1", "h2", "h3", "h4",
     ".card-h3", ".cpa-title", ".cpa-label", ".cpa-desc", ".cpa-note",
     ".section-lede", ".faq-q", ".faq-a", ".founder-p", ".tagline",
-    ".sp-row-caption", ".sp-bubble-caption", ".price-row"
+    ".sp-row-caption", ".price-row"  // diagram captions are SVG <text>, hand-broken — not widont targets
   ].join(",");
 
   var NBSP = " ";

@@ -45,7 +45,7 @@ img{max-width:100%}
    Headings and short display lines then override with `balance`. */
 body{text-wrap:pretty;}
 h1,h2,h3,h4,.h2,.card-h3,.cpa-title,.cpa-label,.tagline,.price-tagline,
-.sp-pill,.sp-row-name,.sp-bubble-name,.eyebrow,.faq-q,.founder-sig,
+.sp-pill,.sp-row-name,.eyebrow,.faq-q,.founder-sig,
 .store-name,.browser-name,.price-name{
   text-wrap:balance;
 }
@@ -88,7 +88,8 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
   @keyframes jfRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 
   .nav{transition:padding .15s ease,box-shadow .15s ease;}
-  .sp-bubble{transition:transform .15s ease,box-shadow .15s ease,opacity .15s ease;}
+  .sp-bubble{transition:opacity .15s ease;}
+  .sp-face{transition:transform .15s ease;}
   .sp-row{transition:transform .15s ease,box-shadow .15s ease,opacity .15s ease;}
   .shot-thumb img{transition:transform .15s ease,box-shadow .15s ease;}
 }
@@ -251,37 +252,39 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
 }
 
 /* ===== Smart Practice diagram ===== */
-/* padding-bottom makes room for the Struggling bubble's deliberate
-   11-15px overhang below the 500px diagram box (overflow-y:hidden can't
-   be visible without forcing the x-axis to auto too, per spec) */
-.sp-wrap{overflow-x:auto;overflow-y:hidden;padding-bottom:20px;}
-.sp-diagram{position:relative;width:940px;height:500px;margin:38px auto 0;}
-.sp-lines{position:absolute;inset:0;width:940px;height:500px;overflow:visible;}
+/* ===== Smart Practice lifecycle (inline SVG, ≥900px) =====
+   One viewBox (1060×660) scaled to the section width — no fixed box, no
+   overflow wrapper. Text is real SVG <text> in the brand faces; the page's
+   @font-face rules apply because the SVG is inline. */
+.sp-wrap{margin:38px auto 0;}
+.sp-lifecycle{display:block;width:100%;height:auto;overflow:visible;}
 
-.sp-bubble{
-  position:absolute;border:var(--border);box-shadow:var(--shadow);border-radius:50%;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;
-  cursor:default;
-}
-.sp-bubble-name{font-family:var(--display);line-height:1.1;}
-.sp-bubble-caption{font-family:var(--mono);font-weight:700;font-size:11px;line-height:1.45;text-transform:uppercase;letter-spacing:.5px;color:rgba(26,26,26,.72);}
+.sp-name{font-family:var(--display);fill:var(--ink);text-anchor:middle;}
+.sp-cap{font-family:var(--mono);font-weight:700;font-size:10px;letter-spacing:.8px;text-transform:uppercase;text-anchor:middle;fill:var(--ink);fill-opacity:.74;}
+.sp-edge{font-family:var(--mono);font-weight:700;font-size:10px;letter-spacing:1px;text-transform:uppercase;text-anchor:middle;fill:var(--ink);fill-opacity:.7;}
+.sp-edge[text-anchor="end"]{text-anchor:end;}
+.sp-edge[text-anchor="start"]{text-anchor:start;}
+.sp-edge--solid{fill-opacity:1;}
 
-.sp-bubble--new{left:4px;top:42px;width:170px;height:170px;background:var(--blue);padding:0 19px;}
-.sp-bubble--new .sp-bubble-name{font-size:24px;}
-.sp-bubble--mastered{left:525px;top:34px;width:250px;height:250px;background:var(--green);padding:0 28px;}
-.sp-bubble--mastered .sp-bubble-name{font-size:30px;}
-.sp-bubble--struggling{left:135px;top:359px;width:152px;height:152px;background:var(--pink);padding:0 17px;}
-.sp-bubble--struggling .sp-bubble-name{font-size:19px;}
-.sp-bubble--learning{left:240px;top:100px;width:230px;height:230px;background:var(--yellow);padding:0 25px;}
-.sp-bubble--learning .sp-bubble-name{font-size:27px;}
-.sp-bubble--reviewdue{left:737px;top:287px;width:176px;height:176px;background:var(--orange);padding:0 19px;}
-.sp-bubble--reviewdue .sp-bubble-name{font-size:18px;}
+.sp-spine{stroke:var(--ink);stroke-width:3;fill:none;}
+.sp-loop{stroke:var(--ink);stroke-width:3.5;fill:none;stroke-linecap:round;stroke-dasharray:1 10;}
+.sp-miss{stroke:var(--ink);stroke-width:2.5;fill:none;stroke-linecap:round;stroke-dasharray:1 8;opacity:.55;}
 
-/* hover/focus raises a bubble and dims the rest */
-.sp-diagram:hover .sp-bubble,.sp-diagram:focus-within .sp-bubble{opacity:.55;}
-.sp-bubble:hover,.sp-bubble:focus-visible,.sp-bubble.is-active{
-  opacity:1 !important;transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink);z-index:2;
-}
+.sp-shadow{fill:var(--ink);}
+.sp-node{stroke:var(--ink);stroke-width:3;}
+.sp-bubble{cursor:default;outline:none;}
+
+/* hover/focus lifts a bubble off its shadow (4px → 6px) and dims the rest */
+.sp-lifecycle:hover .sp-bubble,.sp-lifecycle:focus-within .sp-bubble{opacity:.55;}
+/* The un-dim rules must out-specify the dim rule above (0,3,0), so they
+   carry the .sp-lifecycle prefix too and come later in source. */
+.sp-lifecycle .sp-bubble:hover,.sp-lifecycle .sp-bubble:focus-visible,.sp-lifecycle .sp-bubble.is-active{opacity:1;}
+.sp-lifecycle .sp-bubble:hover .sp-face,.sp-lifecycle .sp-bubble:focus-visible .sp-face,.sp-lifecycle .sp-bubble.is-active .sp-face{transform:translate(-2px,-2px);}
+/* focus indicator: a heavier ink ring on the circle, not the browser's box
+   outline (which would draw a rectangle around a round bubble). Also has to
+   out-specify the generic .sp-bubble:focus-visible outline rule. */
+.sp-lifecycle .sp-bubble:focus-visible{outline:none;}
+.sp-lifecycle .sp-bubble:focus-visible .sp-node{stroke-width:5;}
 
 /* mobile fallback list, hidden ≥900px */
 .sp-list{display:none;list-style:none;margin-top:30px;}
