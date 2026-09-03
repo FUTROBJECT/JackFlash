@@ -376,7 +376,6 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
 .chip-pill{font-family:var(--mono);font-size:12px;font-weight:700;background:var(--panel);border:var(--border-sm);border-radius:999px;box-shadow:var(--shadow-sm);padding:6px 14px;}
 
 /* ===== FAQ ===== */
-.faq-hint{font-size:15px;color:#999;margin-bottom:24px;}
 .faq-card{background:#fff;border:var(--border);box-shadow:var(--shadow);border-radius:16px;padding:16px 26px;}
 .faq-divider{height:3px;background-image:radial-gradient(circle,var(--ink) 1.5px,transparent 2px);background-size:18px 3px;background-repeat:repeat-x;background-position:center;opacity:.45;}
 .faq-summary{display:flex;align-items:center;gap:16px;padding:18px 2px;min-height:44px;}
