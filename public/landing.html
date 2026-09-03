@@ -18,21 +18,30 @@
 </head>
 <body>
 
+<!-- Sticky bar: full-bleed, opaque, the page ground colour — so nothing
+     scrolls past around the pill. Lives outside .page so it spans the
+     viewport; .nav-bar-inner re-creates the content column so the pill
+     lines up with the sections below. -->
+<div class="nav-bar" id="nav-bar">
+  <div class="nav-bar-inner">
+    <!-- ===== nav ===== -->
+    <nav class="nav" id="nav">
+      <span class="brand">
+        <span class="brand-icon" aria-hidden="true">⚡</span>
+        <span class="brand-name">Jack<span class="brand-accent">Flash</span></span>
+      </span>
+      <div class="nav-links" id="nav-links">
+        <a class="nav-pill" href="#method">The method</a>
+        <a class="nav-pill" href="#pricing">Pricing</a>
+        <a class="nav-pill" href="#faq">FAQ</a>
+      </div>
+      <a class="nav-cta" href="#pricing">Get the app</a>
+    </nav>
+  </div>
+</div>
+
 <div class="page">
 
-  <!-- ===== nav ===== -->
-  <nav class="nav" id="nav">
-    <span class="brand">
-      <span class="brand-icon" aria-hidden="true">⚡</span>
-      <span class="brand-name">Jack<span class="brand-accent">Flash</span></span>
-    </span>
-    <div class="nav-links" id="nav-links">
-      <a class="nav-pill" href="#method">The method</a>
-      <a class="nav-pill" href="#pricing">Pricing</a>
-      <a class="nav-pill" href="#faq">FAQ</a>
-    </div>
-    <a class="nav-cta" href="#pricing">Get the app</a>
-  </nav>
 
   <!-- ===== hero ===== -->
   <header class="hero grid-paper" id="top">

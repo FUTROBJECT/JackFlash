@@ -17,7 +17,7 @@
 :root{
   --bg:#FFF8E7; --panel:#FFFBEB; --ink:#1A1A1A;
   --yellow:#FFD43B; --blue:#4CC9F0; --green:#06D6A0; --orange:#FF9F1C; --pink:#FF6B9D; --purple:#B388FF;
-  --text2:#555;
+  --text2:#555; --ground:#EFE6CE;
   --shadow:4px 4px 0 var(--ink); --shadow-sm:3px 3px 0 var(--ink);
   --border:3px solid var(--ink); --border-sm:2.5px solid var(--ink);
   --display:"Galindo","Arial Rounded MT Bold",ui-rounded,"Varela Round",system-ui,sans-serif;
@@ -26,7 +26,7 @@
 }
 
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#EFE6CE;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
 a{color:var(--ink)}
 a:hover{background:var(--yellow);}
 img{max-width:100%}
@@ -72,7 +72,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
    1172 = 1060 (design content width) + 56px gutter × 2. The 56px is
    canvas gutter around the artboard, not padding inside it — so the
    max-width must include it for the content column to land on 1060. */
-.page{max-width:1172px;margin:0 auto;padding:56px;display:flex;flex-direction:column;gap:26px;}
+.page{max-width:1172px;margin:0 auto;padding:0 56px 56px;display:flex;flex-direction:column;gap:26px;}
 
 .ink{color:var(--ink);}
 .hero-lockup-wrap{margin:0;display:flex;justify-content:center;}
@@ -88,6 +88,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
   @keyframes jfRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 
   .nav{transition:padding .15s ease,box-shadow .15s ease;}
+  .nav-bar{transition:padding .15s ease;}
   .sp-bubble{transition:opacity .15s ease;}
   .sp-face{transition:transform .15s ease;}
   .sp-row{transition:transform .15s ease,box-shadow .15s ease,opacity .15s ease;}
@@ -95,8 +96,18 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
 }
 
 /* ===== nav ===== */
+/* ===== sticky bar (full-bleed, opaque) =====
+   The pill used to be sticky on its own, so the page scrolled visibly
+   through the 12px above it and around its rounded ends. The bar is the
+   sticky element now: viewport-wide, painted the ground colour, with the
+   content column re-created inside so the pill still lines up. At rest it
+   carries the page's top gutter (56/32/20) and the 26px gap to the hero;
+   once stuck (scrollY > 40, via JS) it tightens to 12px above and below. */
+.nav-bar{position:sticky;top:0;z-index:50;background:var(--ground);padding:56px 56px 26px;}
+.nav-bar.is-stuck{padding:12px 56px;}
+.nav-bar-inner{max-width:1060px;margin:0 auto;}
+
 .nav{
-  position:sticky;top:12px;z-index:50;
   border:var(--border);border-radius:999px;box-shadow:6px 6px 0 var(--ink);background:var(--panel);
   padding:12px 14px 12px 24px;
   display:flex;align-items:center;flex-wrap:wrap;gap:8px;
@@ -353,7 +364,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
 
 /* ===== FAQ ===== */
 .faq-hint{font-size:15px;color:#999;margin-bottom:24px;}
-.faq-card{background:#fff;border:var(--border);box-shadow:var(--shadow);border-radius:16px;padding:16px 26px;max-width:760px;}
+.faq-card{background:#fff;border:var(--border);box-shadow:var(--shadow);border-radius:16px;padding:16px 26px;}
 .faq-divider{height:3px;background-image:radial-gradient(circle,var(--ink) 1.5px,transparent 2px);background-size:18px 3px;background-repeat:repeat-x;background-position:center;opacity:.45;}
 .faq-summary{display:flex;align-items:center;gap:16px;padding:18px 2px;min-height:44px;}
 .faq-check{width:36px;height:36px;flex:none;background:var(--pink);border:var(--border-sm);border-radius:10px;box-shadow:2px 2px 0 var(--ink);display:flex;align-items:center;justify-content:center;color:var(--ink);font-weight:700;font-size:17px;}
@@ -435,7 +446,9 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
    no orphan. Below 768px both go single-column — three text cards on a
    phone would be ~100px wide. */
 @media (max-width:1099px){
-  .page{padding:32px;}
+  .page{padding:0 32px 32px;}
+  .nav-bar{padding:32px 32px 26px;}
+  .nav-bar.is-stuck{padding:12px 32px;}
   .section{padding:40px 24px;}
   .hero{padding:52px 24px 48px;}
   .shots-grid{grid-template-columns:repeat(2,1fr);}
@@ -450,7 +463,9 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
 
 /* <768px: single column everywhere, smaller type */
 @media (max-width:767px){
-  .page{padding:20px;}
+  .page{padding:0 20px 20px;}
+  .nav-bar{padding:20px 20px 26px;}
+  .nav-bar.is-stuck{padding:12px 20px;}
   .pillars-grid,.cpa-grid,.shots-grid{grid-template-columns:1fr;}
   /* The highlight wraps to two line boxes here. box-decoration-break:clone
      draws a complete bordered box per line, so the design's 1.25 leading

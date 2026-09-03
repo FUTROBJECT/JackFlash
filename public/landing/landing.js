@@ -9,25 +9,26 @@
      that, so we measure the nav's real height and publish it as a CSS
      var; .section's scroll-margin-top reads it via calc(). */
   var nav = document.getElementById("nav");
+  var navBar = document.getElementById("nav-bar") || nav;
 
+  // The bar is what covers content when stuck, so it's what anchors must
+  // clear — measure it, not the pill inside it.
   function setNavHeightVar() {
-    if (!nav) return;
-    document.documentElement.style.setProperty("--nav-h", nav.offsetHeight + "px");
+    if (!navBar) return;
+    document.documentElement.style.setProperty("--nav-h", navBar.offsetHeight + "px");
   }
 
   if (nav) {
     var onScroll = function () {
-      if (window.scrollY > 40) {
-        nav.classList.add("is-stuck");
-      } else {
-        nav.classList.remove("is-stuck");
-      }
+      var stuck = window.scrollY > 40;
+      nav.classList.toggle("is-stuck", stuck);
+      if (navBar !== nav) navBar.classList.toggle("is-stuck", stuck);
       setNavHeightVar();
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", setNavHeightVar);
     if (typeof ResizeObserver !== "undefined") {
-      new ResizeObserver(setNavHeightVar).observe(nav);
+      new ResizeObserver(setNavHeightVar).observe(navBar);
     }
     onScroll();
     setNavHeightVar();
