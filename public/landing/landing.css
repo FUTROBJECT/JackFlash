@@ -46,7 +46,7 @@ img{max-width:100%}
 body{text-wrap:pretty;}
 h1,h2,h3,h4,.h2,.card-h3,.cpa-title,.cpa-label,.tagline,.price-tagline,
 .sp-pill,.sp-row-name,.eyebrow,.faq-q,.founder-sig,
-.store-name,.browser-name,.price-name{
+.browser-name,.price-name{
   text-wrap:balance;
 }
 
@@ -64,7 +64,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
 }
 
 /* house press convention: sink into own shadow */
-.btn-store:active,.btn-browser:active,.nav-cta:active,.shot-thumb:active{
+.btn-browser:active,.nav-cta:active,.shot-thumb:active{
   transform:translate(3px,3px) !important;box-shadow:none !important;
 }
 
@@ -135,6 +135,14 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
 @media (max-width:420px){
   .nav-links{gap:6px;}
   .nav-pill{padding:8px 10px;font-size:10.5px;letter-spacing:.2px;}
+  /* Store badges: 132 + 12 + 148 = 292px misses the 289px hero row at 375px
+     by 3px and stacks. At Apple's 40px minimum the pair is 120 + 12 + 135 =
+     267px and shares the row; 2px vertical padding keeps the link box on the
+     44px touch floor. (At 320px the row is 234px, so they stack regardless.) */
+  /* Prefixed so these out-specify the base .store-badge rules, which sit
+     later in the file (same specificity would lose on source order). */
+  .store-badges .store-badge img{height:40px;}
+  .store-badges .store-badge{padding:2px 0;}
   /* row 1 (brand + CTA) also has to shrink to fit: at 375px inner width
      is ~297px against an untightened 298px (brand 152 + gap 8 + cta 138),
      missing by 1px and dropping the CTA (then the pills) to their own
@@ -182,14 +190,20 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
 }
 .cta-row{display:flex;gap:18px;justify-content:center;margin-top:34px;flex-wrap:wrap;}
 
-.btn-store,.btn-browser{
+.btn-browser{
   display:inline-flex;flex-direction:column;justify-content:center;align-items:center;text-decoration:none;
   border:var(--border);border-radius:14px;box-shadow:var(--shadow);padding:12px 26px;min-height:62px;color:var(--ink);
 }
-.btn-store{background:var(--pink);}
-.btn-store:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink);background:var(--pink);color:var(--ink);}
-.store-eyebrow{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#5c1230;}
-.store-name{font-family:var(--display);font-size:22px;line-height:1.15;}
+
+/* ===== store badges — the official marks, used as supplied =====
+   Apple's and Google's badge guidelines forbid recolouring, borders and
+   shadows, so these deliberately skip the neobrutalist frame. 44px tall:
+   above Apple's 40px minimum and on the page's 44px touch-target floor. */
+.store-badges{display:inline-flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;}
+.store-badge{display:inline-flex;line-height:0;border-radius:7px;}
+.store-badge img{height:44px;width:auto;display:block;}
+.store-badge:hover{background:none;}
+.store-badges--pricing{display:flex;margin:0 0 24px;}
 
 .btn-browser{background:var(--blue);}
 .btn-browser:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink);background:var(--blue);}
@@ -450,7 +464,8 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
   .hero{padding:40px 20px 36px;}
   .section{padding:28px 20px;}
   .cta-row{flex-direction:column;align-items:stretch;}
-  .btn-store,.btn-browser{width:100%;}
+  .btn-browser{width:100%;}
+  .store-badges{width:100%;justify-content:center;}
   .faq-card{padding:14px 16px;}
   .faq-a{margin:0 0 18px 52px;}
 }

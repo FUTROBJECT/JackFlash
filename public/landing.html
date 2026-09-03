@@ -42,10 +42,14 @@
     <p class="tagline">Math fluency, <mark class="mark mark-yellow">the right way.</mark></p>
     <p class="hero-sub">Real Singapore Math practice — the CPA method, bar models, and mastery that means fast <em>and</em>&nbsp;unaided. Built by a dad for his son&nbsp;Jack.</p>
     <div class="cta-row">
-      <a href="#" class="btn-store js-appstore-cta">
-        <span class="store-eyebrow">Download on the</span>
-        <span class="store-name">App&nbsp;Store</span>
-      </a>
+      <div class="store-badges">
+        <a class="store-badge js-store-cta" data-store="appstore" href="#" aria-label="Download on the App Store">
+          <img src="./landing/badges/app-store.svg" alt="Download on the App Store" width="132" height="44">
+        </a>
+        <a class="store-badge js-store-cta" data-store="play" href="#" aria-label="Get it on Google Play">
+          <img src="./landing/badges/google-play.svg" alt="Get it on Google Play" width="148" height="44">
+        </a>
+      </div>
       <a href="./" class="btn-browser">
         <span class="browser-name">Try it free in your browser</span>
         <span class="browser-eyebrow">No install · no account</span>
@@ -267,6 +271,14 @@
         <div class="price-row"><strong class="price-name">Fractions</strong> —&nbsp;<span class="price-tag">$3.99 once</span> · Foundations free to try</div>
       </div>
       <p class="price-tagline">No subscription. No ads. Ever.</p>
+      <div class="store-badges store-badges--pricing">
+        <a class="store-badge js-store-cta" data-store="appstore" href="#" aria-label="Download on the App Store">
+          <img src="./landing/badges/app-store.svg" alt="Download on the App Store" width="132" height="44">
+        </a>
+        <a class="store-badge js-store-cta" data-store="play" href="#" aria-label="Get it on Google Play">
+          <img src="./landing/badges/google-play.svg" alt="Get it on Google Play" width="148" height="44">
+        </a>
+      </div>
       <p class="price-soon-label">Coming soon — same deal</p>
       <div class="price-chips">
         <span class="chip-pill">Add &amp; Subtract</span>
@@ -382,7 +394,7 @@
 
 <!-- ===== toast ===== -->
 <div class="toast" id="toast" role="status" aria-live="polite" hidden>
-  <span class="toast-msg">Coming to the App Store — try it free in your browser today.</span>
+  <span class="toast-msg">Coming to the App Store and Google Play — try it free in your browser today.</span>
   <button type="button" class="toast-close" id="toast-close" aria-label="Dismiss">✕</button>
 </div>
 

@@ -54,8 +54,22 @@
   }
   if (toastCloseBtn) toastCloseBtn.addEventListener("click", hideToast);
 
-  var appStoreCtas = document.querySelectorAll(".js-appstore-cta");
-  appStoreCtas.forEach(function (el) {
+  /* Store badge links. Neither listing exists yet: leave a URL empty and the
+     badge shows the "coming soon" toast instead of navigating. When a listing
+     goes live, paste its URL here — that's the whole change. */
+  var STORE_URLS = {
+    appstore: "",   // e.g. https://apps.apple.com/app/id0000000000
+    play: ""        // e.g. https://play.google.com/store/apps/details?id=com.laserlabstudios.jackflash
+  };
+
+  var storeCtas = document.querySelectorAll(".js-store-cta");
+  storeCtas.forEach(function (el) {
+    var url = STORE_URLS[el.getAttribute("data-store")] || "";
+    if (url) {
+      el.setAttribute("href", url);
+      el.setAttribute("rel", "noopener");
+      return; // live listing: a normal link
+    }
     el.addEventListener("click", function (e) {
       e.preventDefault();
       showToast();
