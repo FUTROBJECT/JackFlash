@@ -392,10 +392,13 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
 /* ===== founder ===== */
 .founder-section{padding-bottom:64px;}
 .founder-card{background:#fff;border:var(--border);box-shadow:var(--shadow);border-radius:16px;padding:30px 28px;max-width:640px;margin:0 auto;position:relative;}
-.founder-badge{position:absolute;top:-22px;left:24px;width:44px;height:44px;background:var(--yellow);border:var(--border);border-radius:12px;box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:center;font-size:22px;}
+/* The chip holds the branded bolt now. Its fill is panel-cream, not yellow:
+   the bolt's own yellow segments would vanish on a yellow chip (same call
+   as the docked header). Bolt at 22×29 keeps the 750×1000 art's aspect. */
+.founder-badge{position:absolute;top:-22px;left:24px;width:44px;height:44px;background:var(--panel);border:var(--border);border-radius:12px;box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:center;}
+.founder-bolt{width:22px;height:29px;display:block;overflow:visible;}
 .founder-quote{font-size:16.5px;line-height:1.7;}
 .founder-attribution{margin-top:16px;font-family:var(--display);font-size:16px;}
-.founder-org{display:block;font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2);margin-top:2px;}
 
 /* ===== footer ===== */
 .site-footer{border:var(--border);border-radius:28px;box-shadow:6px 6px 0 var(--ink);background:var(--panel);padding:34px 20px 44px;text-align:center;}
