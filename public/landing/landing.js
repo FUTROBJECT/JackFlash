@@ -32,6 +32,20 @@
     }
     onScroll();
     setNavHeightVar();
+
+    // Logo → true top. Its href is #top (the hero), but the hero sits ~160px
+    // below the document top under the nav bar, so native anchor scrolling
+    // stops short of scrollY 0 and the bar never un-docks. Scroll to 0
+    // ourselves; behavior:"auto" defers to the CSS scroll-behavior, so this
+    // is smooth only where the reduced-motion gate allows it.
+    var brand = document.querySelector(".brand");
+    if (brand) {
+      brand.addEventListener("click", function (e) {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: "auto" });
+        if (history.replaceState) history.replaceState(null, "", location.pathname + location.search);
+      });
+    }
   }
 
   /* ---------- App Store buttons: not live, show a toast ---------- */
