@@ -89,7 +89,6 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
 
   .nav{transition:padding .15s ease,box-shadow .15s ease,background-color .15s ease,border-color .15s ease,border-radius .15s ease;}
   .nav-bar{transition:padding .15s ease,background-color .15s ease,border-color .15s ease,box-shadow .15s ease;}
-  .brand-icon,.brand-accent{transition:background-color .15s ease,color .15s ease;}
   .sp-bubble{transition:opacity .15s ease;}
   .sp-face{transition:transform .15s ease;}
   .sp-row{transition:transform .15s ease,box-shadow .15s ease,opacity .15s ease;}
@@ -122,15 +121,16 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
   display:flex;align-items:center;flex-wrap:wrap;gap:8px;
 }
 .nav.is-stuck{padding:0;background:transparent;border-color:transparent;box-shadow:none;border-radius:0;}
-/* On the yellow band, yellow-on-yellow and orange-on-yellow both vanish:
-   the icon chip goes panel-cream and "Flash" goes ink (black text on colour
-   chips — the brand's contrast rule). */
-.nav.is-stuck .brand-icon{background:var(--panel);}
-.nav.is-stuck .brand-accent{color:var(--ink);}
-.brand{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;order:0;}
-.brand-icon{width:34px;height:34px;background:var(--yellow);border:var(--border-sm);border-radius:10px;box-shadow:2px 2px 0 var(--ink);display:flex;align-items:center;justify-content:center;font-size:17px;}
-.brand-name{font-family:var(--display);font-size:21px;}
-.brand-accent{color:var(--orange);}
+
+/* Lockup scale lives on .brand's font-size; bolt and wordmark are in em off
+   it, exactly as LogoLockup.jsx does, so the two always read as one mark.
+   Bolt 0.95em wide × 1.27em tall (750×1000 art), wordmark 0.88em Galindo,
+   -0.03em tracking, all ink — no orange accent, no chip: that was the
+   mockup's placeholder, not the logo. */
+.brand{display:inline-flex;align-items:center;font-size:28px;min-height:44px;white-space:nowrap;order:0;text-decoration:none;color:var(--ink);}
+.brand:hover{background:none;}
+.brand-bolt{width:.95em;height:1.27em;display:block;flex:none;overflow:visible;}
+.brand-name{font-family:var(--display);font-size:.88em;letter-spacing:-.03em;line-height:1;margin-left:.04em;color:var(--ink);}
 
 .nav-links{display:inline-flex;align-items:center;gap:8px;order:1;margin-left:auto;}
 .nav-pill{
@@ -174,8 +174,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
      rows. Tightened: brand ~122 + gap 8 + cta ~108 = ~238px, comfortable
      even at 320px's ~242px budget. */
   .nav{padding:10px 12px;}
-  .brand-icon{width:30px;height:30px;}
-  .brand-name{font-size:18px;}
+  .brand{font-size:22px;}
   .nav-cta{padding:8px 14px;font-size:13px;}
 }
 
@@ -185,7 +184,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible,.sp-bubble:focus-visi
    ~15px of headroom so the fit isn't decided by fractions of a pixel.
    min-height on .nav-cta keeps the 44px touch target through the smaller type. */
 @media (max-width:360px){
-  .brand-name{font-size:16px;}
+  .brand{font-size:20px;}
   .nav-cta{padding:8px 11px;font-size:12px;min-height:44px;}
   /* Free ~12px in the FAQ row so questions wrap rather than break mid-word. */
   .faq-summary{gap:10px;}
