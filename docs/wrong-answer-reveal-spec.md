@@ -251,7 +251,7 @@ step and move the *spoken* lines out of the label font.
 
 | Slot | Now | New |
 |---|---|---|
-| Header ("Not yet. Here's the picture.") | Space Mono 700, 13–15px | **Galindo 400, `clamp(20px, 6vw, 24px)`**, ink, `lineHeight 1.2` — the "Let's Go!" sheet title is actually Space Grotesk; Galindo is otherwise used only in the wordmark, so this is a deliberate new in-app usage — Adam asked for a friendlier face for the reveal's voice |
+| Header ("Not yet. Here's the picture.") | Space Mono 700, 13–15px | **Space Grotesk 700, `clamp(20px, 6vw, 24px)`**, ink, `lineHeight 1.2` — the app's bold sans, same face as the prompt and second-miss line. (Galindo was tried and rejected: in-app it belongs to the wordmark only.) |
 | Problem ("2 × 6") | Shrikhand 18–22px | **Shrikhand `clamp(28px, 8.5vw, 34px)`**, operator coloured like the card (`×` orange / `÷` green) |
 | Derivation line ("2 sixes: 6, 12 / … → [7] groups") | Space Mono 700, 13–15px | **Space Mono 700, `clamp(16px, 4.8vw, 19px)`**, `lineHeight 1.45`; the yellow blank chip and the token scale with it (min-width tracks the numeral width — keep the no-layout-shift rule) |
 | Divide partner chip ("2 × 2 = 4") | Space Mono 700 12px | **Space Mono 700 15px**, same cream chip |

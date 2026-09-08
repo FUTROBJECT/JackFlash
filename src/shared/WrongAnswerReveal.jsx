@@ -175,11 +175,11 @@ export default function WrongAnswerReveal({
           {/* Header: rotating "Not yet…" line + the restated problem */}
           <div style={{ textAlign: "center", minHeight: 0 }}>
             <div style={{
-              // Galindo is used nowhere else in the app but the wordmark;
-              // this is a deliberate new in-app usage (a friendlier face for
-              // the reveal's voice), not reuse of an existing UI pattern —
-              // docs/wrong-answer-reveal-spec.md, phase 1b.
-              fontFamily: "'Galindo', cursive", fontSize: "clamp(20px, 6vw, 24px)", fontWeight: 400,
+              // The app's bold sans (Space Grotesk 700) — the same face as the
+              // prompt and second-miss line, so the reveal speaks in one voice.
+              // (Galindo was tried and rejected: in-app it belongs to the
+              // wordmark only.) docs/wrong-answer-reveal-spec.md, phase 1b.
+              fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(20px, 6vw, 24px)", fontWeight: 700,
               color: COLORS.black, lineHeight: 1.2,
             }}>
               {header}
