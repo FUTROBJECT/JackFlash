@@ -8,39 +8,82 @@ import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
 import { computeSelection, tickErrorWindow, markErrorPriority, clearErrorPriority, dedupeFacts } from "./factSelectionPolicy.js";
+import WrongAnswerReveal from "./shared/WrongAnswerReveal.jsx";
 
 
 // Register the multiply module on first load
 registerModule(multiplyModule);
 
-function NumberBond({ whole, partA, partB, show }) {
-  if (!show) return null;
-  const w = 160, h = 120;
-  const wholeCx = w / 2, wholeCy = 26;
-  const leftCx = 32, leftCy = 95;
-  const rightCx = w - 32, rightCy = 95;
-  const r1 = 24, r2 = 20;
+// ---------------------------------------------------------------------------
+// Wrong-answer reveal helpers (docs/wrong-answer-reveal-spec.md).
+// NumberBond, HintComponent (SkipCount) and the old appended incorrect block
+// they served are gone from this screen — the reveal replaces them. The
+// shared NumberBond in src/shared/barComponents.jsx is untouched; Add &
+// Fractions still use it legitimately.
+// ---------------------------------------------------------------------------
+
+// Deterministic string hash (no Math.random() in render — spec "Header").
+function hashString(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+// "Not yet" is invariant; the tail rotates deterministically by a hash of the
+// item's factKey (stable for the life of that item, no session-state race).
+const HEADER_TAILS = [
+  "Not yet. Here's the picture.",
+  "Not quite. Look at it.",
+  "Not yet — watch this.",
+];
+
+// Spellings for the derivation line ("6 sevens: 7, 14, …, [42]").
+const PLURAL_WORDS = { 1: "ones", 2: "twos", 3: "threes", 4: "fours", 5: "fives", 6: "sixes", 7: "sevens", 8: "eights", 9: "nines", 10: "tens" };
+const SINGULAR_WORDS = { 1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten" };
+
+// The answer token inside the derivation line: a numeral (line just
+// appeared), a yellow blank chip (re-ask open — same width, no layout
+// shift), or green (correct re-answer).
+function DerivationToken({ value, state }) {
+  const width = `${String(value).length}ch`;
+  if (state === "blank") {
+    return (
+      <span style={{
+        display: "inline-block", width, height: "1em",
+        backgroundColor: COLORS.yellow, border: BRUTAL_BORDER_SM, borderRadius: "4px",
+        verticalAlign: "middle",
+      }} />
+    );
+  }
   return (
-    <div style={{ display: "flex", justifyContent: "center", marginTop: "12px", animation: "fadeSlideUp 0.4s ease both" }}>
-      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
-        <line x1={wholeCx} y1={wholeCy + r1} x2={leftCx} y2={leftCy - r2} stroke={COLORS.black} strokeWidth="3" />
-        <line x1={wholeCx} y1={wholeCy + r1} x2={rightCx} y2={rightCy - r2} stroke={COLORS.black} strokeWidth="3" />
-        <circle cx={wholeCx + 3} cy={wholeCy + 3} r={r1} fill={COLORS.black} />
-        <circle cx={wholeCx} cy={wholeCy} r={r1} fill={COLORS.yellow} stroke={COLORS.black} strokeWidth="3" />
-        <text x={wholeCx} y={wholeCy + 1} textAnchor="middle" dominantBaseline="central"
-          fontFamily="'Space Mono', monospace" fontSize="16" fontWeight="700" fill={COLORS.black}>{whole}</text>
-        <circle cx={leftCx + 2} cy={leftCy + 2} r={r2} fill={COLORS.black} />
-        <circle cx={leftCx} cy={leftCy} r={r2} fill={COLORS.blue} stroke={COLORS.black} strokeWidth="3" />
-        <text x={leftCx} y={leftCy + 1} textAnchor="middle" dominantBaseline="central"
-          fontFamily="'Space Mono', monospace" fontSize="14" fontWeight="700" fill={COLORS.black}>{partA}</text>
-        <text x={w / 2} y={leftCy + 1} textAnchor="middle" dominantBaseline="central"
-          fontFamily="'Space Mono', monospace" fontSize="16" fontWeight="700" fill={COLORS.black}>{"×"}</text>
-        <circle cx={rightCx + 2} cy={rightCy + 2} r={r2} fill={COLORS.black} />
-        <circle cx={rightCx} cy={rightCy} r={r2} fill={COLORS.green} stroke={COLORS.black} strokeWidth="3" />
-        <text x={rightCx} y={rightCy + 1} textAnchor="middle" dominantBaseline="central"
-          fontFamily="'Space Mono', monospace" fontSize="14" fontWeight="700" fill={COLORS.black}>{partB}</text>
-      </svg>
-    </div>
+    <span style={{
+      display: "inline-block", width, textAlign: "center",
+      color: state === "correct" ? COLORS.green : COLORS.black,
+    }}>
+      {value}
+    </span>
+  );
+}
+
+// Rule (Pedagogy → Derivation line): state a step he did not already have.
+// Multiply a×b=c: "a bs: b, 2b, …, [c]". Divide c÷b=a: "c in groups of b → [a] groups".
+function buildDerivationLine(fact, tokenState) {
+  if (!fact) return null;
+  if (fact.operation === "divide") {
+    return (
+      <span>
+        {fact.a} in groups of {fact.b} {"→"} <DerivationToken value={fact.answer} state={tokenState} /> groups
+      </span>
+    );
+  }
+  const word = fact.a === 1 ? (SINGULAR_WORDS[fact.b] || `${fact.b}`) : (PLURAL_WORDS[fact.b] || `${fact.b}s`);
+  const steps = Array.from({ length: fact.a }, (_, i) => fact.b * (i + 1));
+  const leading = steps.slice(0, -1);
+  return (
+    <span>
+      {fact.a} {word}: {leading.length > 0 ? `${leading.join(", ")}, ` : ""}
+      <DerivationToken value={fact.answer} state={tokenState} />
+    </span>
   );
 }
 
@@ -113,7 +156,6 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   // the current fact. Reset on every new fact and on CPA mode change.
   const [builderGroups, setBuilderGroups] = useState(0);
   const [showSkipCount, setShowSkipCount] = useState(false);
-  const [showNumberBond, setShowNumberBond] = useState(false);
   const [sessionStats, setSessionStats] = useState({ correct: 0, total: 0 });
   const [view, setView] = useState(initialView);
   const [streak, setStreak] = useState(0);
@@ -125,6 +167,17 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   const [dailyStreak, setDailyStreak] = useState(null);
   const [achievementQueue, setAchievementQueue] = useState([]);
   const [sessionStartTime] = useState(Date.now());
+  // Wrong-answer reveal (docs/wrong-answer-reveal-spec.md). phase:
+  // "idle" (no reveal) | "ask" (picture + derivation, re-asking) |
+  // "done" (correct re-answer, green beat) | "missed" (second miss, filled +
+  // auto-advance). `value` is the re-ask input's own controlled value —
+  // entirely separate from `userAnswer` (the first, logged submission).
+  const [retry, setRetry] = useState({ phase: "idle", value: "" });
+  // Session-scoped miss count, for the header line's deterministic rotation.
+  const [missCount, setMissCount] = useState(0);
+  // 0 = picture only, 1 = derivation line shown (numeral), 2 = blank chip +
+  // live re-ask input. Driven by timers keyed off retry.phase === "ask".
+  const [revealStage, setRevealStage] = useState(0);
   const inputRef = useRef(null);
   // Fluency timing: when the current fact became answerable (set on focus, not
   // on render — render/focus latency isn't billed to the child).
@@ -132,6 +185,13 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   // Error-priority window (docs/fact-selection-policy.md §8): in-memory only,
   // { [factKey]: drawsRemaining }. Not persisted, discarded on unmount.
   const errorWindowRef = useRef({});
+  // Comeback slot (spec "Comeback slot"): a queue of second-miss facts due
+  // back within 3–5 draws, bypassing the weighted draw. Session-scoped, not
+  // persisted — a plain ref since it never drives its own render.
+  const comebackQueueRef = useRef([]);
+  // Pending pickNewFact() timeout from the retry flow (done → 900ms, missed →
+  // 2500ms) — cleared when the child advances early via Enter.
+  const advanceTimeoutRef = useRef(null);
 
   // Initialize data manager
   useEffect(() => {
@@ -197,8 +257,15 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   // src/factSelectionPolicy.js so it can be driven by both this component
   // and the Node acceptance-criteria simulation.
   const pickNewFact = useCallback(() => {
+    // A fresh draw closes out any pending retry-flow auto-advance timer.
+    if (advanceTimeoutRef.current) {
+      clearTimeout(advanceTimeoutRef.current);
+      advanceTimeoutRef.current = null;
+    }
+
     if (facts.length === 0) {
       setCurrentFact(null);
+      setRetry({ phase: "idle", value: "" });
       return;
     }
 
@@ -209,22 +276,56 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     // elevated priority (spec §8) fades out over roughly its next 10 draws.
     tickErrorWindow(errorWindowRef);
 
-    const { selected } = computeSelection({
-      facts,
-      masteryData,
-      prevKey: currentFact?.factKey,
-      operation,
-      errorWindow: errorWindowRef.current,
-      threshold: masteryThreshold,
-    });
+    // Comeback slot (docs/wrong-answer-reveal-spec.md "Comeback slot"): a
+    // second-miss fact is due back within 3–5 draws — pre-check before the
+    // weighted draw, bypassing it and the anti-repeat guard. "Draws" means
+    // calls to pickNewFact, so the countdown decrements once, right here,
+    // every time (whether or not the front entry ends up serving this turn).
+    let selected = null;
+    if (comebackQueueRef.current.length > 0) {
+      const queue = comebackQueueRef.current.map((entry) => ({ ...entry, dueIn: entry.dueIn - 1 }));
+      const front = queue[0];
+      if (front.dueIn <= 0) {
+        const match = facts.find((f) => f.factKey === front.factKey);
+        comebackQueueRef.current = queue.slice(1);
+        // If the fact vanished (its table got toggled off mid-session), just
+        // drop it and fall through to an ordinary weighted draw this turn.
+        if (match) selected = match;
+      } else {
+        comebackQueueRef.current = queue;
+      }
+    }
+
+    if (!selected) {
+      // Exclude any fact still waiting on its comeback turn from the ordinary
+      // weighted draw. Without this, a queued fact could be re-drawn early —
+      // the very miss that queued it also called markErrorPriority, which
+      // boosts its within-category weight ×4 in computeSelection for up to
+      // ERROR_WINDOW_DRAWS draws, so the regular pipeline could (and did:
+      // measured a 2×2 comeback served on the 2nd draw against a 3–5 offset)
+      // resurface it before the guaranteed offset above ever reached zero.
+      const pendingComebackKeys = new Set(comebackQueueRef.current.map((entry) => entry.factKey));
+      const candidateFacts = pendingComebackKeys.size > 0
+        ? facts.filter((f) => !pendingComebackKeys.has(f.factKey))
+        : facts;
+      const result = computeSelection({
+        facts: candidateFacts.length > 0 ? candidateFacts : facts,
+        masteryData,
+        prevKey: currentFact?.factKey,
+        operation,
+        errorWindow: errorWindowRef.current,
+        threshold: masteryThreshold,
+      });
+      selected = result.selected;
+    }
 
     setCurrentFact(selected);
     setUserAnswer("");
     setFeedback(null);
     setShowScaffold(false);
     setUserHidScaffold(false);
-    setShowNumberBond(false);
     setBuilderGroups(0);
+    setRetry({ phase: "idle", value: "" });
 
     // Finish-line on-ramp: at threshold−1 in pictorial (and not parent-locked),
     // start the scaffold hidden behind "Show me" — a non-punitive invitation
@@ -373,12 +474,79 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       setStreak(0);
       setFeedback("incorrect");
       setShowScaffold(true);
+      setRetry({ phase: "ask", value: "" });
+      setMissCount((n) => n + 1);
     }
   }, [currentFact, userAnswer, profileId, moduleId, pickNewFact, streak, sessionStats, sessionStartTime, mod, mode, lockedMode, userHidScaffold, showScaffold]);
 
+  // The reveal owns Enter while open (see handleRetryKeyDown below) — this
+  // card's own input is hidden behind it whenever feedback === "incorrect".
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      feedback === "incorrect" ? pickNewFact() : handleSubmit();
+    if (e.key === "Enter") handleSubmit();
+  };
+
+  // Timed reveal choreography (spec "Timing"): picture builds 0–400ms →
+  // derivation line at 400ms (stage 1, numeral) → re-ask opens ~900ms
+  // (stage 2, blank chip + live input). Keyed on the retry phase entering
+  // "ask" so every fresh wrong answer restarts the sequence from the top.
+  // Only reset/restart when a NEW item enters "ask" — do NOT reset on
+  // "ask" -> "done"/"missed": that transition is the correct-retry green
+  // beat (or the second-miss fill), and the derivation line/partner chip
+  // are exactly what should stay on screen and reinforce during it. The old
+  // unconditional `setRevealStage(0)` on every phase change made the line
+  // flash and vanish for the whole ~900ms beat.
+  useEffect(() => {
+    if (retry.phase !== "ask") return undefined;
+    setRevealStage(0);
+    const t1 = setTimeout(() => setRevealStage(1), 400);
+    const t2 = setTimeout(() => setRevealStage(2), 900);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [retry.phase, currentFact?.factKey]);
+
+  // R1 — Record once, at first submit; the re-answer is never logged.
+  // The outcome of an item is recorded exactly once, at the first submission.
+  // When that answer is wrong the app calls updateMastery(profileId, moduleId,
+  // itemKey, false) (level −1, floor 0), increments sessionStats.total with no
+  // increment to sessionStats.correct, resets streak to 0, and enters the
+  // reveal. That is the complete record for the item.
+  // The re-answer inside the reveal is an assisted attempt (picture, derivation
+  // line on screen). It is understanding, not fluency, and is NOT logged. A
+  // re-answer — correct or wrong — must NOT: call updateMastery or change
+  // correct, attempts, masteredAt, lastSeen or the review interval; change
+  // sessionStats; change streak (stays 0 — the next unassisted correct starts
+  // it at 1); call checkAfterAnswer or any streak milestone; count toward the
+  // ≥10-problem daily-streak threshold. Nothing below touches mastery, stats,
+  // streak, or achievements.
+  const handleRetrySubmit = useCallback(() => {
+    if (!currentFact || retry.phase !== "ask" || retry.value === "") return;
+    const isCorrect = parseInt(retry.value, 10) === currentFact.answer;
+    if (advanceTimeoutRef.current) {
+      clearTimeout(advanceTimeoutRef.current);
+      advanceTimeoutRef.current = null;
+    }
+    if (isCorrect) {
+      setRetry((r) => ({ ...r, phase: "done" }));
+      advanceTimeoutRef.current = setTimeout(() => pickNewFact(), 900);
+    } else {
+      // Wrong twice: fill the answer, hold the picture, queue the comeback.
+      setRetry({ phase: "missed", value: String(currentFact.answer) });
+      const offset = 3 + (hashString(currentFact.factKey) % 3); // 3–5 draws
+      comebackQueueRef.current = [...comebackQueueRef.current, { factKey: currentFact.factKey, dueIn: offset }];
+      advanceTimeoutRef.current = setTimeout(() => pickNewFact(), 2500);
+    }
+  }, [currentFact, retry, pickNewFact]);
+
+  // Enter: submits the re-answer in "ask", advances immediately in "missed".
+  const handleRetryKeyDown = (e) => {
+    if (e.key !== "Enter") return;
+    if (retry.phase === "ask") {
+      handleRetrySubmit();
+    } else if (retry.phase === "missed") {
+      if (advanceTimeoutRef.current) {
+        clearTimeout(advanceTimeoutRef.current);
+        advanceTimeoutRef.current = null;
+      }
+      pickNewFact();
     }
   };
 
@@ -389,15 +557,6 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       ? Math.max(0.15, 1 - getMasteryLevel(currentFact.factKey) * 0.3)
       : 0;
 
-  // For multiply: count by a, b times (e.g. 6×3 → 6, 12, 18)
-  // For divide: count by divisor, answer times (e.g. 30÷5=6 → 5, 10, 15, 20, 25, 30)
-  const skipFactor = currentFact
-    ? (currentFact.operation === "divide" ? currentFact.b : currentFact.a)
-    : 1;
-  const skipCountVal = currentFact
-    ? (currentFact.operation === "divide" ? currentFact.answer : currentFact.b)
-    : 1;
-
   // Check if the current selection has no accessible tables
   const isCurrentGroupLocked = mod ? ((focusNumber && !isTableAccessible(focusNumber))
     || currentTables.length === 0) : false;
@@ -406,7 +565,9 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   // (per-group progress is now computed inline in the progress grid, per
   //  the selected Multiply/Divide tab.)
 
-  // Get the ScaffoldComponent and HintComponent from the module
+  // Get the ScaffoldComponent from the module (HintComponent/SkipCount is no
+  // longer used by this screen — the wrong-answer reveal replaced it; the
+  // module still exports it for anything else that wants it).
   // Use DivisionScaffoldComponent (bar model) for divide, DotArray for multiply
   const MultiplyScaffold = mod?.ScaffoldComponent;
   const DivisionScaffold = mod?.DivisionScaffoldComponent;
@@ -417,7 +578,6 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     () => typeof window !== "undefined" && !!window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
     []
   );
-  const HintComponent = mod?.HintComponent;
 
   // Guard: if module somehow not found, show message (all hooks already called above)
   if (!mod) {
@@ -934,7 +1094,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                     <input ref={inputRef} type="number" value={userAnswer}
                       onChange={(e) => setUserAnswer(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      disabled={feedback === "correct"}
+                      disabled={feedback === "correct" || feedback === "incorrect"}
                       placeholder="?"
                       style={{
                         width: "clamp(140px, 55vw, 300px)",
@@ -980,9 +1140,16 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                     />
                   )}
                 </div>
-              ) : mode !== "abstract" && (
+              ) : (
                 <div style={{ marginTop: "16px", display: "flex", justifyContent: "center" }}>
-                  {(showScaffold || (!userHidScaffold && scaffoldOpacity > 0)) && (
+                  {/* Bug fix (docs/wrong-answer-reveal-spec.md "CPA modes"): this
+                      used to be gated on `mode !== "abstract"` at the ternary
+                      above, so an Abstract miss showed no picture at all. Adopt
+                      the fractions guard — abstract only renders once revealed
+                      (via a wrong answer or "Show me"), pictorial is unaffected
+                      (scaffoldOpacity is 0 in abstract, so this is a no-op there
+                      unless showScaffold is true). A miss never changes mode. */}
+                  {!(mode === "abstract" && !showScaffold) && (showScaffold || (!userHidScaffold && scaffoldOpacity > 0)) && (
                     currentFact.operation === "divide" && DivisionScaffold ? (
                       <DivisionScaffold
                         rows={currentFact.a}
@@ -1008,65 +1175,37 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                     : `${currentFact.a} rows × ${currentFact.b} columns`}
                 </div>
               )}
-              {mode === "pictorial" && userHidScaffold && !feedback && (
+              {/* "Show me" (CLAUDE.md: Abstract = symbols + "Show me" fallback) —
+                  pre-answer only, doesn't affect logging. Ported from the
+                  fractions pattern (fractions-practice.jsx). */}
+              {!feedback && ((mode === "abstract" && !showScaffold) || (mode === "pictorial" && userHidScaffold)) && (
                 <div style={{ marginTop: "12px", textAlign: "center" }}>
-                  <BrutalButton small onClick={() => setUserHidScaffold(false)} bg={COLORS.cream}>
+                  <BrutalButton small onClick={() => mode === "pictorial" ? setUserHidScaffold(false) : setShowScaffold(true)} bg={COLORS.cream} style={{ minHeight: 44 }}>
                     Show me
                   </BrutalButton>
                 </div>
               )}
 
-              {feedback && (
+              {/* Correct feedback only — the wrong-answer chip/because/hint/bond
+                  are gone (docs/wrong-answer-reveal-spec.md R3): the reveal
+                  overlay is the whole story on a miss now. Deterministic pick
+                  (was Math.random() in render). */}
+              {feedback === "correct" && (
                 <div style={{
                   marginTop: "16px", fontSize: "16px", fontWeight: 700,
                   fontFamily: "'Space Mono', monospace",
-                  color: feedback === "correct" ? COLORS.green : COLORS.red,
+                  color: COLORS.green,
                   animation: "fadeSlideUp 0.3s ease both",
                 }}>
-                  {feedback === "correct" ? (
-                    streak >= 5 ? "OUTSTANDING! ⚡" : streak >= 3 ? "🔥 STREAK! KEEP GOING!" : ["NICE!", "GOT IT!", "YES!", "CORRECT!", "BOOM!"][Math.floor(Math.random() * 5)]
-                  ) : (
-                    <span>
-                      It's <span style={{
-                        backgroundColor: COLORS.yellow, padding: "2px 8px",
-                        border: BRUTAL_BORDER_SM, borderRadius: "4px", fontSize: "20px",
-                      }}>{currentFact.answer}</span>
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {feedback === "incorrect" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginTop: "20px" }}>
-                  {/* Because statement */}
-                  <div style={{
-                    fontFamily: "'Space Mono', monospace", fontSize: "16px", fontWeight: 700,
-                    color: COLORS.black, textAlign: "center",
-                    backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM, borderRadius: "8px",
-                    padding: "10px 14px",
-                  }}>
-                    because {currentFact.a} × {currentFact.b} = {currentFact.answer}
-                  </div>
-
-                  {/* Hint component */}
-                  <div>
-                    <HintComponent factor={skipFactor} count={skipCountVal} show={true} />
-                  </div>
-
-                  {/* Number bond */}
-                  <div>
-                    <NumberBond whole={currentFact.answer} partA={currentFact.a} partB={currentFact.b} show={true} />
-                  </div>
+                  {streak >= 5 ? "OUTSTANDING! ⚡" : streak >= 3 ? "🔥 STREAK! KEEP GOING!" : ["NICE!", "GOT IT!", "YES!", "CORRECT!", "BOOM!"][sessionStats.total % 5]}
                 </div>
               )}
             </div>
 
             <div style={{ display: "flex", gap: "8px", marginTop: "16px", justifyContent: "center", flexWrap: "wrap" }}>
-              {feedback === "incorrect" ? (
-                <BrutalButton onClick={pickNewFact} bg={COLORS.yellow}>Next →</BrutalButton>
-              ) : feedback !== "correct" ? (
+              {feedback !== "correct" && feedback !== "incorrect" && (
                 <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
-              ) : null}
+              )}
             </div>
 
             {/* Mode description removed — decluttered practice view */}
@@ -1074,6 +1213,85 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
         ))}
       </div>
       </div>
+
+      {/* Wrong-answer reveal (docs/wrong-answer-reveal-spec.md) — replaces the
+          old appended incorrect block. Full-screen; no knowledge of facts or
+          mastery lives in the shell, all of that is composed here. */}
+      {currentFact && (
+        <WrongAnswerReveal
+          open={feedback === "incorrect"}
+          focusDelayMs={1000}
+          header={HEADER_TAILS[hashString(currentFact.factKey) % HEADER_TAILS.length]}
+          problem={`${currentFact.a} ${currentFact.operation === "divide" ? "÷" : "×"} ${currentFact.b}`}
+          picture={
+            currentFact.operation === "divide" && DivisionScaffold ? (
+              <DivisionScaffold rows={currentFact.a} cols={currentFact.b} opacity={1} animate={mode === "abstract"} />
+            ) : MultiplyScaffold ? (
+              <MultiplyScaffold rows={currentFact.a} cols={currentFact.b} opacity={1} animate={mode === "abstract"} totals={true} />
+            ) : null
+          }
+          line={
+            retry.phase === "missed"
+              ? "Still tricky. Here it is — we'll come back to it."
+              : revealStage >= 1
+                ? buildDerivationLine(currentFact, retry.phase === "done" ? "correct" : revealStage >= 2 ? "blank" : "numeral")
+                : null
+          }
+          extra={
+            currentFact.operation === "divide" && revealStage >= 1 ? (
+              <div style={{
+                display: "inline-flex", alignItems: "center", height: "24px", padding: "0 10px",
+                fontFamily: "'Space Mono', monospace", fontSize: "12px", fontWeight: 700,
+                backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM, borderRadius: "6px",
+              }}>
+                {currentFact.b} × {currentFact.answer} = {currentFact.a}
+              </div>
+            ) : null
+          }
+          prompt={retry.phase === "ask" && revealStage >= 2 ? "Now you — use the picture." : null}
+          input={
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={retry.value}
+                placeholder="?"
+                disabled={retry.phase !== "ask" || revealStage < 2}
+                onChange={(e) => setRetry((r) => ({ ...r, value: e.target.value }))}
+                onKeyDown={handleRetryKeyDown}
+                style={{
+                  width: "clamp(120px, 42vw, 220px)",
+                  // R2 band budget: input capped at 64px tall (was ~78px) so
+                  // it and the derivation line above it fit above a 300px
+                  // iOS keyboard at 375×667.
+                  height: "64px",
+                  boxSizing: "border-box",
+                  fontSize: "clamp(32px, 9vw, 44px)",
+                  fontFamily: "'Shrikhand', cursive",
+                  fontWeight: 400,
+                  textAlign: "center",
+                  border: "none",
+                  borderBottom: `4px solid ${COLORS.black}`,
+                  backgroundColor: retry.phase === "missed" ? COLORS.yellow : retry.phase === "done" ? COLORS.green : "#FFF0F0",
+                  color: COLORS.black,
+                  outline: "none",
+                  padding: "2px 0",
+                  WebkitAppearance: "none",
+                  MozAppearance: "textfield",
+                  animation: retry.phase === "done" ? "correctPulse 0.4s ease" : "none",
+                  transition: "background-color 0.3s ease",
+                }}
+              />
+              {retry.phase === "ask" && revealStage >= 2 && (
+                // R4 — no exclamation marks inside the reveal (the card's own
+                // "Check!" button outside the reveal is unaffected).
+                <BrutalButton onClick={handleRetrySubmit} bg={COLORS.yellow}>Check</BrutalButton>
+              )}
+            </div>
+          }
+        />
+      )}
+
       {/* Legal/copyright moved to Parent Zone Settings */}
       {achievementQueue.length > 0 && (
         <AchievementPopup
