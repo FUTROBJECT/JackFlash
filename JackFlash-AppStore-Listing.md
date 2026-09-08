@@ -1,94 +1,85 @@
 # JackFlash — App Store Listing Copy
 
-Draft v1 · For Apple App Store (Google Play uses the same copy with minor field-name differences).
-Character counts shown against Apple's limits. Pick from the options where given.
+v2 (launch-ready) · For Apple App Store (Google Play uses the same copy with minor field-name differences).
+Character counts shown against Apple's limits.
+
+**What ships in v1:** Multiply & Divide (free, all groups) and Fractions ($3.99 one-time — "Fractions Full", product id `module.fractions.full` — with the Foundations group free to try). Add & Subtract, Place Value, and Connections appear in the app as Coming Soon previews and cannot be purchased. There is no bundle at launch.
 
 ---
 
 ## App Name  *(limit: 30 characters)*
 
-**Recommended:** `JackFlash: Math Practice` — 24 characters
+**Final:** `JackFlash: Math Practice` — 24 characters
 
 Future-proof: works as more modules ship. Apple indexes every word here for search, so "Math" and "Practice" are already covered as keywords.
-
-Alternatives:
-
-- `JackFlash: Multiplication` — 25 characters. More accurate to what ships first and captures a high-volume search term — but awkward once Add, Fractions, and Place Value arrive.
-- `JackFlash` — 9 characters. Cleanest, but wastes the free keyword real estate.
 
 ---
 
 ## Subtitle  *(limit: 30 characters)*
 
-**Recommended:** `Math facts that finally stick` — 29 characters
+**Final:** `Math facts that finally stick` — 29 characters
 
-Alternatives:
+Alternatives, if search data later argues for a change:
 
-- `Adaptive multiplication facts` — 29 characters
+- `Singapore Math, done right` — 26 characters
 - `Multiplication, the visual way` — 30 characters
 
 ---
 
 ## Promotional Text  *(limit: 170 characters — editable any time without an app update)*
 
-> Math facts that finally stick. Smart Practice picks each problem your child sees — built on the visual, mastery-based approach behind Singapore math. Free, no ads.
+> Real Singapore Math practice. Multiply & Divide is free; Fractions is $3.99 once — no subscription. Mastered means fast and unaided. No ads. No tracking. Fully offline.
 
-163 characters. Leads with the promise, then names Smart Practice as the mechanism. Good slot for seasonal or feature updates later (e.g. "Now with the Add module").
-
----
-
-## Keywords  *(limit: 100 characters · comma-separated · no spaces needed)*
-
-```
-multiplication,division,times tables,fact families,Singapore math,elementary,flashcards,homeschool
-```
-
-98 characters. Notes: don't repeat words already in the App Name ("math", "practice") — Apple indexes those automatically, so spending keyword space on them is wasted. Revisit after launch using App Store search data.
+168 characters. Leads with the three pillars in priority order: real pedagogy, one-time price, private by architecture. Good slot for seasonal or feature updates later (e.g. "Now with Add & Subtract").
 
 ---
 
-## Description  *(limit: 4000 characters)*
+## Keywords  *(limit: 100 characters · comma-separated · no spaces after commas)*
+
+```
+multiplication,division,times tables,singapore,fractions,homeschool,flashcards,bar model,offline
+```
+
+96 characters. Notes: never repeat words already indexed from the App Name or Subtitle ("math", "practice", "facts") — that space is wasted. "singapore" pairs with "math" from the name to cover "singapore math"; "bar model" is a high-intent term for the homeschool wedge audience. Revisit after launch using Apple Search Ads exact-match data (see marketing plan §4 Phase C).
+
+---
+
+## Description  *(limit: 4000 characters — current draft: 2,615)*
 
 The first ~3 lines show before the "more" fold — they carry the most weight.
 
 ---
 
-JackFlash turns math practice into something kids actually want to do — and turns "I memorized it" into "I get it."
-
-Built on the Concrete-Pictorial-Abstract approach used in Singapore-style math classrooms, JackFlash teaches multiplication and division as visual fact families, not flashcard drills. Every problem your child sees is chosen for them — based on what they know, what they're learning, and what they're ready for next.
-
-ONE APP. EVERY CHILD'S LEVEL.
-Olive is in 3rd grade. Her sister Anna is in kindergarten. They share one iPad — and one app. Each child gets their own profile, their own avatar, and a module set to their level. Tap your face and you're in your own world: your progress, your streak, your achievements.
-
-SMART PRACTICE THAT ADAPTS
-Smart Practice — JackFlash's adaptive engine — sorts every math fact into five categories: new, learning, struggling, mastered, and review-due. It adjusts how often each one appears. A child who's mastered their 2s and 5s but keeps missing 7s and 8s sees far more 7s and 8s. No time wasted drilling facts they already own.
+JackFlash is real Singapore Math practice — the visual, mastery-based approach behind the world's top-performing classrooms, built by a dad for his son Jack. Multiply & Divide is completely free. No ads, no subscription, and nothing your child does ever leaves the device.
 
 SEE THE MATH, DON'T JUST GUESS
-Visual scaffolds — dot arrays, skip counting, number bonds — help kids understand what multiplication actually is. As mastery grows, the scaffolding fades on its own. Concrete becomes pictorial becomes abstract. Understanding first, fluency second.
+Built on the Concrete–Pictorial–Abstract method, JackFlash teaches multiplication and division as visual fact families, not flashcard drills. Kids build each fact with their hands in Concrete mode, see it as dot arrays, number bonds, and bar models, then answer without help. As mastery grows, the scaffolding fades on its own. Understanding first, fluency second.
 
-MASTERY THAT STAYS
-A fact counts as mastered after three correct answers — then it comes back for review on a widening schedule (next day, 3 days, 7, 14, 30) so it sticks for good. Miss one later? It quietly drops back into practice. No more "learned it, forgot it."
+SMART PRACTICE THAT ADAPTS
+Smart Practice — JackFlash's adaptive engine — sorts every fact into five categories: new, learning, struggling, mastered, and review-due. A child who owns their 2s and 5s but keeps missing 7s and 8s sees far more 7s and 8s. No time wasted drilling facts they already know.
+
+MASTERED MEANS FAST AND UNAIDED
+Most apps call a fact mastered after three lucky taps. JackFlash waits until your child can answer quickly, without the visual — because that's what real recall looks like. Slow answers still get the full celebration, still count toward streaks and session scores; your child will never see "too slow." Mastery simply waits until it's real. Then each fact comes back on a widening review schedule — next day, 3 days, 7, 14, 30 — so it stays real.
+
+ONE APP. EVERY CHILD'S LEVEL.
+Siblings share one device, each with their own profile, avatar, progress, streaks, and achievements. Tap your face and you're in your own world.
 
 BUILT FOR PARENTS, TOO
-Behind a simple parent gate: assign each child a module, read per-child progress reports, see the exact facts they're struggling with, and fine-tune settings. Daily streaks and achievement badges keep kids coming back on their own.
+The Parent Zone sits behind a quick multiplication gate, so kids can't wander in. Inside: per-child progress reports, the exact facts your child is struggling with, a "ready to try unaided" list, module assignment, and settings. Every purchase lives behind that gate too.
 
-PRIVATE BY DESIGN
-No accounts. No ads. No data collection. Nothing your child does ever leaves the device. JackFlash is COPPA-safe by design — because the best kids' app is the one parents never have to worry about.
+PRIVATE BY ARCHITECTURE
+No accounts. No ads. No tracking. JackFlash works fully offline, and everything your child does stays on the device. That's not a policy promise — the app has nowhere to send data.
 
-FREE TO START
-The entire Multiply & Divide module is free — every table group, no limits. Want more? Try the Fractions module's Foundations group free, then unlock the rest with a one-time purchase. More modules arrive over time. No subscriptions, ever.
+SIMPLE, HONEST PRICING
+Multiply & Divide is free. All of it — every table group, forever. Fractions covers equivalent fractions, comparing and ordering, and fraction addition and subtraction: try the Foundations group free, then unlock the rest with a one-time $3.99 purchase. No subscription. Ever. Add & Subtract, Place Value, and the Connections capstone are coming soon.
 
 Five minutes of focused practice beats thirty minutes of grinding. JackFlash makes those five minutes count.
 
 ---
 
-*(Description above is ~2,100 characters — well within the 4,000 limit, leaving room to expand.)*
-
----
-
 ## What's New  *(version notes — for v1.0)*
 
-> Welcome to JackFlash! This first release includes two modules — Multiply & Divide (free) and Fractions (with a free Foundations group to try) — for grades 2–4, with Smart Practice, visual scaffolds, daily streaks, achievements, and multi-child profiles. We'd love your feedback.
+> Welcome to JackFlash. This first release includes Multiply & Divide (completely free) and Fractions (Foundations group free to try, one-time unlock for the rest) — with Smart Practice, touch-the-math Concrete mode, visual scaffolds, fluency-based mastery, daily streaks, achievements, and multi-child profiles. Built by a dad for his son Jack. We'd love your feedback.
 
 ---
 
@@ -99,16 +90,45 @@ Short, benefit-led lines to pair with each screenshot:
 1. One app. Every child's level.
 2. Smart Practice adapts to your child
 3. See the math — don't just guess
-4. Mastery that actually sticks
+4. Mastered means fast and unaided
 5. Parents see what matters
-6. Streaks and badges keep them coming back
+6. Free to start. $3.99 once. No subscription.
+
+---
+
+## App Review Notes  *(App Store Connect → App Review Information → Notes)*
+
+> JackFlash is fully offline. There is no account, no sign-in, and no network activity at runtime — all content is reviewable immediately, no credentials needed.
+>
+> Reaching settings and the store: from the home screen, tap "Parent Zone." A parental gate asks a multiplication question (e.g. "What is 37 × 6?") — type the answer to enter. The store is on the Modules tab inside the Parent Zone.
+>
+> In-app purchases: one product at launch — Fractions Full (`module.fractions.full`, $3.99 one-time), which unlocks the Fractions module beyond its free Foundations group. Multiply & Divide is entirely free with full access to all content — no purchase involved. Add & Subtract, Place Value, and Connections appear as "Coming Soon" previews and cannot be purchased.
+>
+> All children's progress data is stored on-device only. Nothing is collected or transmitted.
+
+(~135 words. Update the product list here with each module release.)
+
+---
+
+## Privacy Nutrition Label answers  *(App Store Connect → App Privacy)*
+
+**Answer: Data Not Collected.** ("Do you or your third-party partners collect data from this app?" → **No.**)
+
+This is true by architecture, not policy: the app makes zero network calls at runtime. No accounts, no analytics, no ads SDKs, no crash reporting. All profiles, progress, and settings live in on-device storage and never leave the device.
+
+- Data used to track you: **None**
+- Data linked to you: **None**
+- Data not linked to you: **None**
+
+**One item to verify before submitting:** the native build includes the RevenueCat SDK for processing the Fractions purchase. RevenueCat's own guidance is that apps using it typically declare **Purchases → Purchase History, "App Functionality," not linked to identity, not used for tracking**. Check RevenueCat's current App Privacy disclosure guidance at submission time; if disclosure is required, the label becomes "Data Not Linked to You: Purchase History" — still no tracking, no linked data, and everything else above stays true. The listing copy ("no tracking, nothing leaves the device") remains accurate either way, since purchase processing is Apple's own transaction flow.
 
 ---
 
 ## Notes & Open Decisions
 
-- **App Store privacy label:** JackFlash should qualify for "Data Not Collected" — a genuinely strong differentiator worth leaning on. (Revisit if RevenueCat is added for in-app purchases; that introduces a third-party SDK that may need disclosure.)
-- **What ships at launch:** Two modules — Multiply & Divide (entirely free) and Fractions ($3.99, with the Foundations group free to sample). Add, Place Value, and Connections are staged but not wired. The description says "more modules arrive over time" rather than naming firm dates — keep it that way until each is real, to stay within Apple's rules on advertising unreleased content.
-- **Bundle:** The "All Modules" bundle is intentionally hidden until 3+ paid modules are live, so it's an honest discount rather than a pre-sale of unbuilt content. It auto-surfaces in the Parent Zone once the threshold is met. Do not create the bundle IAP product in App Store Connect / Play until then.
-- **Category / age rating:** Education, age rating 4+ (per the build plan).
-- **"Smart Practice" is a branded feature name.** Always capitalized, used as a proper noun — never as a loose adjective ("smart practice"). It names the five-category adaptive engine defined in the build plan. Keep it consistent across the app, this listing, the FAQ, the screenshots, and the landing page so the precise definition stays attached to the name rather than diluting into generic edtech filler.
+- **What ships at launch:** Two modules — Multiply & Divide (entirely free, all groups) and Fractions ($3.99 one-time, Foundations group free to sample). Add & Subtract, Place Value, and Connections are visible in-app as Coming Soon teasers but are not purchasable. The description says "coming soon" without naming dates — keep it that way until each is real, to stay within Apple's rules on advertising unreleased content.
+- **No bundle at launch.** The bundle exists in code but stays hidden until 3+ paid modules are live, so it's an honest discount rather than a pre-sale of unbuilt content. It never appears in customer-facing copy until then. Do not create a bundle IAP product in App Store Connect / Play until the threshold is met.
+- **Pricing in metadata:** the description and promo text say $3.99 (it's the loudest pillar for the homeschool audience). Apple sets regional price tiers, so verify the USD tier matches before submission, and remember promo text is editable without an app update if it ever drifts.
+- **Mastery copy rule:** "mastered means fast and unaided" is a selling point — but never phrase it as kids being timed, tested, or penalized. The app never shows "too slow," never decrements for a slow answer, and celebrates every correct answer. Copy must always pair the standard with that reassurance, as the description's MASTERED section does.
+- **Category / age rating:** Education; Kids category age bands 6–8 and 9–11; rating 4+. Kids-category rules are already satisfied: no ads, no tracking, purchases behind a parental gate.
+- **"Smart Practice" is a branded feature name.** Always capitalized, used as a proper noun — never as a loose adjective ("smart practice"). It names the five-category adaptive engine. Keep it consistent across the app, this listing, the FAQ, the screenshots, and the landing page.

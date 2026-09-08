@@ -299,14 +299,13 @@ const simulatedProvider = {
 // ----------------------------------------------------------------------------
 // RevenueCat native provider (Phase 2 scaffold).
 //
-// SAFE TO SHIP AS-IS: the RevenueCat SDK is loaded with a lazy, @vite-ignore'd
-// dynamic import keyed by a variable, so Vite never bundles or resolves it — the
-// web build stays green even though the package isn't installed yet. This code
-// path only runs inside a native Capacitor shell (isNativePlatform()); on web the
+// The SDK import is a STATIC specifier so Vite bundles the plugin JS for the
+// native build (flipped from the pre-install @vite-ignore scaffold once
+// @revenuecat/purchases-capacitor was installed). This code path only runs
+// inside a native Capacitor shell (isNativePlatform()); on web the
 // simulatedProvider is used, so web/gh-pages behavior is unchanged.
 //
 // TO GO LIVE (Phase 2):
-//   1. `npm i @revenuecat/purchases-capacitor` (after Capacitor is added).
 //   2. Paste the public SDK keys below (RevenueCat dashboard → API keys, per platform).
 //   3. In the RevenueCat dashboard: create one Entitlement per unlock and attach the
 //      matching App Store / Play product. Name the *store product identifiers* the
@@ -318,7 +317,7 @@ const simulatedProvider = {
 //      Capacitor API has shifted across majors; adjust the destructuring if needed.
 // ----------------------------------------------------------------------------
 const REVENUECAT_KEYS = {
-  ios: "REVENUECAT_IOS_PUBLIC_SDK_KEY__TODO",
+  ios: "appl_sRLrdUZymZzlfvSGfJmmJDegBeo",
   android: "REVENUECAT_ANDROID_PUBLIC_SDK_KEY__TODO",
 };
 
@@ -329,13 +328,17 @@ const RC_ENTITLEMENT_TO_PRODUCT = {
   // add: "module.add.full", connections: "module.connections.full"  // v1.1/v1.2
 };
 
-// Lazy SDK loader — variable specifier + @vite-ignore keeps it out of the web bundle.
-const RC_MODULE_ID = "@revenuecat/purchases-capacitor";
+// Lazy-loaded on first use; static specifier so the bundler includes the plugin.
+// NOTE: resolves to a WRAPPER, never the plugin proxy itself — returning the
+// proxy from an async function triggers thenable assimilation (the engine
+// probes `.then`, Capacitor's proxy fabricates a native "then()" method, and
+// the await hangs forever with an UNIMPLEMENTED rejection). Same fix as
+// getPreferences() in storage.js.
 let _rc = null;
 async function loadRevenueCat() {
   if (!_rc) {
-    const mod = await import(/* @vite-ignore */ RC_MODULE_ID);
-    _rc = mod.Purchases || (mod.default && mod.default.Purchases) || mod.default;
+    const mod = await import("@revenuecat/purchases-capacitor");
+    _rc = { Purchases: mod.Purchases || (mod.default && mod.default.Purchases) || mod.default };
   }
   return _rc;
 }
@@ -353,9 +356,16 @@ const nativeProvider = {
   id: "native",
 
   async init() {
-    const Purchases = await loadRevenueCat();
     const platform = (window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform()) || "ios";
     const apiKey = platform === "android" ? REVENUECAT_KEYS.android : REVENUECAT_KEYS.ios;
+    // Pre-launch guard: until the real public SDK key is pasted in, don't
+    // configure at all — the placeholder just earns a wall of 401s from
+    // RevenueCat on every device launch. Purchases stay cleanly unavailable.
+    if (!apiKey || apiKey.includes("__TODO")) {
+      console.warn("[JF] RevenueCat key not set for", platform, "— store purchases disabled this build");
+      return;
+    }
+    const { Purchases } = await loadRevenueCat();
     await Purchases.configure({ apiKey });
     // Pull whatever the store already knows for this user (covers reinstalls).
     const { customerInfo } = await Purchases.getCustomerInfo();
@@ -368,7 +378,7 @@ const nativeProvider = {
     if (product.available === false) return { status: "error", productId, error: "This product isn't available yet." };
     if (isProductOwned(productId)) return { status: "already_owned", productId };
 
-    const Purchases = await loadRevenueCat();
+    const { Purchases } = await loadRevenueCat();
     const offerings = await Purchases.getOfferings();
     const pkgs = (offerings && offerings.current && offerings.current.availablePackages) || [];
     const pkg = pkgs.find((p) => p.product && p.product.identifier === productId);
@@ -388,7 +398,7 @@ const nativeProvider = {
   },
 
   async restore() {
-    const Purchases = await loadRevenueCat();
+    const { Purchases } = await loadRevenueCat();
     const { customerInfo } = await Purchases.restorePurchases();
     applyActiveEntitlements(customerInfo);
     const restored = Object.keys((customerInfo && customerInfo.entitlements && customerInfo.entitlements.active) || {}).length;

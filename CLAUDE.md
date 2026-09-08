@@ -3,7 +3,7 @@
 Math-fact practice app for Jack (8, Grade 3 / P3), aligned with the **think!
 Mathematics (Singapore Math)** curriculum. React + Vite, no TypeScript, no CSS
 frameworks, no test framework. Neo-brutalist design. Ships to web (gh-pages)
-and to iOS/Android via a Capacitor shell (`com.laserlabstudios.jackflash`).
+and to iOS/Android via a Capacitor shell (`com.laserlabstudio.jackflash`).
 
 ## Commands
 

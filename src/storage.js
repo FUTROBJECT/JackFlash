@@ -12,12 +12,11 @@
 // in-render layer; Preferences is a durable backup.
 //
 // SAFE ON WEB: every function below is a no-op unless running in a native shell
-// (window.Capacitor). The plugin is loaded via a lazy, @vite-ignore'd dynamic
-// import keyed by a variable, so Vite never bundles or resolves it — the web
-// build stays green even before @capacitor/preferences is installed.
+// (window.Capacitor). The plugin import is a STATIC specifier so Vite bundles
+// the plugin JS for the native build (flipped from the pre-install @vite-ignore
+// scaffold once @capacitor/preferences was installed — see launch checklist).
 // ============================================================================
 
-const PREFS_MODULE_ID = "@capacitor/preferences";
 const KEY = "jackflash_data"; // must match DATA_KEY in dataManager.js
 
 function isNative() {
@@ -27,13 +26,18 @@ function isNative() {
     && window.Capacitor.isNativePlatform();
 }
 
-let _prefs = null;
+// NOTE: resolve to a WRAPPER, never the plugin proxy itself. Returning the
+// proxy from an async function triggers thenable assimilation — the JS engine
+// probes `.then` on it, Capacitor's proxy fabricates a native "then()" method,
+// and the await hangs forever ("Preferences.then() is not implemented on ios"
+// + a white screen, since main.jsx gates the first render on hydrate).
+let _prefsMod = null;
 async function getPreferences() {
-  if (!_prefs) {
-    const mod = await import(/* @vite-ignore */ PREFS_MODULE_ID);
-    _prefs = mod.Preferences || (mod.default && mod.default.Preferences) || mod.default;
+  if (!_prefsMod) {
+    const mod = await import("@capacitor/preferences");
+    _prefsMod = { Preferences: mod.Preferences || (mod.default && mod.default.Preferences) || mod.default };
   }
-  return _prefs;
+  return _prefsMod;
 }
 
 // Mirror the latest data blob into durable native storage. Fire-and-forget from
@@ -41,7 +45,7 @@ async function getPreferences() {
 export async function saveDurable(json) {
   if (!isNative()) return;
   try {
-    const Preferences = await getPreferences();
+    const { Preferences } = await getPreferences();
     await Preferences.set({ key: KEY, value: json });
   } catch (err) {
     console.error("[JF] saveDurable failed:", err);
@@ -62,7 +66,7 @@ export async function hydrateFromDurable() {
       saveDurable(local);
       return;
     }
-    const Preferences = await getPreferences();
+    const { Preferences } = await getPreferences();
     const { value } = await Preferences.get({ key: KEY });
     if (value) {
       localStorage.setItem(KEY, value); // repair the sync layer for this session

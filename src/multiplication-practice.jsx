@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, DEFAULT_MASTERY_THRESHOLD, AVATARS } from "./constants.js";
+import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, DEFAULT_MASTERY_THRESHOLD, AVATARS, fluencyLimitMs as computeFluencyLimitMs } from "./constants.js";
 import multiplyModule from "./modules/multiply.jsx";
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
-import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordSession, getProfile, updateChildSettings } from "./dataManager.js";
+import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordAnswerInSession, finalizeLiveSession, getProfile, updateChildSettings, getPreferredMode, setPreferredMode } from "./dataManager.js";
 import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
+import { computeSelection, tickErrorWindow, markErrorPriority, clearErrorPriority, dedupeFacts } from "./factSelectionPolicy.js";
 
 
 // Register the multiply module on first load
@@ -95,7 +96,11 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     }
     return null;
   });
-  const [mode, setMode] = useState("pictorial");
+  // CPA mode: the child's saved pick (persisted per module), unless a parent
+  // has locked it in Parent Zone. `mode` drives scaffoldOpacity below.
+  const [pickedMode, setPickedMode] = useState(() => getPreferredMode(profileId, moduleId) || "pictorial");
+  const lockedMode = getProfile(profileId)?.settings?.lockedMode || null;
+  const mode = lockedMode || pickedMode;
   const [operation, setOperation] = useState(mod?.defaultOperation || "mixed");
   // Per-group operation tab in the progress grid ({ [groupId]: "multiply" | "divide" }).
   const [groupOp, setGroupOp] = useState({});
@@ -104,6 +109,9 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   const [feedback, setFeedback] = useState(null);
   const [showScaffold, setShowScaffold] = useState(false);
   const [userHidScaffold, setUserHidScaffold] = useState(false);
+  // Concrete-mode builder: groups built (multiply) / groups made (divide) for
+  // the current fact. Reset on every new fact and on CPA mode change.
+  const [builderGroups, setBuilderGroups] = useState(0);
   const [showSkipCount, setShowSkipCount] = useState(false);
   const [showNumberBond, setShowNumberBond] = useState(false);
   const [sessionStats, setSessionStats] = useState({ correct: 0, total: 0 });
@@ -118,6 +126,12 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   const [achievementQueue, setAchievementQueue] = useState([]);
   const [sessionStartTime] = useState(Date.now());
   const inputRef = useRef(null);
+  // Fluency timing: when the current fact became answerable (set on focus, not
+  // on render — render/focus latency isn't billed to the child).
+  const factShownAtRef = useRef(0);
+  // Error-priority window (docs/fact-selection-policy.md §8): in-memory only,
+  // { [factKey]: drawsRemaining }. Not persisted, discarded on unmount.
+  const errorWindowRef = useRef({});
 
   // Initialize data manager
   useEffect(() => {
@@ -132,27 +146,13 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     }
   }, [profileId]);
 
-  // Record session on unmount — use refs so the cleanup only fires ONCE
-  // (previous version had sessionStats in deps, causing a phantom session to be
-  // recorded on every answered question with inflated cumulative totals)
-  const sessionStatsRef = useRef(sessionStats);
-  useEffect(() => { sessionStatsRef.current = sessionStats; }, [sessionStats]);
-  const moduleIdRef = useRef(moduleId);
-  useEffect(() => { moduleIdRef.current = moduleId; }, [moduleId]);
-
+  // Sessions are now persisted per-answer in the data layer (see
+  // recordAnswerInSession below), so they survive the app being killed and
+  // don't merge separate sittings together. This unmount effect just closes
+  // out the current live session when the child navigates away.
   useEffect(() => {
-    return () => {
-      const stats = sessionStatsRef.current;
-      if (profileId && stats.total > 0) {
-        recordSession(profileId, {
-          moduleId: moduleIdRef.current,
-          correct: stats.correct,
-          total: stats.total,
-          duration: Date.now() - sessionStartTime,
-        });
-      }
-    };
-  }, [profileId, sessionStartTime]);
+    return () => { if (profileId) finalizeLiveSession(profileId); };
+  }, [profileId]);
 
   // Get mastery data (either from profile via data manager, or local state)
   const getMasteryData = useCallback(() => {
@@ -190,11 +190,12 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     return masteryData[factKey]?.correct || 0;
   }, [getMasteryData]);
 
-  // Spaced-repetition review intervals (days) — Leitner-inspired
-  // Index = number of correct answers beyond mastery threshold
-  const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
-
-  // Pick a new fact using spaced repetition + Singapore Math spiral review
+  // Pick a new fact using the fact-selection policy: category budgets +
+  // within-category weights, a gated introduction frontier, an anti-repeat
+  // guard, a per-fact ceiling, and an in-memory error-priority window.
+  // See docs/fact-selection-policy.md — the pipeline itself lives in
+  // src/factSelectionPolicy.js so it can be driven by both this component
+  // and the Node acceptance-criteria simulation.
   const pickNewFact = useCallback(() => {
     if (facts.length === 0) {
       setCurrentFact(null);
@@ -202,72 +203,20 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     }
 
     const masteryThreshold = DEFAULT_MASTERY_THRESHOLD;
-    const now = Date.now();
     const masteryData = getMasteryData();
-    const MAX_NEW_FACTS = 3; // Introduce at most 3 unseen facts at a time
 
-    // Categorize every fact in the current pool
-    const scored = facts.map((f) => {
-      const record = masteryData[f.factKey];
-      const level = record?.correct || 0;
-      const attempts = record?.attempts || 0;
-      const lastSeen = record?.lastSeen ? new Date(record.lastSeen).getTime() : 0;
-      const daysSince = lastSeen ? (now - lastSeen) / (1000 * 60 * 60 * 24) : Infinity;
+    // Error-priority window: decrement before this draw so a missed fact's
+    // elevated priority (spec §8) fades out over roughly its next 10 draws.
+    tickErrorWindow(errorWindowRef);
 
-      if (level >= masteryThreshold) {
-        // MASTERED — check if review is due
-        const reviewsAfterMastery = level - masteryThreshold;
-        const intervalDays = REVIEW_INTERVALS[Math.min(reviewsAfterMastery, REVIEW_INTERVALS.length - 1)];
-        const reviewDue = daysSince >= intervalDays;
-        return { fact: f, weight: reviewDue ? 4 : 1, category: reviewDue ? "review" : "mastered" };
-      }
-
-      if (attempts === 0 && !record?.lastSeen) {
-        // NEVER SEEN — will be capped below
-        // (check lastSeen too for backward compat with old records that lack attempts)
-        return { fact: f, weight: 3, category: "new" };
-      }
-
-      if (level === 0) {
-        // STRUGGLING — seen but nothing sticking
-        return { fact: f, weight: 6, category: "struggling" };
-      }
-
-      // LEARNING — partially mastered, weight inversely proportional to progress
-      return { fact: f, weight: (masteryThreshold - level + 1) * 2, category: "learning" };
+    const { selected } = computeSelection({
+      facts,
+      masteryData,
+      prevKey: currentFact?.factKey,
+      operation,
+      errorWindow: errorWindowRef.current,
+      threshold: masteryThreshold,
     });
-
-    // Singapore Math principle: don't overwhelm — limit new-fact introductions
-    // Only allow MAX_NEW_FACTS unseen facts into the weighted pool at a time
-    let newCount = 0;
-    let pool = scored.filter((s) => {
-      if (s.category === "new") {
-        newCount++;
-        return newCount <= MAX_NEW_FACTS;
-      }
-      return true;
-    });
-
-    // Anti-repeat guard: never show the same fact twice in a row as long as
-    // there is at least one other fact available. Prevents the weighted-random
-    // algorithm from picking a dominant-weight fact back-to-back.
-    const previousKey = currentFact?.factKey;
-    if (previousKey && pool.length > 1) {
-      const withoutPrevious = pool.filter((s) => s.fact.factKey !== previousKey);
-      if (withoutPrevious.length > 0) pool = withoutPrevious;
-    }
-
-    // Weighted random selection
-    const totalWeight = pool.reduce((sum, s) => sum + s.weight, 0);
-    let r = Math.random() * totalWeight;
-    let selected = pool[0]?.fact || null;
-    for (const entry of pool) {
-      r -= entry.weight;
-      if (r <= 0) {
-        selected = entry.fact;
-        break;
-      }
-    }
 
     setCurrentFact(selected);
     setUserAnswer("");
@@ -275,8 +224,25 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     setShowScaffold(false);
     setUserHidScaffold(false);
     setShowNumberBond(false);
-    setTimeout(() => inputRef.current?.focus(), 100);
-  }, [facts, getMasteryData, currentFact]);
+    setBuilderGroups(0);
+
+    // Finish-line on-ramp: at threshold−1 in pictorial (and not parent-locked),
+    // start the scaffold hidden behind "Show me" — a non-punitive invitation
+    // to retrieve.
+    const rec = getMasteryData()[selected?.factKey];
+    if (selected && mode === "pictorial" && !lockedMode && (rec?.correct || 0) === DEFAULT_MASTERY_THRESHOLD - 1) {
+      setUserHidScaffold(true);
+    }
+
+    setTimeout(() => {
+      // preventScroll + scroll home: iOS keyboard-avoidance scrolls the page on
+      // focus even when the input is already visible, which shoves the sticky
+      // header's safe-area zone up behind the Dynamic Island on every new fact.
+      inputRef.current?.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+      factShownAtRef.current = Date.now();
+    }, 100);
+  }, [facts, getMasteryData, currentFact, mode, lockedMode, operation]);
 
   // Trigger pickNewFact when enabled tables, focus number, operation, or facts change
   useEffect(() => {
@@ -326,10 +292,30 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     const isCorrect = parseInt(userAnswer) === currentFact.answer;
     const masteryThreshold = DEFAULT_MASTERY_THRESHOLD;
 
+    // Error-priority window (docs/fact-selection-policy.md §8): a missed fact
+    // returns within ~6 draws via a ×4 within-category weight boost; a correct
+    // answer clears it immediately rather than waiting for the window to expire.
+    if (isCorrect) {
+      clearErrorPriority(errorWindowRef, currentFact.factKey);
+    } else {
+      markErrorPriority(errorWindowRef, currentFact.factKey);
+    }
+
     // Update mastery via data manager if profileId exists, otherwise via local state
     if (profileId) {
-      updateMastery(profileId, moduleId, currentFact.factKey, isCorrect);
+      const responseMs = factShownAtRef.current ? Date.now() - factShownAtRef.current : undefined;
+      // Scaffolded = a mathematically informative visual VISIBLE at submit time.
+      // Pictorial with the scaffold tapped-hidden (userHidScaffold) counts as
+      // UNSCAFFOLDED — that's the on-ramp.
+      const scaffolded = mode === "concrete" || (mode === "pictorial" && !userHidScaffold) || showScaffold === true;
+      const masteryGatesExempt = lockedMode === "concrete" || lockedMode === "pictorial";
+      const fluencyLimitMs = computeFluencyLimitMs(currentFact.operation, currentFact.answer);
+      if (import.meta.env.DEV) console.debug("[JF] responseMs", currentFact.factKey, responseMs);
+      updateMastery(profileId, moduleId, currentFact.factKey, isCorrect, { responseMs, fluencyLimitMs, scaffolded, masteryGatesExempt });
+      recordAnswerInSession(profileId, moduleId, isCorrect);
     } else {
+      // Anonymous practice (no profileId) is legacy-ungated: a dev-only path,
+      // since the shipped app always passes a profile.
       setLocalMastery((prev) => ({
         ...prev,
         [currentFact.factKey]: {
@@ -388,7 +374,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       setFeedback("incorrect");
       setShowScaffold(true);
     }
-  }, [currentFact, userAnswer, profileId, moduleId, pickNewFact, streak, sessionStats, sessionStartTime, mod]);
+  }, [currentFact, userAnswer, profileId, moduleId, pickNewFact, streak, sessionStats, sessionStartTime, mod, mode, lockedMode, userHidScaffold, showScaffold]);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
@@ -424,6 +410,13 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   // Use DivisionScaffoldComponent (bar model) for divide, DotArray for multiply
   const MultiplyScaffold = mod?.ScaffoldComponent;
   const DivisionScaffold = mod?.DivisionScaffoldComponent;
+  // Concrete-mode interactive builders (docs/multiply-concrete-spec.md)
+  const ConcreteMultiply = mod?.ConcreteMultiplyComponent;
+  const ConcreteDivide = mod?.ConcreteDivideComponent;
+  const reducedMotion = useMemo(
+    () => typeof window !== "undefined" && !!window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    []
+  );
   const HintComponent = mod?.HintComponent;
 
   // Guard: if module somehow not found, show message (all hooks already called above)
@@ -432,7 +425,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: `repeating-linear-gradient(0deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), repeating-linear-gradient(90deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), ${COLORS.bg}`, fontFamily: "'Space Grotesk', sans-serif", padding: 0, overflow: "auto" }}>
+    <div style={{ minHeight: "100vh", background: `repeating-linear-gradient(0deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), repeating-linear-gradient(90deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), ${COLORS.bg}`, fontFamily: "'Space Grotesk', sans-serif", padding: 0 }}>
       <style>{`
         * { box-sizing: border-box; }
         @keyframes dotPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -445,8 +438,10 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
 
       {/* Header */}
       <div style={{
-        background: COLORS.yellow, padding: "14px clamp(12px, 4vw, 20px) 10px",
+        background: COLORS.yellow,
+        padding: "calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 14px) clamp(12px, 4vw, 20px) 10px",
         borderBottom: `4px solid ${COLORS.black}`,
+        position: "sticky", top: 0, zIndex: 50,
       }}>
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
           {/* Back button, logo lockup, and player avatar */}
@@ -465,7 +460,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                 </svg>
               </button>
             )}
-            <LogoLockup size="medium" style={{ flex: 1 }} />
+            <LogoLockup size="medium" boltVariant="rev" style={{ flex: 1 }} />
             {profileAvatar && (
               <div style={{
                 width: "44px", height: "44px",
@@ -484,8 +479,12 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
           {/* Stats row — always visible, shows cumulative + session progress */}
           {(() => {
             const masteryData = getMasteryData();
-            const totalFacts = facts.length;
-            const masteredFacts = totalFacts > 0 ? facts.filter(f => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length : 0;
+            // Count DISTINCT facts — generateFacts emits symmetric division facts
+            // twice (e.g. "4÷2"), which inflated this stat's numerator and
+            // denominator (the group grids below already dedupe).
+            const distinctFacts = dedupeFacts(facts);
+            const totalFacts = distinctFacts.length;
+            const masteredFacts = totalFacts > 0 ? distinctFacts.filter(f => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length : 0;
             const masteryPct = totalFacts > 0 ? Math.round((masteredFacts / totalFacts) * 100) : 0;
             return (
               <div style={{ display: "flex", gap: "6px", alignItems: "stretch", marginBottom: "8px", minHeight: "56px" }}>
@@ -661,6 +660,45 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               }}>
                 Tap to toggle sets on/off — your choices are saved
               </p>
+            </div>
+
+            {/* CPA Mode selector — drives how much scaffold shows during practice */}
+            <div style={{
+              backgroundColor: "white", borderRadius: "12px", padding: "18px",
+              marginBottom: "14px", border: BRUTAL_BORDER, boxShadow: BRUTAL_SHADOW,
+            }}>
+              <h3 style={{ margin: "0 0 14px", fontSize: "16px", fontWeight: 700, fontFamily: "'Shrikhand', cursive" }}>
+                Practice Mode
+              </h3>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {[
+                  { id: "concrete", label: "Concrete", sub: "Touch the math" },
+                  { id: "pictorial", label: "Pictorial", sub: "See it fade" },
+                  { id: "abstract", label: "Abstract", sub: "Symbols only" },
+                ].map(m => (
+                  <button key={m.id}
+                    disabled={!!lockedMode}
+                    onClick={() => { if (lockedMode) return; setPickedMode(m.id); setPreferredMode(profileId, moduleId, m.id); setBuilderGroups(0); }}
+                    style={{
+                      flex: 1, padding: "10px 6px", borderRadius: "10px", border: BRUTAL_BORDER_SM,
+                      backgroundColor: mode === m.id ? COLORS.green : "white",
+                      color: COLORS.black,
+                      fontFamily: "'Space Mono', monospace", fontSize: "11px", fontWeight: 700,
+                      cursor: lockedMode ? "default" : "pointer",
+                      opacity: lockedMode && mode !== m.id ? 0.45 : 1,
+                      boxShadow: mode === m.id ? "none" : BRUTAL_SHADOW_SM,
+                      transition: "all 0.15s ease",
+                    }}>
+                    {m.label}
+                    <div style={{ fontSize: "9px", opacity: 0.7, marginTop: "3px" }}>{m.sub}</div>
+                  </button>
+                ))}
+              </div>
+              {lockedMode && (
+                <p style={{ margin: "10px 0 0", fontSize: "11px", color: "#888", fontFamily: "'Space Mono', monospace" }}>
+                  🔒 Locked by a parent in Parent Zone
+                </p>
+              )}
             </div>
 
             {/* Start Practice button */}
@@ -915,8 +953,34 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                 );
               })()}
 
-              {/* Scaffold (bar model / dot array) below the input */}
-              {mode !== "abstract" && (
+              {/* Concrete: interactive builder — the tap gesture IS the operation
+                  (docs/multiply-concrete-spec.md). Pictorial: passive scaffold that
+                  fades with mastery. Abstract: nothing (unchanged). */}
+              {mode === "concrete" && ConcreteMultiply && ConcreteDivide ? (
+                <div style={{ marginTop: "16px", display: "flex", justifyContent: "center" }}>
+                  {currentFact.operation === "divide" ? (
+                    <ConcreteDivide
+                      dividend={currentFact.a}
+                      divisor={currentFact.b}
+                      groupsMade={builderGroups}
+                      onMakeGroup={() => setBuilderGroups((g) => Math.min(g + 1, currentFact.answer))}
+                      onUndoGroup={() => setBuilderGroups((g) => Math.max(0, g - 1))}
+                      revealed={showScaffold}
+                      reducedMotion={reducedMotion}
+                    />
+                  ) : (
+                    <ConcreteMultiply
+                      a={currentFact.a}
+                      b={currentFact.b}
+                      groupsBuilt={builderGroups}
+                      onAddGroup={() => setBuilderGroups((g) => Math.min(g + 1, currentFact.a))}
+                      onRemoveGroup={() => setBuilderGroups((g) => Math.max(0, g - 1))}
+                      revealed={showScaffold}
+                      reducedMotion={reducedMotion}
+                    />
+                  )}
+                </div>
+              ) : mode !== "abstract" && (
                 <div style={{ marginTop: "16px", display: "flex", justifyContent: "center" }}>
                   {(showScaffold || (!userHidScaffold && scaffoldOpacity > 0)) && (
                     currentFact.operation === "divide" && DivisionScaffold ? (
@@ -937,11 +1001,18 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                   )}
                 </div>
               )}
-              {mode !== "abstract" && !userHidScaffold && scaffoldOpacity > 0 && (
+              {mode === "pictorial" && !userHidScaffold && scaffoldOpacity > 0 && (
                 <div style={{ marginTop: "6px", fontSize: "11px", fontFamily: "'Space Mono', monospace", opacity: 0.45, fontWeight: 700 }}>
                   {currentFact.operation === "divide"
                     ? `${currentFact.a} split into groups of ${currentFact.b}`
                     : `${currentFact.a} rows × ${currentFact.b} columns`}
+                </div>
+              )}
+              {mode === "pictorial" && userHidScaffold && !feedback && (
+                <div style={{ marginTop: "12px", textAlign: "center" }}>
+                  <BrutalButton small onClick={() => setUserHidScaffold(false)} bg={COLORS.cream}>
+                    Show me
+                  </BrutalButton>
                 </div>
               )}
 

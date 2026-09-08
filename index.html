@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#FFD43B" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -11,10 +11,32 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="icon" type="image/svg+xml" href="icon.svg" />
     <!-- Fonts are self-hosted and bundled via src/fonts.css (offline-safe for the native app) -->
+    <script>
+      // Surface uncaught errors via console.* — Capacitor's native console bridge
+      // only forwards console calls, so without this, a crash during module init
+      // is a silent white screen in the native shell.
+      window.addEventListener("error", function (e) {
+        console.error("[JF] uncaught:", e.message, "@", e.filename + ":" + e.lineno);
+      });
+      window.addEventListener("unhandledrejection", function (e) {
+        var r = e.reason || {};
+        console.error("[JF] unhandled rejection:", r.message || String(r), "| code:", r.code, "| stack:", r.stack);
+      });
+      window.addEventListener("DOMContentLoaded", function () {
+        var probe = document.createElement("div");
+        probe.style.cssText = "position:absolute;visibility:hidden;padding-top:var(--safe-area-inset-top, env(safe-area-inset-top, 0px))";
+        document.body.appendChild(probe);
+        console.log("[JF] safe-area-top (t=0) =", getComputedStyle(probe).paddingTop);
+        setTimeout(function () {
+          console.log("[JF] safe-area-top (t=2s) =", getComputedStyle(probe).paddingTop);
+          probe.remove();
+        }, 2000);
+      });
+    </script>
     <title>JackFlash</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body { max-width: 100vw; overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+      html, body { max-width: 100vw; overflow-x: clip; -webkit-text-size-adjust: 100%; }
       input, button, select, textarea { font-size: 16px; } /* Prevent iOS zoom on focus */
     </style>
   </head>

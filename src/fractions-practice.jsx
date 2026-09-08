@@ -19,6 +19,8 @@ import {
   COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM,
   DEFAULT_MASTERY_THRESHOLD, AVATARS,
 } from "./constants.js";
+// Note: fractions is a conceptual module — no speed gate is passed to
+// updateMastery here (curriculum ruling), so FLUENCY_MS_* is not imported.
 import { itemCellLabel } from "./shared/ui.jsx";
 import fractionsModule, {
   FRACTION_POOL, shouldAllowSkill, FractionDisplay,
@@ -28,7 +30,7 @@ import fractionsModule, {
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
 import {
   initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch,
-  recordSession, getProfile,
+  recordAnswerInSession, finalizeLiveSession, getProfile, getPreferredMode, setPreferredMode,
 } from "./dataManager.js";
 import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
@@ -362,7 +364,7 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
   if (skill === "E4") {
     return (
       <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-        <NumberLineScaffold n={item.n} d={item.d} opacity={opacity} animate={showScaffold} />
+        <NumberLineScaffold n={item.n} d={item.d} opacity={opacity} animate={showScaffold} showValue={showScaffold} />
       </div>
     );
   }
@@ -502,7 +504,7 @@ function gcd(a, b) {
 // Question Display (the big fraction or equation)
 // ---------------------------------------------------------------------------
 
-function QuestionDisplay({ item }) {
+function QuestionDisplay({ item, feedback }) {
   const skill = item.skill;
 
   // F1: "What fraction is shaded?"
@@ -613,7 +615,9 @@ function QuestionDisplay({ item }) {
         <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#666" }}>
           {item.questionText}
         </div>
-        <NumberLineScaffold n={item.n} d={item.d} opacity={1} animate={false} />
+        {/* Marker value stays hidden until the child has answered — the question
+            is "What fraction is marked?" */}
+        <NumberLineScaffold n={item.n} d={item.d} opacity={1} animate={false} showValue={!!feedback} />
       </div>
     );
   }
@@ -717,7 +721,13 @@ export default function FractionsPractice({
 
   // ---- All state (no conditional hooks) ----
   const [localMastery, setLocalMastery] = useState({});
-  const [mode, setMode] = useState("pictorial");
+  // Seed from the child's saved choice so it survives leaving practice and
+  // coming back (component state alone resets on remount).
+  const [pickedMode, setPickedMode] = useState(() => getPreferredMode(profileId, moduleId) || "pictorial");
+  // A parent lock (Parent Zone → Lock CPA Mode) overrides the child's choice.
+  // Read during render so a lock set mid-session applies on the next render.
+  const lockedMode = getProfile(profileId)?.settings?.lockedMode || null;
+  const mode = lockedMode || pickedMode;
   const [activeGroups, setActiveGroups] = useState(null); // null = all accessible
   const [focusSkill, setFocusSkill] = useState(null);
   const [currentItem, setCurrentItem] = useState(null);
@@ -736,6 +746,10 @@ export default function FractionsPractice({
   const [achievementQueue, setAchievementQueue] = useState([]);
   const [sessionStartTime] = useState(Date.now());
   const inputRef = useRef(null);
+  // Fluency timing: when the current item became answerable. Fractions is a
+  // conceptual module with no speed gate, but timing is still collected for
+  // QA / fast-follow analysis (see handleAnswer's DEV console.debug).
+  const factShownAtRef = useRef(0);
 
   // Shuffled choices (stable per item)
   const shuffledChoices = useShuffledChoices(currentItem);
@@ -749,22 +763,13 @@ export default function FractionsPractice({
     }
   }, [profileId]);
 
-  // Session recording on unmount
-  const sessionStatsRef = useRef(sessionStats);
-  useEffect(() => { sessionStatsRef.current = sessionStats; }, [sessionStats]);
+  // Sessions are now persisted per-answer in the data layer (see
+  // recordAnswerInSession below), so they survive the app being killed and
+  // don't merge separate sittings together. This unmount effect just closes
+  // out the current live session when the child navigates away.
   useEffect(() => {
-    return () => {
-      const stats = sessionStatsRef.current;
-      if (profileId && stats.total > 0) {
-        recordSession(profileId, {
-          moduleId,
-          correct: stats.correct,
-          total: stats.total,
-          duration: Date.now() - sessionStartTime,
-        });
-      }
-    };
-  }, [profileId, sessionStartTime, moduleId]);
+    return () => { if (profileId) finalizeLiveSession(profileId); };
+  }, [profileId]);
 
   // Mastery data helpers
   const getMasteryData = useCallback(() => {
@@ -852,8 +857,23 @@ export default function FractionsPractice({
     setPickedChoice(null); setFeedback(null);
     setShowScaffold(false); setUserHidScaffold(false);
     setOrderSubmitted(false);
-    setTimeout(() => inputRef.current?.focus(), 100);
-  }, [activePools, getMasteryData, currentItem]);
+
+    // Finish-line on-ramp: at threshold−1 in pictorial (and not parent-locked),
+    // start the scaffold hidden behind "Show me" — a non-punitive invitation
+    // to retrieve. No-op for F1/E4 (scaffold not rendered for those skills).
+    const rec = getMasteryData()[selected?.itemKey];
+    if (selected && mode === "pictorial" && !lockedMode && (rec?.correct || 0) === DEFAULT_MASTERY_THRESHOLD - 1) {
+      setUserHidScaffold(true);
+    }
+
+    setTimeout(() => {
+      // preventScroll + scroll home: keeps iOS keyboard-avoidance from shoving
+      // the sticky header behind the Dynamic Island on every new item.
+      inputRef.current?.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+      factShownAtRef.current = Date.now();
+    }, 100);
+  }, [activePools, getMasteryData, currentItem, mode, lockedMode]);
 
   useEffect(() => {
     pickNewItem();
@@ -915,8 +935,17 @@ export default function FractionsPractice({
     const isCorrect = evaluateAnswer(currentItem, answerPayload);
 
     if (profileId) {
-      updateMastery(profileId, moduleId, currentItem.itemKey, isCorrect);
+      // Scaffolded = a mathematically informative visual VISIBLE at submit time.
+      const scaffolded = (mode !== "abstract" && !userHidScaffold) || showScaffold === true;
+      const masteryGatesExempt = lockedMode === "concrete" || lockedMode === "pictorial";
+      // Fractions is a conceptual module — no speed gate (no responseMs /
+      // fluencyLimitMs passed). Timing is still logged in DEV for QA data.
+      if (import.meta.env.DEV) console.debug("[JF] responseMs", currentItem.itemKey, factShownAtRef.current ? Date.now() - factShownAtRef.current : undefined);
+      updateMastery(profileId, moduleId, currentItem.itemKey, isCorrect, { scaffolded, masteryGatesExempt });
+      recordAnswerInSession(profileId, moduleId, isCorrect);
     } else {
+      // Anonymous practice (no profileId) is legacy-ungated: a dev-only path,
+      // since the shipped app always passes a profile.
       setLocalMastery(prev => ({
         ...prev,
         [currentItem.itemKey]: {
@@ -968,7 +997,7 @@ export default function FractionsPractice({
       setFeedback("incorrect");
       setShowScaffold(true);
     }
-  }, [currentItem, evaluateAnswer, profileId, moduleId, streak, sessionStats, sessionStartTime, mod, pickNewItem]);
+  }, [currentItem, evaluateAnswer, profileId, moduleId, streak, sessionStats, sessionStartTime, mod, pickNewItem, mode, lockedMode, userHidScaffold, showScaffold]);
 
   // Submit handlers per answer type
   const handleSubmit = useCallback(() => {
@@ -1039,7 +1068,7 @@ export default function FractionsPractice({
       minHeight: "100vh",
       background: `repeating-linear-gradient(0deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), repeating-linear-gradient(90deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), ${COLORS.bg}`,
       fontFamily: "'Space Grotesk', sans-serif",
-      padding: 0, overflow: "auto",
+      padding: 0,
     }}>
       <style>{`
         * { box-sizing: border-box; }
@@ -1054,8 +1083,10 @@ export default function FractionsPractice({
 
       {/* ========= HEADER ========= */}
       <div style={{
-        background: COLORS.yellow, padding: "14px clamp(12px,4vw,20px) 10px",
+        background: COLORS.yellow,
+        padding: "calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 14px) clamp(12px,4vw,20px) 10px",
         borderBottom: `4px solid ${COLORS.black}`,
+        position: "sticky", top: 0, zIndex: 50,
       }}>
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
@@ -1073,7 +1104,7 @@ export default function FractionsPractice({
                 </svg>
               </button>
             )}
-            <LogoLockup size="medium" style={{ flex: 1 }} />
+            <LogoLockup size="medium" boltVariant="rev" style={{ flex: 1 }} />
             {profileAvatar && (
               <div style={{
                 width: 44, height: 44, borderRadius: "50%", border: BRUTAL_BORDER_SM,
@@ -1203,13 +1234,17 @@ export default function FractionsPractice({
                     { id: "pictorial", label: "Pictorial", sub: "See it fade" },
                     { id: "abstract", label: "Abstract", sub: "Symbols only" },
                   ].map(m => (
-                    <button key={m.id} onClick={() => setMode(m.id)}
+                    <button key={m.id}
+                      disabled={!!lockedMode}
+                      onClick={() => { if (lockedMode) return; setPickedMode(m.id); setPreferredMode(profileId, moduleId, m.id); }}
                       style={{
                         flex: 1, padding: "10px 6px", borderRadius: 10, border: BRUTAL_BORDER_SM,
                         backgroundColor: mode === m.id ? COLORS.purple : "white",
                         color: mode === m.id ? "white" : COLORS.black,
                         fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
-                        cursor: "pointer", boxShadow: mode === m.id ? "none" : BRUTAL_SHADOW_SM,
+                        cursor: lockedMode ? "default" : "pointer",
+                        opacity: lockedMode && mode !== m.id ? 0.45 : 1,
+                        boxShadow: mode === m.id ? "none" : BRUTAL_SHADOW_SM,
                         transition: "all 0.15s ease",
                       }}>
                       {m.label}
@@ -1217,6 +1252,11 @@ export default function FractionsPractice({
                     </button>
                   ))}
                 </div>
+                {lockedMode && (
+                  <p style={{ margin: "10px 0 0", fontSize: 11, color: "#888", fontFamily: "'Space Mono', monospace" }}>
+                    🔒 Locked by a parent in Parent Zone
+                  </p>
+                )}
               </div>
 
               {/* Start Practice */}
@@ -1359,7 +1399,7 @@ export default function FractionsPractice({
                   </div>
 
                   {/* Question */}
-                  <QuestionDisplay item={currentItem} />
+                  <QuestionDisplay item={currentItem} feedback={feedback} />
 
                   {/* Answer input */}
                   {!feedback && currentItem.answerType === "buildBar" && mode === "concrete" ? (
@@ -1453,7 +1493,7 @@ export default function FractionsPractice({
                       (F1 bar/circle, E4 number line) and in concrete F2, where the
                       interactive bar is the input and a pre-shaded bar would reveal
                       the answer (it still appears there after a wrong answer). */}
-                  {scaffoldRendered && (
+                  {scaffoldRendered && (showScaffold || (!userHidScaffold && scaffoldOpacity > 0)) && (
                     <div
                       onClick={mode === "pictorial" && scaffoldOpacity > 0 && !showScaffold && !userHidScaffold
                         ? () => setUserHidScaffold(true)
@@ -1480,10 +1520,19 @@ export default function FractionsPractice({
                     </div>
                   )}
 
-                  {/* Show me button (abstract mode) */}
-                  {scaffoldRendered && mode === "abstract" && !showScaffold && !feedback && (
+                  {/* Show me button: abstract mode (reveals the scaffold), or
+                      pictorial mode with the scaffold tapped-hidden / on-ramped
+                      via the finish-line invitation (un-hides it, faded). */}
+                  {scaffoldRendered && !feedback && (
+                    (mode === "abstract" && !showScaffold) ||
+                    (mode === "pictorial" && userHidScaffold)
+                  ) && (
                     <div style={{ marginTop: 12, textAlign: "center" }}>
-                      <BrutalButton small onClick={() => setShowScaffold(true)} bg={COLORS.cream}>
+                      <BrutalButton
+                        small
+                        onClick={() => mode === "pictorial" ? setUserHidScaffold(false) : setShowScaffold(true)}
+                        bg={COLORS.cream}
+                      >
                         Show me
                       </BrutalButton>
                     </div>

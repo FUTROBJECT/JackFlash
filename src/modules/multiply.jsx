@@ -50,6 +50,167 @@ function DotArray({ rows, cols, opacity = 1, animate = false }) {
 }
 
 /**
+ * Concrete-mode manipulatives (docs/multiply-concrete-spec.md).
+ * One shared gesture, run in opposite directions:
+ *   Multiply — Equal-Groups Builder: tap to ADD a group of `b`, `a` times.
+ *   Divide   — Grouping Maker: tap to PULL a group of `divisor` out of the pile.
+ * Anti-reveal rules (non-negotiable): never print a running dot total (multiply —
+ * the total IS the answer) and never print or pre-slot a group count (divide —
+ * the group count IS the answer). The pile label counts dividend→0, which is
+ * safe; `X of a groups` restates the given factor `a`, also safe.
+ */
+
+const builderLabel = {
+  fontFamily: "'Space Mono', monospace",
+  fontSize: "12px",
+  fontWeight: 700,
+  color: "#1A1A1A",
+  opacity: 0.7,
+};
+
+const builderPrompt = {
+  fontFamily: "'Space Grotesk', sans-serif",
+  fontSize: "13px",
+  fontWeight: 700,
+  color: "#1A1A1A",
+  textAlign: "center",
+};
+
+const builderButton = {
+  padding: "10px 16px",
+  borderRadius: "10px",
+  border: BRUTAL_BORDER_SM,
+  backgroundColor: "#FFD43B",
+  color: "#1A1A1A",
+  fontFamily: "'Space Grotesk', sans-serif",
+  fontSize: "14px",
+  fontWeight: 700,
+  cursor: "pointer",
+  boxShadow: BRUTAL_SHADOW_SM,
+};
+
+export function ConcreteMultiplyBuilder({ a, b, groupsBuilt, onAddGroup, onRemoveGroup, revealed = false, reducedMotion = false }) {
+  // Revealed (after a wrong answer): auto-complete the array and show the total.
+  const shown = revealed ? a : groupsBuilt;
+  const total = a * b;
+  const dotSize = total > 80 ? 6 : total > 50 ? 7 : total > 30 ? 8 : b > 8 ? 9 : 11;
+  const gap = total > 50 ? 3 : 4;
+  const done = shown >= a;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", maxWidth: "100%" }}>
+      <div style={builderLabel}>{shown} of {a} groups</div>
+      <div style={{
+        display: "inline-flex", flexDirection: "column", gap: `${gap + 2}px`,
+        background: COLORS.cream, border: BRUTAL_BORDER_SM, borderRadius: "8px",
+        padding: "10px", maxWidth: "100%", overflow: "hidden",
+      }}>
+        {Array.from({ length: a }).map((_, r) => {
+          const filled = r < shown;
+          return (
+            <div
+              key={r}
+              onClick={revealed ? undefined : (filled ? () => onRemoveGroup(r) : onAddGroup)}
+              style={{
+                display: "flex", gap: `${gap}px`, alignItems: "center",
+                cursor: revealed ? "default" : "pointer",
+                padding: "2px 4px", borderRadius: "6px",
+                border: filled ? "2px solid transparent" : "2px dashed #C9C0A8",
+              }}
+            >
+              {Array.from({ length: b }).map((_, c) => (
+                <div key={c} style={{
+                  width: dotSize, height: dotSize, borderRadius: "50%", flexShrink: 0,
+                  backgroundColor: filled ? COLORS.pink : "transparent",
+                  border: filled ? `1.5px solid ${COLORS.black}` : "1.5px dashed #C9C0A8",
+                  animation: filled && !reducedMotion ? `dotPop 0.25s ease ${c * 25}ms both` : "none",
+                }} />
+              ))}
+              {revealed && (
+                <span style={{ ...builderLabel, fontSize: "10px", marginLeft: "6px", opacity: 0.6 }}>{b}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {revealed ? (
+        <div style={{ ...builderLabel, opacity: 1 }}>{a} groups of {b} — count them: {total}</div>
+      ) : done ? (
+        <div style={builderPrompt}>Now count them all, then type your answer.</div>
+      ) : (
+        <button onClick={onAddGroup} style={builderButton}>＋ Make a group of {b}</button>
+      )}
+    </div>
+  );
+}
+
+export function ConcreteDivideBuilder({ dividend, divisor, groupsMade, onMakeGroup, onUndoGroup, revealed = false, reducedMotion = false }) {
+  const quotient = Math.round(dividend / divisor);
+  // Revealed (after a wrong answer): pile empties into the full set of groups.
+  const shownGroups = revealed ? quotient : groupsMade;
+  const pileRemaining = Math.max(0, dividend - shownGroups * divisor);
+  const dotSize = dividend > 80 ? 6 : dividend > 50 ? 7 : dividend > 30 ? 8 : 10;
+  const gap = dividend > 50 ? 3 : 4;
+  const empty = pileRemaining === 0;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", maxWidth: "100%" }}>
+      <div style={builderLabel}>In the pile: {pileRemaining}</div>
+      <div style={{
+        display: "flex", flexWrap: "wrap", gap: `${gap}px`, justifyContent: "center",
+        alignItems: "center", background: COLORS.cream, border: BRUTAL_BORDER_SM,
+        borderRadius: "8px", padding: "10px", maxWidth: "300px", minHeight: `${dotSize + 8}px`,
+      }}>
+        {empty ? (
+          <span style={{ ...builderLabel, fontSize: "11px", opacity: 0.5 }}>empty!</span>
+        ) : (
+          Array.from({ length: pileRemaining }).map((_, i) => (
+            <div key={i} style={{
+              width: dotSize, height: dotSize, borderRadius: "50%", flexShrink: 0,
+              backgroundColor: COLORS.blue, border: `1.5px solid ${COLORS.black}`,
+            }} />
+          ))
+        )}
+      </div>
+      {revealed ? (
+        <div style={{ ...builderLabel, opacity: 1 }}>{dividend} split into groups of {divisor} → {quotient} groups</div>
+      ) : empty ? (
+        <div style={builderPrompt}>Now count your groups, then type your answer.</div>
+      ) : (
+        <button onClick={onMakeGroup} style={builderButton}>＋ Take a group of {divisor}</button>
+      )}
+      {shownGroups > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "center", maxWidth: "100%" }}>
+          {Array.from({ length: shownGroups }).map((_, g) => (
+            <div
+              key={g}
+              onClick={revealed ? undefined : () => onUndoGroup(g)}
+              style={{
+                display: "flex", flexWrap: "wrap", gap: `${gap}px`, alignItems: "center",
+                background: "white", border: BRUTAL_BORDER_SM, borderRadius: "6px",
+                padding: "6px", maxWidth: "120px",
+                cursor: revealed ? "default" : "pointer",
+              }}
+            >
+              {Array.from({ length: divisor }).map((_, c) => (
+                <div key={c} style={{
+                  width: dotSize, height: dotSize, borderRadius: "50%", flexShrink: 0,
+                  backgroundColor: COLORS.blue, border: `1.5px solid ${COLORS.black}`,
+                  animation: reducedMotion ? "none" : `dotPop 0.25s ease ${c * 25}ms both`,
+                }} />
+              ))}
+              {revealed && (
+                <span style={{ ...builderLabel, fontSize: "10px", marginLeft: "4px", opacity: 0.6 }}>{divisor}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * BarModel Component
  * Singapore Math bar/tape diagram for division.
  * Shows the total (dividend) as a whole bar split into equal groups.
@@ -331,6 +492,9 @@ const multiplyModule = {
   // React components for scaffolding and hints
   ScaffoldComponent: DotArray,
   DivisionScaffoldComponent: BarModel,
+  // Concrete-mode interactive builders (docs/multiply-concrete-spec.md)
+  ConcreteMultiplyComponent: ConcreteMultiplyBuilder,
+  ConcreteDivideComponent: ConcreteDivideBuilder,
   HintComponent: SkipCount,
 
   // Individual focus tables (the buttons 2-10)

@@ -7,6 +7,7 @@ import {
   getActiveProfile,
   deleteProfile,
   updateProfile,
+  setProfileAvatar,
   updateChildSettings,
   updateParentSettings,
   getParentSettings,
@@ -127,6 +128,11 @@ export default function App() {
     refresh();
   };
 
+  const handleSetProfileAvatar = (profileId, avatarId) => {
+    setProfileAvatar(profileId, avatarId);
+    refresh();
+  };
+
   const handleDeleteProfile = (profileId) => {
     deleteProfile(profileId);
     refresh();
@@ -193,6 +199,7 @@ export default function App() {
           onAddProfile={handleAddProfile}
           onOpenParentZone={handleOpenParentZone}
           onViewProgress={handleViewProgress}
+          onSetAvatar={handleSetProfileAvatar}
           activeTab={homeTab}
           onTabChange={handleTabChange}
           masteryData={masteryData}
@@ -258,6 +265,7 @@ export default function App() {
           onAddProfile={handleAddProfile}
           onOpenParentZone={handleOpenParentZone}
           onViewProgress={handleViewProgress}
+          onSetAvatar={handleSetProfileAvatar}
           activeTab={homeTab}
           onTabChange={handleTabChange}
           masteryData={masteryData}

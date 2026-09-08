@@ -30,7 +30,7 @@ import connectionsModule, {
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
 import {
   initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch,
-  recordSession, getProfile,
+  recordAnswerInSession, finalizeLiveSession, getProfile, getPreferredMode, setPreferredMode,
 } from "./dataManager.js";
 import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
@@ -631,7 +631,15 @@ export default function ConnectionsPractice({
 
   // ---- All state (no conditional hooks) ----
   const [localMastery, setLocalMastery] = useState({});
-  const [mode, setMode] = useState("pictorial");
+  // Seeded from the child's saved choice so it survives leaving practice.
+  const [pickedMode, setPickedMode] = useState(() => getPreferredMode(profileId, moduleId) || "pictorial");
+  // Once the child has explicitly chosen a mode, per-group defaults stop
+  // overriding it. A ref (not state) so the item-selection callback always
+  // reads the current value without needing it in its dependency list.
+  const hasExplicitModeRef = useRef(!!getPreferredMode(profileId, moduleId));
+  // A parent lock (Parent Zone → Lock CPA Mode) overrides the child's choice.
+  const lockedMode = getProfile(profileId)?.settings?.lockedMode || null;
+  const mode = lockedMode || pickedMode;
   const [activeGroups, setActiveGroups] = useState(null); // null = all
   const [currentItem, setCurrentItem] = useState(null);
   const [feedback, setFeedback] = useState(null);
@@ -664,17 +672,13 @@ export default function ConnectionsPractice({
     }
   }, [profileId]);
 
-  // Session recording on unmount
-  const sessionStatsRef = useRef(sessionStats);
-  useEffect(() => { sessionStatsRef.current = sessionStats; }, [sessionStats]);
+  // Sessions are now persisted per-answer in the data layer (see
+  // recordAnswerInSession below), so they survive the app being killed and
+  // don't merge separate sittings together. This unmount effect just closes
+  // out the current live session when the child navigates away.
   useEffect(() => {
-    return () => {
-      const stats = sessionStatsRef.current;
-      if (profileId && stats.total > 0) {
-        recordSession(profileId, { moduleId, correct: stats.correct, total: stats.total, duration: Date.now() - sessionStartTime });
-      }
-    };
-  }, [profileId, sessionStartTime, moduleId]);
+    return () => { if (profileId) finalizeLiveSession(profileId); };
+  }, [profileId]);
 
   // Mastery helpers
   const getMasteryData = useCallback(() => {
@@ -799,11 +803,14 @@ export default function ConnectionsPractice({
     setOrderSubmitted(false);
     // Reset concrete state for I-group
     setConcreteState({ splitDone: false, selectedParts: selected?.numerator || null });
-    // Set default mode based on group
-    if (selected?.group === "integration") {
-      setMode("concrete");
+    // Set default mode based on group — but only until the child has made an
+    // explicit choice, which then sticks across groups. Automatic default, so
+    // it isn't persisted; a parent lock still wins regardless, since the
+    // effective mode is `lockedMode || pickedMode`.
+    if (!hasExplicitModeRef.current && selected?.group === "integration") {
+      setPickedMode("concrete");
     }
-    setTimeout(() => inputRef.current?.focus(), 100);
+    setTimeout(() => { inputRef.current?.focus({ preventScroll: true }); window.scrollTo(0, 0); }, 100); // preventScroll: keep the sticky header out from behind the Dynamic Island
   }, [activePools, getMasteryData, currentItem]);
 
   useEffect(() => {
@@ -864,6 +871,7 @@ export default function ConnectionsPractice({
 
     if (profileId) {
       updateMastery(profileId, moduleId, currentItem.itemKey, isCorrect);
+      recordAnswerInSession(profileId, moduleId, isCorrect);
     } else {
       setLocalMastery(prev => ({
         ...prev,
@@ -978,7 +986,7 @@ export default function ConnectionsPractice({
       minHeight: "100vh",
       background: `repeating-linear-gradient(0deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), repeating-linear-gradient(90deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), ${COLORS.bg}`,
       fontFamily: "'Space Grotesk', sans-serif",
-      padding: 0, overflow: "auto",
+      padding: 0,
     }}>
       <style>{`
         * { box-sizing: border-box; }
@@ -994,8 +1002,10 @@ export default function ConnectionsPractice({
 
       {/* ========= HEADER ========= */}
       <div style={{
-        background: COLORS.yellow, padding: "14px clamp(12px,4vw,20px) 10px",
+        background: COLORS.yellow,
+        padding: "calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 14px) clamp(12px,4vw,20px) 10px",
         borderBottom: `4px solid ${COLORS.black}`,
+        position: "sticky", top: 0, zIndex: 50,
       }}>
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
@@ -1013,7 +1023,7 @@ export default function ConnectionsPractice({
                 </svg>
               </button>
             )}
-            <LogoLockup size="medium" style={{ flex: 1 }} />
+            <LogoLockup size="medium" boltVariant="rev" style={{ flex: 1 }} />
             {/* Capstone badge */}
             <span style={{
               fontFamily: "'Space Mono', monospace", fontSize: 10, fontWeight: 700,
@@ -1151,13 +1161,17 @@ export default function ConnectionsPractice({
                     { id: "pictorial", label: "Pictorial", sub: "See it fade" },
                     { id: "abstract", label: "Abstract", sub: "Symbols only" },
                   ].map(m => (
-                    <button key={m.id} onClick={() => setMode(m.id)}
+                    <button key={m.id}
+                      disabled={!!lockedMode}
+                      onClick={() => { if (lockedMode) return; hasExplicitModeRef.current = true; setPickedMode(m.id); setPreferredMode(profileId, moduleId, m.id); }}
                       style={{
                         flex: 1, padding: "10px 6px", borderRadius: 10, border: BRUTAL_BORDER_SM,
                         backgroundColor: mode === m.id ? AMBER : "white",
                         color: COLORS.black,
                         fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
-                        cursor: "pointer", boxShadow: mode === m.id ? "none" : BRUTAL_SHADOW_SM,
+                        cursor: lockedMode ? "default" : "pointer",
+                        opacity: lockedMode && mode !== m.id ? 0.45 : 1,
+                        boxShadow: mode === m.id ? "none" : BRUTAL_SHADOW_SM,
                         transition: "all 0.15s ease",
                       }}>
                       {m.label}
@@ -1165,6 +1179,11 @@ export default function ConnectionsPractice({
                     </button>
                   ))}
                 </div>
+                {lockedMode && (
+                  <p style={{ margin: "10px 0 0", fontSize: 11, color: "#888", fontFamily: "'Space Mono', monospace" }}>
+                    🔒 Locked by a parent in Parent Zone
+                  </p>
+                )}
               </div>
 
               {/* Start Practice */}

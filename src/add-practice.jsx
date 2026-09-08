@@ -26,7 +26,7 @@ import addModule, {
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
 import {
   initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch,
-  recordSession, getProfile,
+  recordAnswerInSession, finalizeLiveSession, getProfile, getPreferredMode, setPreferredMode,
 } from "./dataManager.js";
 import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
@@ -108,7 +108,7 @@ function ColumnInput({ item, value, onChange, onSubmit, disabled }) {
     onChange(next);
     // Auto-advance
     if (ch && i < numDigits - 1) {
-      fieldRefs.current[i + 1]?.focus();
+      fieldRefs.current[i + 1]?.focus({ preventScroll: true });
     }
     // Auto-submit if all filled
     if (ch && next.every(d => d !== "")) {
@@ -119,7 +119,7 @@ function ColumnInput({ item, value, onChange, onSubmit, disabled }) {
 
   function handleKeyDown(i, e) {
     if (e.key === "Backspace" && !digits[i] && i > 0) {
-      fieldRefs.current[i - 1]?.focus();
+      fieldRefs.current[i - 1]?.focus({ preventScroll: true });
     }
     if (e.key === "Enter" && digits.every(d => d !== "")) {
       onSubmit(digits);
@@ -796,7 +796,15 @@ export default function AddPractice({
 
   // ---- All state (no conditional hooks) ----
   const [localMastery, setLocalMastery] = useState({});
-  const [mode, setMode] = useState("concrete"); // default concrete for N group
+  // Child's saved choice wins; otherwise concrete (the N-group default).
+  const [pickedMode, setPickedMode] = useState(() => getPreferredMode(profileId, moduleId) || "concrete");
+  // Once the child has explicitly chosen a mode, per-group defaults stop
+  // overriding it. A ref (not state) so the item-selection callback always
+  // reads the current value without needing it in its dependency list.
+  const hasExplicitModeRef = useRef(!!getPreferredMode(profileId, moduleId));
+  // A parent lock (Parent Zone → Lock CPA Mode) overrides the child's choice.
+  const lockedMode = getProfile(profileId)?.settings?.lockedMode || null;
+  const mode = lockedMode || pickedMode;
   const [currentItem, setCurrentItem] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [userAnswer, setUserAnswer] = useState(""); // for "number" and "barChoice"
@@ -825,22 +833,13 @@ export default function AddPractice({
     }
   }, [profileId]);
 
-  // Session recording on unmount
-  const sessionStatsRef = useRef(sessionStats);
-  useEffect(() => { sessionStatsRef.current = sessionStats; }, [sessionStats]);
+  // Sessions are now persisted per-answer in the data layer (see
+  // recordAnswerInSession below), so they survive the app being killed and
+  // don't merge separate sittings together. This unmount effect just closes
+  // out the current live session when the child navigates away.
   useEffect(() => {
-    return () => {
-      const stats = sessionStatsRef.current;
-      if (profileId && stats.total > 0) {
-        recordSession(profileId, {
-          moduleId,
-          correct: stats.correct,
-          total: stats.total,
-          duration: Date.now() - sessionStartTime,
-        });
-      }
-    };
-  }, [profileId, sessionStartTime, moduleId]);
+    return () => { if (profileId) finalizeLiveSession(profileId); };
+  }, [profileId]);
 
   // Mastery helpers
   const getMasteryData = useCallback(() => {
@@ -953,12 +952,15 @@ export default function AddPractice({
     setShowScaffold(false);
     setUserHidScaffold(false);
     setTenFrameMoved(0);
-    // Set default mode for the new item's group
-    if (selected && mod?.defaultModeByGroup) {
+    // Set default mode for the new item's group — but only until the child has
+    // made an explicit choice, which then sticks across groups. Automatic
+    // default, so it isn't persisted; a parent lock still wins regardless,
+    // since the effective mode is `lockedMode || pickedMode`.
+    if (!hasExplicitModeRef.current && selected && mod?.defaultModeByGroup) {
       const defaultMode = mod.defaultModeByGroup[selected.group] || "pictorial";
-      setMode(defaultMode);
+      setPickedMode(defaultMode);
     }
-    setTimeout(() => inputRef.current?.focus(), 100);
+    setTimeout(() => { inputRef.current?.focus({ preventScroll: true }); window.scrollTo(0, 0); }, 100); // preventScroll: keep the sticky header out from behind the Dynamic Island
   }, [activePool, getMasteryData, currentItem, mod]);
 
   useEffect(() => {
@@ -1004,6 +1006,7 @@ export default function AddPractice({
 
     if (profileId) {
       updateMastery(profileId, moduleId, currentItem.itemKey, isCorrect);
+      recordAnswerInSession(profileId, moduleId, isCorrect);
     } else {
       setLocalMastery(prev => ({
         ...prev,
@@ -1117,7 +1120,7 @@ export default function AddPractice({
       minHeight: "100vh",
       background: `repeating-linear-gradient(0deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), repeating-linear-gradient(90deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), ${COLORS.bg}`,
       fontFamily: "'Space Grotesk', sans-serif",
-      padding: 0, overflow: "auto",
+      padding: 0,
     }}>
       <style>{`
         * { box-sizing: border-box; }
@@ -1133,8 +1136,10 @@ export default function AddPractice({
 
       {/* ========= HEADER ========= */}
       <div style={{
-        background: COLORS.yellow, padding: "14px clamp(12px,4vw,20px) 10px",
+        background: COLORS.yellow,
+        padding: "calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 14px) clamp(12px,4vw,20px) 10px",
         borderBottom: `4px solid ${COLORS.black}`,
+        position: "sticky", top: 0, zIndex: 50,
       }}>
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
@@ -1153,7 +1158,7 @@ export default function AddPractice({
                 </svg>
               </button>
             )}
-            <LogoLockup size="medium" style={{ flex: 1 }} />
+            <LogoLockup size="medium" boltVariant="rev" style={{ flex: 1 }} />
             {profileAvatar && (
               <div style={{
                 width: 44, height: 44, borderRadius: "50%", border: BRUTAL_BORDER_SM,
@@ -1283,13 +1288,17 @@ export default function AddPractice({
                     { id: "pictorial", label: "Pictorial", sub: "See it fade" },
                     { id: "abstract", label: "Abstract", sub: "Symbols only" },
                   ].map(m => (
-                    <button key={m.id} onClick={() => setMode(m.id)}
+                    <button key={m.id}
+                      disabled={!!lockedMode}
+                      onClick={() => { if (lockedMode) return; hasExplicitModeRef.current = true; setPickedMode(m.id); setPreferredMode(profileId, moduleId, m.id); }}
                       style={{
                         flex: 1, padding: "10px 6px", borderRadius: 10, border: BRUTAL_BORDER_SM,
                         backgroundColor: mode === m.id ? moduleColor : "white",
                         color: mode === m.id ? "white" : COLORS.black,
                         fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
-                        cursor: "pointer", boxShadow: mode === m.id ? "none" : BRUTAL_SHADOW_SM,
+                        cursor: lockedMode ? "default" : "pointer",
+                        opacity: lockedMode && mode !== m.id ? 0.45 : 1,
+                        boxShadow: mode === m.id ? "none" : BRUTAL_SHADOW_SM,
                         transition: "all 0.15s ease", minHeight: 56,
                       }}>
                       {m.label}
@@ -1297,6 +1306,11 @@ export default function AddPractice({
                     </button>
                   ))}
                 </div>
+                {lockedMode && (
+                  <p style={{ margin: "10px 0 0", fontSize: 11, color: "#888", fontFamily: "'Space Mono', monospace" }}>
+                    🔒 Locked by a parent in Parent Zone
+                  </p>
+                )}
               </div>
 
               {/* Start Practice */}

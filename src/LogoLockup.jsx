@@ -1,6 +1,7 @@
 import React from "react";
 import { COLORS } from "./constants.js";
 import LightningBolt from "./LightningBolt.jsx";
+import LightningBoltRev from "./LightningBoltRev.jsx";
 
 /**
  * Shared JackFlash logo lockup — bolt + "JackFlash" wordmark.
@@ -11,12 +12,15 @@ import LightningBolt from "./LightningBolt.jsx";
  *
  * Props:
  *   size        – overall scale ("large" | "medium" | "small"), default "medium"
- *   accentColor – passed through to LightningBolt
+ *   accentColor – passed through to the bolt
  *   subtitle    – optional small text beneath the lockup
  *   stacked     – bolt above the wordmark instead of beside it
+ *   boltVariant – "default" | "rev". Use "rev" (cyan-bodied) ONLY on yellow
+ *                 backgrounds (the practice headers) where the standard
+ *                 yellow-bodied bolt washes out.
  *   style       – extra styles on the wrapper div
  */
-export default function LogoLockup({ size = "medium", accentColor, subtitle, stacked = false, style = {} }) {
+export default function LogoLockup({ size = "medium", accentColor, subtitle, stacked = false, boltVariant = "default", style = {} }) {
   // Root font-size sets the lockup scale; the bolt and wordmark are sized in
   // em off it, so their proportions stay locked at every viewport width.
   const fontScale = {
@@ -39,7 +43,9 @@ export default function LogoLockup({ size = "medium", accentColor, subtitle, sta
         gap: stacked ? "0.04em" : 0,
         justifyContent: "center",
       }}>
-        <LightningBolt size={boltEm} accentColor={accentColor} />
+        {boltVariant === "rev"
+          ? <LightningBoltRev size={boltEm} accentColor={accentColor} />
+          : <LightningBolt size={boltEm} accentColor={accentColor} />}
         <h1 style={{
           fontFamily: "'Galindo', cursive",
           fontSize: "0.88em",
