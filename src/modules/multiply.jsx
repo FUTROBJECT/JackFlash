@@ -54,7 +54,10 @@ function DotArray({ rows, cols, opacity = 1, animate = false, totals = false }) 
             </div>
             <span style={{
               fontFamily: "'Space Mono', monospace",
-              fontSize: dotSize <= 7 ? "10px" : "12px",
+              // Bumped (phase 1b polish, totals branch only) so the labels
+              // stay legible at ≥12px even before the reveal's PictureSlot
+              // scale-to-fill (min scale 1×) is applied.
+              fontSize: dotSize <= 7 ? "12px" : "13px",
               fontWeight: r === rows - 1 ? 700 : 400,
               color: r === rows - 1 ? COLORS.black : "#888",
               minWidth: "2.4em",

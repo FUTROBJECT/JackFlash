@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { COLORS } from "../constants.js";
+import { COLORS, BRUTAL_BORDER, BRUTAL_SHADOW } from "../constants.js";
+
+// Same ground the practice screen paints behind its card (reused verbatim —
+// docs/wrong-answer-reveal-spec.md "phase 1b: The frame" — so the reveal
+// reads as the practice screen taken over, not a different screen).
+const PAGE_BACKGROUND = `repeating-linear-gradient(0deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), repeating-linear-gradient(90deg, transparent, transparent 21px, rgba(0,0,0,0.06) 21px, rgba(0,0,0,0.06) 22px), ${COLORS.bg}`;
 
 /**
  * WrongAnswerReveal — presentational full-screen overlay shell for the
@@ -120,71 +125,107 @@ export default function WrongAnswerReveal({
         position: "fixed",
         inset: 0,
         zIndex: 900, // below AchievementPopup's 1000
-        background: COLORS.cream,
-        display: "grid",
-        // R2: top-anchor the stack and cap the picture band (≤150px) instead
-        // of letting it absorb all slack via 1fr — that pinned the derivation
-        // line/prompt/input to the bottom of the screen, exactly where the
-        // iOS number keyboard covers them (measured: input top ≈690px at
-        // 375×812 with the keyboard up).
-        gridTemplateRows: "auto minmax(0, min(150px, 24dvh)) auto auto auto",
-        alignContent: "start",
-        rowGap: "12px",
+        // Same ground as the practice screen — no dark scrim, this is a
+        // lesson card taking over the card that was already there.
+        background: PAGE_BACKGROUND,
         height: "100dvh",
         overflow: "hidden",
-        padding: "calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + clamp(8px, 3vw, 16px)) clamp(12px, 4vw, 20px) clamp(8px, 3vw, 16px)",
         boxSizing: "border-box",
+        // Top offset is the keyboard-budget one (~16px), not the practice
+        // card's own top (~175px, under the sticky header): R2's fit-with-
+        // keyboard-up budget wins over phase 1b's "no jump" framing — the
+        // header is gone during the takeover, and the card rises into place
+        // instead (docs/wrong-answer-reveal-spec.md, phase 1b).
+        padding: "calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + clamp(8px, 3vw, 16px)) clamp(12px, 4vw, 20px) clamp(8px, 3vw, 16px)",
         fontFamily: "'Space Grotesk', sans-serif",
-        animation: "cardRiseIn 0.3s ease both",
+        color: COLORS.black,
       }}
     >
-      {/* Header: rotating "Not yet…" line + the restated problem */}
-      <div style={{ textAlign: "center", minHeight: 0 }}>
-        <div style={{
-          fontFamily: "'Space Mono', monospace", fontSize: "clamp(13px, 4vw, 15px)", fontWeight: 700,
-          color: COLORS.black,
+      {/* Centered column matches the practice page's own maxWidth/margin
+          (multiplication-practice.jsx ~L717), so the card sits exactly
+          where the practice card sat. */}
+      <div style={{ maxWidth: 540, margin: "0 auto" }}>
+        {/* The one white card — same frame tokens as the practice card
+            (multiplication-practice.jsx ~L1027-1029): BRUTAL_BORDER,
+            BRUTAL_SHADOW, 14px radius. Height auto — never scrolls
+            internally; the grid rows below are what R2's budget governs. */}
+        <div className="cardRise" style={{
+          backgroundColor: "white",
+          border: BRUTAL_BORDER,
+          boxShadow: BRUTAL_SHADOW,
+          borderRadius: "14px",
+          padding: "clamp(14px, 4vw, 20px)",
+          boxSizing: "border-box",
+          display: "grid",
+          // R2: top-anchor the stack and cap the picture band instead of
+          // letting it absorb all slack via 1fr — that pinned the derivation
+          // line/prompt/input to the bottom of the screen, exactly where the
+          // iOS number keyboard covers them (measured: input top ≈690px at
+          // 375×812 with the keyboard up). Cap lowered to 120px/20dvh in
+          // phase 1b to make room for the bigger type.
+          gridTemplateRows: "auto minmax(0, min(120px, 20dvh)) auto auto auto",
+          alignContent: "start",
+          rowGap: "10px",
+          height: "auto",
+          // Entrance animation via the shared .cardRise class (animations.css)
+          // rather than an inline animation, so the app's reduced-motion
+          // media query (which targets .cardRise, not a bare keyframe name)
+          // disables it here too. Also aligns duration with the rest of the app (0.4s).
         }}>
-          {header}
+          {/* Header: rotating "Not yet…" line + the restated problem */}
+          <div style={{ textAlign: "center", minHeight: 0 }}>
+            <div style={{
+              // Galindo is used nowhere else in the app but the wordmark;
+              // this is a deliberate new in-app usage (a friendlier face for
+              // the reveal's voice), not reuse of an existing UI pattern —
+              // docs/wrong-answer-reveal-spec.md, phase 1b.
+              fontFamily: "'Galindo', cursive", fontSize: "clamp(20px, 6vw, 24px)", fontWeight: 400,
+              color: COLORS.black, lineHeight: 1.2,
+            }}>
+              {header}
+            </div>
+            {problem && (
+              <div style={{ marginTop: 4, fontFamily: "'Shrikhand', cursive", fontSize: "clamp(28px, 8.5vw, 34px)", color: COLORS.black }}>
+                {problem}
+              </div>
+            )}
+          </div>
+
+          {/* Picture — scale-to-fill measuring wrapper */}
+          <PictureSlot>{picture}</PictureSlot>
+
+          {/* Derivation line (or the second-miss line, styled by the caller)
+              + (divide) partner chip */}
+          <div style={{ textAlign: "center", color: COLORS.black }}>
+            {line && (
+              <div style={{
+                fontFamily: "'Space Mono', monospace", fontSize: "clamp(16px, 4.8vw, 19px)", fontWeight: 700,
+                color: COLORS.black, lineHeight: 1.45,
+              }}>
+                {line}
+              </div>
+            )}
+            {extra && (
+              <div style={{ marginTop: 6, display: "flex", justifyContent: "center" }}>
+                {extra}
+              </div>
+            )}
+          </div>
+
+          {/* Re-ask prompt */}
+          <div style={{ textAlign: "center", minHeight: 20 }}>
+            {prompt && (
+              <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(16px, 4.6vw, 18px)", fontWeight: 700, color: COLORS.black }}>
+                {prompt}
+              </div>
+            )}
+          </div>
+
+          {/* Input slot */}
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            {input}
+          </div>
         </div>
-        {problem && (
-          <div style={{ marginTop: 2, fontFamily: "'Shrikhand', cursive", fontSize: "clamp(18px, 5.5vw, 22px)", color: COLORS.black }}>
-            {problem}
-          </div>
-        )}
-      </div>
-
-      {/* Picture — scale-to-fill measuring wrapper */}
-      <PictureSlot>{picture}</PictureSlot>
-
-      {/* Derivation line + (divide) partner chip */}
-      <div style={{ textAlign: "center" }}>
-        {line && (
-          <div style={{
-            fontFamily: "'Space Mono', monospace", fontSize: "clamp(13px, 4vw, 15px)", fontWeight: 700,
-            color: COLORS.black, lineHeight: 1.3,
-          }}>
-            {line}
-          </div>
-        )}
-        {extra && (
-          <div style={{ marginTop: 6, display: "flex", justifyContent: "center" }}>
-            {extra}
-          </div>
-        )}
-      </div>
-
-      {/* Re-ask prompt */}
-      <div style={{ textAlign: "center", minHeight: 16 }}>
-        {prompt && (
-          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, opacity: 0.7 }}>
-            {prompt}
-          </div>
-        )}
-      </div>
-
-      {/* Input slot */}
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        {input}
       </div>
     </div>
   );
@@ -193,9 +234,10 @@ export default function WrongAnswerReveal({
 // ---------------------------------------------------------------------------
 // PictureSlot — a legibility fix, not a fitting one (spec "Picture fit").
 // Measures the slot's available box and the picture's own unscaled natural
-// size, then scales UP (never down, never past the slot) so a tiny DotArray
-// or BarModel reads as a hero visual instead of a postage stamp. Scales the
-// shipped component via CSS transform — never restyles it.
+// size, then scales to fill the slot (up for a tiny DotArray/BarModel so it
+// reads as a hero visual, down for a tall one so it never clips) — capped at
+// 2.5x, never past the slot in either direction. Scales the shipped
+// component via CSS transform — never restyles it.
 // ---------------------------------------------------------------------------
 function PictureSlot({ children }) {
   const outerRef = useRef(null);
@@ -214,7 +256,10 @@ function PictureSlot({ children }) {
       const naturalW = inner.offsetWidth;
       const naturalH = inner.offsetHeight;
       if (!slotW || !slotH || !naturalW || !naturalH) return;
-      const k = Math.min(2.5, Math.max(1, Math.min(slotW / naturalW, slotH / naturalH)));
+      // No floor at 1: a tall DotArray (tables 6-10, ~110-210px natural) must
+      // be able to scale DOWN to fit the 120px band, or its bottom rows —
+      // the running totals nearest the answer — get clipped (design review).
+      const k = Math.min(2.5, Math.min(slotW / naturalW, slotH / naturalH));
       setScale(k);
     };
     recompute();

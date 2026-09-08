@@ -1222,7 +1222,15 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
           open={feedback === "incorrect"}
           focusDelayMs={1000}
           header={HEADER_TAILS[hashString(currentFact.factKey) % HEADER_TAILS.length]}
-          problem={`${currentFact.a} ${currentFact.operation === "divide" ? "÷" : "×"} ${currentFact.b}`}
+          problem={
+            <span>
+              {currentFact.a}{" "}
+              <span style={{ color: currentFact.operation === "divide" ? COLORS.green : COLORS.orange }}>
+                {currentFact.operation === "divide" ? "÷" : "×"}
+              </span>{" "}
+              {currentFact.b}
+            </span>
+          }
           picture={
             currentFact.operation === "divide" && DivisionScaffold ? (
               <DivisionScaffold rows={currentFact.a} cols={currentFact.b} opacity={1} animate={mode === "abstract"} />
@@ -1232,7 +1240,14 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
           }
           line={
             retry.phase === "missed"
-              ? "Still tricky. Here it is — we'll come back to it."
+              // Second-miss line reads as spoken, not labelled — Space
+              // Grotesk override on the shell's Space Mono default (spec
+              // "phase 1b" typography table).
+              ? (
+                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(16px, 4.6vw, 18px)", fontWeight: 700, lineHeight: 1.3 }}>
+                  Still tricky. Here it is — we'll come back to it.
+                </span>
+              )
               : revealStage >= 1
                 ? buildDerivationLine(currentFact, retry.phase === "done" ? "correct" : revealStage >= 2 ? "blank" : "numeral")
                 : null
@@ -1241,8 +1256,9 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
             currentFact.operation === "divide" && revealStage >= 1 ? (
               <div style={{
                 display: "inline-flex", alignItems: "center", height: "24px", padding: "0 10px",
-                fontFamily: "'Space Mono', monospace", fontSize: "12px", fontWeight: 700,
+                fontFamily: "'Space Mono', monospace", fontSize: "15px", fontWeight: 700,
                 backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM, borderRadius: "6px",
+                color: COLORS.black, // black text on a colour chip, by token not by accident
               }}>
                 {currentFact.b} × {currentFact.answer} = {currentFact.a}
               </div>
@@ -1250,7 +1266,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
           }
           prompt={retry.phase === "ask" && revealStage >= 2 ? "Now you — use the picture." : null}
           input={
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", width: "100%" }}>
               <input
                 type="number"
                 inputMode="numeric"
@@ -1284,8 +1300,10 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               />
               {retry.phase === "ask" && revealStage >= 2 && (
                 // R4 — no exclamation marks inside the reveal (the card's own
-                // "Check!" button outside the reveal is unaffected).
-                <BrutalButton onClick={handleRetrySubmit} bg={COLORS.yellow}>Check</BrutalButton>
+                // "Check!" button outside the reveal is unaffected). Full
+                // card width, bigger tap target (spec "phase 1b" typography
+                // table: minHeight 48 / fontSize 18 / width 100%).
+                <BrutalButton onClick={handleRetrySubmit} bg={COLORS.yellow} style={{ minHeight: 48, fontSize: 18, width: "100%" }}>Check</BrutalButton>
               )}
             </div>
           }

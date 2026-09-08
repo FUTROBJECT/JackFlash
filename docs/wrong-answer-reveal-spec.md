@@ -206,3 +206,83 @@ after wrong→retry-right, `correct` is down exactly 1 and never back up,
 Regression: correct answers pulse and advance; achievements and streak
 milestones still fire on unassisted corrects; Progress grid unchanged; "Show
 me" in Abstract shows the scaffold before answering.
+
+# Wrong-answer reveal — visual polish (phase 1b)
+
+Append this as a section to `docs/wrong-answer-reveal-spec.md` in the build
+worktree. Rules R1–R7 and the Pedagogy section are unchanged. This is
+presentation only: no logic, no timing, no state changes.
+
+## Why
+Adam's review of the working reveal: "It just needs to look better. Frame it
+all in with the same white rounded rectangle. Bump up the text sizes. The
+CTAs/directives are small. Bold some fonts or change some font types to be
+more friendly. The dot diagrams could get smaller if need be."
+
+Today the reveal is loose type on a cream sheet. The practice card the child
+just left is a white rounded rectangle with an ink border and hard shadow —
+the reveal should read as *that card, taken over*, not as a different screen.
+
+## The frame
+- The page behind stays the practice screen's ground (cream + the same grid
+  lines the practice screen paints; reuse its `background` value). No dark
+  scrim — this is a lesson card, not a modal.
+- All reveal content sits in ONE card: `backgroundColor: "white"`, `border:
+  BRUTAL_BORDER`, `boxShadow: BRUTAL_SHADOW`, and the same `borderRadius` the
+  practice card uses — read it from the main card wrapper in
+  `multiplication-practice.jsx` (the div containing `<MasteryDots …>` near the
+  top of the card, ~L1030) and use the identical value. Match its horizontal
+  page margin too, so the reveal card sits exactly where the practice card sat.
+- Card padding: `clamp(14px, 4vw, 20px)`; internal row gap 10px. Card is
+  top-anchored (`alignContent:start` stays) with the same top offset as the
+  practice card's top edge, so the frame doesn't jump on open.
+  **In practice this is resolved in R2's favour**: the practice card sits
+  ~175px down (under the sticky header), but the reveal card sits at ~16px —
+  the sticky header is gone during the takeover, so there's no header to
+  match, and the card rises into place (`cardRiseIn`) rather than holding the
+  practice card's exact top.
+- Keep `height: 100dvh` on the outer layer; the card itself is `height:auto`
+  (it must never scroll internally). Body scroll-lock stays.
+
+## Typography (the app's own faces, one step up)
+Fonts already loaded by the app: Space Grotesk (body), Space Mono (labels /
+buttons), Shrikhand (hero numbers), Galindo (display). Bump everything one
+step and move the *spoken* lines out of the label font.
+
+| Slot | Now | New |
+|---|---|---|
+| Header ("Not yet. Here's the picture.") | Space Mono 700, 13–15px | **Galindo 400, `clamp(20px, 6vw, 24px)`**, ink, `lineHeight 1.2` — the "Let's Go!" sheet title is actually Space Grotesk; Galindo is otherwise used only in the wordmark, so this is a deliberate new in-app usage — Adam asked for a friendlier face for the reveal's voice |
+| Problem ("2 × 6") | Shrikhand 18–22px | **Shrikhand `clamp(28px, 8.5vw, 34px)`**, operator coloured like the card (`×` orange / `÷` green) |
+| Derivation line ("2 sixes: 6, 12 / … → [7] groups") | Space Mono 700, 13–15px | **Space Mono 700, `clamp(16px, 4.8vw, 19px)`**, `lineHeight 1.45`; the yellow blank chip and the token scale with it (min-width tracks the numeral width — keep the no-layout-shift rule) |
+| Divide partner chip ("2 × 2 = 4") | Space Mono 700 12px | **Space Mono 700 15px**, same cream chip |
+| Prompt ("Now you — use the picture.") | Space Mono 700 12px, 0.7 opacity | **Space Grotesk 700, `clamp(16px, 4.6vw, 18px)`**, ink, full opacity, sentence case — a directive should read like a person, not a label |
+| Second-miss line ("Still tricky. Here it is — we'll come back to it.") | as prompt | **Space Grotesk 700, same size as prompt**, ink |
+| Retry input | Shrikhand 32–44px, 64px tall | unchanged size; keep `WebkitAppearance:"none"`, the 4px ink underline, and the tinted states |
+| "Check" button | `BrutalButton` default | **the default (not `small`) `BrutalButton`, `minHeight 48`, `fontSize 18`, Space Mono 700**, full card width minus padding (`width: 100%`), yellow — the biggest tap target on the screen after the input |
+| Running totals on the dot array | 10–12px labels | scale with the array; make sure they are ≥ 12px *after* the transform at the new cap (bump the label font in `DotArray`'s `totals` branch if needed — totals branch only) |
+
+Contrast: black text on every coloured chip (yellow blank chip, cream partner
+chip, green/yellow input states). No red panels, no exclamation marks (R4).
+
+## The picture gets smaller to pay for the type
+- Picture band cap: `min(150px, 24dvh)` → **`min(120px, 20dvh)`**. The
+  scale-to-fill logic is unchanged (cap 2.5×); it will simply land lower.
+- Reason: R2 still governs. At 375×667 the retry input's bottom edge must stay
+  ≤ ~400px with the bigger type and the card padding/border added. Budget:
+  card top ~16 · padding 16 · header 30 · problem 40 · picture ≤120 · line
+  28 (up to 2 lines: 56) · prompt 24 · input 64 · gaps 6×10 · padding 16 ≈
+  ~390–410. If the two-line derivation case pushes past ~410, reduce the
+  picture cap to 110 before touching type sizes.
+
+## Do NOT
+No logic changes: `handleRetrySubmit`, the retry state machine, the comeback
+slot, timings (400/900/focus), and R1 are untouched. No new dependencies. No
+`Math.random()`. Tokens only. Don't touch `fractions-practice.jsx`.
+
+## Verify (builder, static) / (main loop, preview)
+Builder: `npm --prefix <worktree> run build` green; report each slot's final
+font/size with file:line; report the computed budget arithmetic for 375×667
+with a two-line derivation (e.g. `10 tens: 10, 20, … [100]`).
+Main loop: measures card frame values equal the practice card's, input bottom
+≤ ~410px at 375×667 for a two-line line, no inner scroll at 320×568, screenshots
+in all three modes for Adam.
