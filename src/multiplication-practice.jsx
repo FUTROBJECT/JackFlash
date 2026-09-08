@@ -1221,6 +1221,17 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
         <WrongAnswerReveal
           open={feedback === "incorrect"}
           focusDelayMs={1000}
+          // Tall-array follow-up to phase 1b: a 6+ row DotArray (tables 6-10)
+          // with running totals is ~180px natural and the final total (the
+          // answer) needs to survive scale-to-fit — give it a taller band.
+          // Divide's BarModel is never tall, so it stays on the shell default.
+          // 140 (not 150) — R2 budget arithmetic for the two-line derivation
+          // case at 375×667 lands the retry input's bottom edge at ~410px
+          // with a 150px band (right at the limit, no margin for estimation
+          // error); 140px keeps it at ~400px with real headroom. Same
+          // px-caps-first/dvh-caps-on-short-screens ratio as the shell default
+          // (120px @ 20dvh, 150px @ 25dvh → 140px @ ~22dvh).
+          pictureMax={currentFact.operation !== "divide" && currentFact.a >= 6 ? "min(140px, 22dvh)" : undefined}
           header={HEADER_TAILS[hashString(currentFact.factKey) % HEADER_TAILS.length]}
           problem={
             <span>

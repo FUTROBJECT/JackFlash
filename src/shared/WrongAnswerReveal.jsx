@@ -20,7 +20,18 @@ const PAGE_BACKGROUND = `repeating-linear-gradient(0deg, transparent, transparen
  * prompt, input. `open` mounts/unmounts the layer; `focusDelayMs` controls
  * when the input slot receives focus (spec: ~600ms after the picture
  * finishes building, so the keyboard doesn't cover the animation).
+ *
+ * `pictureMax` (tall-array follow-up to phase 1b): the cap on the picture
+ * grid row, default the phase-1b value. A caller with a tall picture (a 9- or
+ * 10-row DotArray with running totals) can pass a taller cap to keep the
+ * final total legible; when it does, the shell also trims the problem font
+ * and the card's row gap by the same amount it grew the band, so the whole
+ * card still fits the R2 one-screen budget. Derived from `pictureMax` itself
+ * (not a separate flag) so there's one source of truth for "are we in the
+ * tall case".
  */
+const DEFAULT_PICTURE_MAX = "min(120px, 20dvh)";
+
 export default function WrongAnswerReveal({
   open,
   header,
@@ -31,8 +42,13 @@ export default function WrongAnswerReveal({
   prompt = null,
   input,
   focusDelayMs = 1000,
+  pictureMax = DEFAULT_PICTURE_MAX,
 }) {
   const containerRef = useRef(null);
+  // Tall case: caller asked for a bigger picture band than the phase-1b
+  // default — pay for it by trimming the problem font and row gap (spec:
+  // "Pay for the extra 30px in the tall case only").
+  const compact = pictureMax !== DEFAULT_PICTURE_MAX;
 
   // On open: make sure no element outside the reveal holds focus (the
   // underlying card's own input isn't disabled while feedback === "incorrect"),
@@ -162,10 +178,12 @@ export default function WrongAnswerReveal({
           // line/prompt/input to the bottom of the screen, exactly where the
           // iOS number keyboard covers them (measured: input top ≈690px at
           // 375×812 with the keyboard up). Cap lowered to 120px/20dvh in
-          // phase 1b to make room for the bigger type.
-          gridTemplateRows: "auto minmax(0, min(120px, 20dvh)) auto auto auto",
+          // phase 1b to make room for the bigger type; a tall picture
+          // (`pictureMax` prop) can grow this row, paid for below by the
+          // `compact` trims to problem font and row gap.
+          gridTemplateRows: `auto minmax(0, ${pictureMax}) auto auto auto`,
           alignContent: "start",
-          rowGap: "10px",
+          rowGap: compact ? "8px" : "10px",
           height: "auto",
           // Entrance animation via the shared .cardRise class (animations.css)
           // rather than an inline animation, so the app's reduced-motion
@@ -185,7 +203,7 @@ export default function WrongAnswerReveal({
               {header}
             </div>
             {problem && (
-              <div style={{ marginTop: 4, fontFamily: "'Shrikhand', cursive", fontSize: "clamp(28px, 8.5vw, 34px)", color: COLORS.black }}>
+              <div style={{ marginTop: 4, fontFamily: "'Shrikhand', cursive", fontSize: compact ? "clamp(24px, 7vw, 28px)" : "clamp(28px, 8.5vw, 34px)", color: COLORS.black }}>
                 {problem}
               </div>
             )}

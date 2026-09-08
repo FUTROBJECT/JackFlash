@@ -34,40 +34,56 @@ function DotArray({ rows, cols, opacity = 1, animate = false, totals = false }) 
       }}
     >
       {totals
-        ? Array.from({ length: rows }).map((_, r) => (
-          <div key={r} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <div style={{ display: "flex", gap: `${gap}px` }}>
-              {Array.from({ length: cols }).map((_, c) => (
-                <div
-                  key={c}
-                  style={{
-                    width: dotSize,
-                    height: dotSize,
-                    borderRadius: "50%",
-                    backgroundColor: COLORS.pink,
-                    border: `1.5px solid ${COLORS.black}`,
-                    animation: animate ? `dotPop 0.3s ease ${(r * cols + c) * 15}ms both` : "none",
-                    flexShrink: 0,
-                  }}
-                />
-              ))}
-            </div>
-            <span style={{
-              fontFamily: "'Space Mono', monospace",
-              // Bumped (phase 1b polish, totals branch only) so the labels
-              // stay legible at ≥12px even before the reveal's PictureSlot
-              // scale-to-fill (min scale 1×) is applied.
-              fontSize: dotSize <= 7 ? "12px" : "13px",
-              fontWeight: r === rows - 1 ? 700 : 400,
-              color: r === rows - 1 ? COLORS.black : "#888",
-              minWidth: "2.4em",
-              textAlign: "right",
-              animation: animate ? `fadeSlideUp 0.3s ease ${(r * cols + cols - 1) * 15 + 100}ms both` : "none",
-            }}>
-              {(r + 1) * cols}
-            </span>
-          </div>
-        ))
+        // Uniform row pitch: every row gets the same explicit height (max of
+        // the dot size and a normal-label line box), overflow:visible, so
+        // bumping the FINAL total's font size below doesn't grow that row's
+        // box and throw off the vertical rhythm of the dots above it — the
+        // bigger label centers in place on its row and is allowed to sit
+        // tight against the row above rather than pushing the array taller
+        // (docs/wrong-answer-reveal-spec.md, phase 1b follow-up).
+        ? (() => {
+          const rowHeight = Math.max(dotSize, 16);
+          return Array.from({ length: rows }).map((_, r) => {
+            const isLast = r === rows - 1;
+            return (
+              <div key={r} style={{ display: "flex", alignItems: "center", gap: "6px", height: `${rowHeight}px`, overflow: "visible" }}>
+                <div style={{ display: "flex", gap: `${gap}px` }}>
+                  {Array.from({ length: cols }).map((_, c) => (
+                    <div
+                      key={c}
+                      style={{
+                        width: dotSize,
+                        height: dotSize,
+                        borderRadius: "50%",
+                        backgroundColor: COLORS.pink,
+                        border: `1.5px solid ${COLORS.black}`,
+                        animation: animate ? `dotPop 0.3s ease ${(r * cols + c) * 15}ms both` : "none",
+                        flexShrink: 0,
+                      }}
+                    />
+                  ))}
+                </div>
+                <span style={{
+                  fontFamily: "'Space Mono', monospace",
+                  // Bumped (phase 1b polish, totals branch only) so the labels
+                  // stay legible at ≥12px even before the reveal's PictureSlot
+                  // scale-to-fill (min scale 1×) is applied. The FINAL total
+                  // is the answer — bumped further so it reads as the answer,
+                  // not just another running count in the sequence.
+                  fontSize: isLast ? "18px" : dotSize <= 7 ? "12px" : "13px",
+                  fontWeight: isLast ? 700 : 400,
+                  color: isLast ? COLORS.black : "#888",
+                  lineHeight: isLast ? 1 : undefined,
+                  minWidth: "2.4em",
+                  textAlign: "right",
+                  animation: animate ? `fadeSlideUp 0.3s ease ${(r * cols + cols - 1) * 15 + 100}ms both` : "none",
+                }}>
+                  {(r + 1) * cols}
+                </span>
+              </div>
+            );
+          });
+        })()
         : Array.from({ length: rows }).map((_, r) => (
           <div key={r} style={{ display: "flex", gap: `${gap}px` }}>
             {Array.from({ length: cols }).map((_, c) => (
