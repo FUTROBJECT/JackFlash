@@ -1,5 +1,6 @@
 import React from "react";
 import { COLORS, BRUTAL_SHADOW_SM, BRUTAL_BORDER_SM } from "../constants.js";
+import DerivationToken from "../shared/DerivationToken.jsx";
 
 /**
  * DotArray Component
@@ -7,85 +8,96 @@ import { COLORS, BRUTAL_SHADOW_SM, BRUTAL_BORDER_SM } from "../constants.js";
  * Shows rows × cols arrangement of colored dots.
  *
  * `totals` (opt-in, default off — docs/wrong-answer-reveal-spec.md): labels a
- * running total down the right edge of each row (the skip count merged into
- * the array, for the wrong-answer reveal's picture). When false, the JSX is
- * byte-identical to the pre-existing render path, so the in-problem scaffold
- * is unchanged.
+ * running total (rows layout: down the right edge; columns layout: under
+ * each column) — the skip count merged into the array, for the wrong-answer
+ * reveal's picture. When false, the JSX is byte-identical to the
+ * pre-existing render path, so the in-problem scaffold is unchanged.
+ *
+ * `layout` (phase 1c "tall arrays", derived internally from `cols < rows`,
+ * not a prop): draws the array along the axis with room. A tall/thin fact
+ * like 9x1 (9 rows of 1 dot) wastes the picture band's fixed height; drawn
+ * as 9 single-dot-tall columns instead, it fills it. Ties (square facts)
+ * stay rows — meaning is preserved either way ("a groups of b"). Applies to
+ * both the `totals` and non-`totals` branches so the in-card Pictorial
+ * scaffold and the reveal's picture are always the same shape.
+ *
+ * `finalToken` ("numeral" | "blank" | "correct", default "numeral"; only
+ * meaningful with `totals`): how the array's FINAL running total renders —
+ * a plain numeral, the yellow blank re-ask chip (same width, no layout
+ * shift, via the shared DerivationToken), or green on a correct re-answer.
+ * Used when the wrong-answer reveal folds its derivation line into the
+ * picture (phase 1c) and the answer token moves onto the array itself.
  */
-function DotArray({ rows, cols, opacity = 1, animate = false, totals = false }) {
-  // Scale dots to fit within mobile screens
+function DotArray({ rows, cols, opacity = 1, animate = false, totals = false, finalToken = "numeral" }) {
+  // Scale dots to fit within mobile screens. Totals mode (the reveal's hero
+  // picture, scaled to fit by the shared PictureSlot afterwards) uses a
+  // fixed dot size/gap regardless of count (phase 1c) — the heuristic below
+  // is for the in-card 1x scaffold only. Non-totals mode is unchanged.
   const total = rows * cols;
-  const dotSize = total > 80 ? 6 : total > 50 ? 7 : total > 30 ? 8 : cols > 8 ? 9 : 11;
-  const gap = total > 50 ? 3 : 4;
-  return (
-    <div
-      style={{
-        display: "inline-flex",
-        flexDirection: "column",
-        gap: `${gap}px`,
-        opacity,
-        transition: "opacity 0.6s ease",
-        maxWidth: "100%",
-        overflow: "hidden",
-        background: COLORS.cream,
-        border: BRUTAL_BORDER_SM,
-        borderRadius: "6px",
-        padding: "8px",
-      }}
-    >
-      {totals
-        // Uniform row pitch: every row gets the same explicit height (max of
-        // the dot size and a normal-label line box), overflow:visible, so
-        // bumping the FINAL total's font size below doesn't grow that row's
-        // box and throw off the vertical rhythm of the dots above it — the
-        // bigger label centers in place on its row and is allowed to sit
-        // tight against the row above rather than pushing the array taller
-        // (docs/wrong-answer-reveal-spec.md, phase 1b follow-up).
-        ? (() => {
-          const rowHeight = Math.max(dotSize, 16);
-          return Array.from({ length: rows }).map((_, r) => {
-            const isLast = r === rows - 1;
-            return (
-              <div key={r} style={{ display: "flex", alignItems: "center", gap: "6px", height: `${rowHeight}px`, overflow: "visible" }}>
-                <div style={{ display: "flex", gap: `${gap}px` }}>
-                  {Array.from({ length: cols }).map((_, c) => (
-                    <div
-                      key={c}
-                      style={{
-                        width: dotSize,
-                        height: dotSize,
-                        borderRadius: "50%",
-                        backgroundColor: COLORS.pink,
-                        border: `1.5px solid ${COLORS.black}`,
-                        animation: animate ? `dotPop 0.3s ease ${(r * cols + c) * 15}ms both` : "none",
-                        flexShrink: 0,
-                      }}
-                    />
-                  ))}
-                </div>
-                <span style={{
-                  fontFamily: "'Space Mono', monospace",
-                  // Bumped (phase 1b polish, totals branch only) so the labels
-                  // stay legible at ≥12px even before the reveal's PictureSlot
-                  // scale-to-fill (min scale 1×) is applied. The FINAL total
-                  // is the answer — bumped further so it reads as the answer,
-                  // not just another running count in the sequence.
-                  fontSize: isLast ? "18px" : dotSize <= 7 ? "12px" : "13px",
-                  fontWeight: isLast ? 700 : 400,
-                  color: isLast ? COLORS.black : "#888",
-                  lineHeight: isLast ? 1 : undefined,
-                  minWidth: "2.4em",
-                  textAlign: "right",
-                  animation: animate ? `fadeSlideUp 0.3s ease ${(r * cols + cols - 1) * 15 + 100}ms both` : "none",
-                }}>
-                  {(r + 1) * cols}
-                </span>
-              </div>
-            );
-          });
-        })()
-        : Array.from({ length: rows }).map((_, r) => (
-          <div key={r} style={{ display: "flex", gap: `${gap}px` }}>
+  const dotSize = totals ? 11 : (total > 80 ? 6 : total > 50 ? 7 : total > 30 ? 8 : cols > 8 ? 9 : 11);
+  const gap = totals ? 4 : (total > 50 ? 3 : 4);
+  // Orientation rule (phase 1c "tall arrays"): draw along the axis we have
+  // room in. Ties (cols === rows, e.g. 9x9, 10x10) stay rows.
+  const layout = cols < rows ? "columns" : "rows";
+
+  let content;
+  if (totals && layout === "columns") {
+    // Columns totals: `rows` (a) groups side by side, each a vertical stack
+    // of `cols` (b) dots; running total under each column, last one
+    // emphasised (18px/700/ink; others 12px/#888, as the rows branch).
+    // Uniform column pitch — wide enough for the widest INTERMEDIATE label
+    // at 12px Space Mono (`String(total).length` ch) — so columns don't
+    // jitter in width; the emphasised final label may overflow its cell
+    // (overflow: visible), the container's 8px padding absorbs it (spec
+    // "Columns-layout details").
+    const pitch = `${String(total).length}ch`;
+    content = Array.from({ length: rows }).map((_, g) => {
+      const isLast = g === rows - 1;
+      return (
+        <div key={g} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: `${gap}px`, minWidth: pitch, fontFamily: "'Space Mono', monospace", fontSize: "12px" }}>
+          {Array.from({ length: cols }).map((_, d) => (
+            <div
+              key={d}
+              style={{
+                width: dotSize,
+                height: dotSize,
+                borderRadius: "50%",
+                backgroundColor: COLORS.pink,
+                border: `1.5px solid ${COLORS.black}`,
+                animation: animate ? `dotPop 0.3s ease ${(g * cols + d) * 15}ms both` : "none",
+                flexShrink: 0,
+              }}
+            />
+          ))}
+          <div style={{
+            marginTop: "4px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "visible",
+            fontSize: isLast ? "18px" : "12px",
+            fontWeight: isLast ? 700 : 400,
+            color: isLast ? COLORS.black : "#888",
+            lineHeight: isLast ? 1 : undefined,
+            animation: animate ? `fadeSlideUp 0.3s ease ${(g * cols + cols - 1) * 15 + 100}ms both` : "none",
+          }}>
+            {isLast ? <DerivationToken value={(g + 1) * cols} state={finalToken} /> : (g + 1) * cols}
+          </div>
+        </div>
+      );
+    });
+  } else if (totals) {
+    // Rows totals — unchanged shape (running totals down the right edge),
+    // plus finalToken on the last row's total (phase 1c "Fold the line").
+    // Uniform row pitch: every row gets the same explicit height (max of
+    // the dot size and a normal-label line box), overflow:visible, so
+    // bumping the FINAL total's font size below doesn't grow that row's
+    // box and throw off the vertical rhythm of the dots above it — the
+    // bigger label centers in place on its row and is allowed to sit
+    // tight against the row above rather than pushing the array taller
+    // (docs/wrong-answer-reveal-spec.md, phase 1b follow-up).
+    const rowHeight = Math.max(dotSize, 16);
+    content = Array.from({ length: rows }).map((_, r) => {
+      const isLast = r === rows - 1;
+      return (
+        <div key={r} style={{ display: "flex", alignItems: "center", gap: "6px", height: `${rowHeight}px`, overflow: "visible" }}>
+          <div style={{ display: "flex", gap: `${gap}px` }}>
             {Array.from({ length: cols }).map((_, c) => (
               <div
                 key={c}
@@ -101,11 +113,99 @@ function DotArray({ rows, cols, opacity = 1, animate = false, totals = false }) 
               />
             ))}
           </div>
+          <span style={{
+            fontFamily: "'Space Mono', monospace",
+            // Bumped (phase 1b polish, totals branch only) so the labels
+            // stay legible at ≥12px even before the reveal's PictureSlot
+            // scale-to-fill (min scale 1×) is applied. The FINAL total
+            // is the answer — bumped further so it reads as the answer,
+            // not just another running count in the sequence.
+            fontSize: isLast ? "18px" : dotSize <= 7 ? "12px" : "13px",
+            fontWeight: isLast ? 700 : 400,
+            color: isLast ? COLORS.black : "#888",
+            lineHeight: isLast ? 1 : undefined,
+            minWidth: "2.4em",
+            textAlign: "right",
+            animation: animate ? `fadeSlideUp 0.3s ease ${(r * cols + cols - 1) * 15 + 100}ms both` : "none",
+          }}>
+            {isLast ? <DerivationToken value={(r + 1) * cols} state={finalToken} /> : (r + 1) * cols}
+          </span>
+        </div>
+      );
+    });
+  } else if (layout === "columns") {
+    // Non-totals columns: `rows` (a) groups side by side, each a vertical
+    // stack of `cols` (b) dots — same shape as the totals picture above,
+    // sans labels, so the in-card scaffold and the reveal's picture never
+    // disagree (spec "Apply the orientation rule to both branches").
+    content = Array.from({ length: rows }).map((_, g) => (
+      <div key={g} style={{ display: "flex", flexDirection: "column", gap: `${gap}px` }}>
+        {Array.from({ length: cols }).map((_, d) => (
+          <div
+            key={d}
+            style={{
+              width: dotSize,
+              height: dotSize,
+              borderRadius: "50%",
+              backgroundColor: COLORS.pink,
+              border: `1.5px solid ${COLORS.black}`,
+              animation: animate ? `dotPop 0.3s ease ${(g * cols + d) * 15}ms both` : "none",
+              flexShrink: 0,
+            }}
+          />
         ))}
+      </div>
+    ));
+  } else {
+    // Non-totals rows — the pre-existing render path (unchanged: same
+    // dot markup, styles and animation delays as before phase 1c).
+    content = Array.from({ length: rows }).map((_, r) => (
+      <div key={r} style={{ display: "flex", gap: `${gap}px` }}>
+        {Array.from({ length: cols }).map((_, c) => (
+          <div
+            key={c}
+            style={{
+              width: dotSize,
+              height: dotSize,
+              borderRadius: "50%",
+              backgroundColor: COLORS.pink,
+              border: `1.5px solid ${COLORS.black}`,
+              animation: animate ? `dotPop 0.3s ease ${(r * cols + c) * 15}ms both` : "none",
+              flexShrink: 0,
+            }}
+          />
+        ))}
+      </div>
+    ));
+  }
+
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        flexDirection: layout === "columns" ? "row" : "column",
+        // Columns layout: align every column's dot-stack to the same
+        // baseline (all columns share the same dot count, cols === b, so
+        // this is a no-op today — future-proofing only).
+        alignItems: layout === "columns" ? "flex-end" : undefined,
+        // Columns layout: a wider gap between groups so they read as
+        // groups, not one continuous grid (spec "Columns-layout details").
+        // Rows layout gap is unchanged.
+        gap: layout === "columns" ? "9px" : `${gap}px`,
+        opacity,
+        transition: "opacity 0.6s ease",
+        maxWidth: "100%",
+        overflow: "hidden",
+        background: COLORS.cream,
+        border: BRUTAL_BORDER_SM,
+        borderRadius: "6px",
+        padding: "8px",
+      }}
+    >
+      {content}
     </div>
   );
 }
-
 /**
  * Concrete-mode manipulatives (docs/multiply-concrete-spec.md).
  * One shared gesture, run in opposite directions:

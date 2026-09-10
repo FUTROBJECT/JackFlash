@@ -49,6 +49,12 @@ export default function WrongAnswerReveal({
   // default — pay for it by trimming the problem font and row gap (spec:
   // "Pay for the extra 30px in the tall case only").
   const compact = pictureMax !== DEFAULT_PICTURE_MAX;
+  // Phase 1c "Fold the line": when the caller has nothing for the line/extra
+  // slot (the fold case outside the second miss), don't reserve a grid track
+  // for it at all — an empty "auto" track still costs a rowGap on each side
+  // of it. Dropping the track (not just the DOM node) is what actually
+  // reclaims that space; the prompt/input rows shift up to fill it.
+  const hasLineRow = line != null || extra != null;
 
   // On open: make sure no element outside the reveal holds focus (the
   // underlying card's own input isn't disabled while feedback === "incorrect"),
@@ -181,7 +187,16 @@ export default function WrongAnswerReveal({
           // phase 1b to make room for the bigger type; a tall picture
           // (`pictureMax` prop) can grow this row, paid for below by the
           // `compact` trims to problem font and row gap.
-          gridTemplateRows: `auto minmax(0, ${pictureMax}) auto auto auto`,
+          // The picture track is plain `auto`, NOT `minmax(0, cap)`: in an
+          // auto-height grid a track with a fixed max resolves to that max
+          // (its growth limit) whatever the content, so the band was always
+          // its full cap and a short picture left a hole beneath it. The
+          // cap is enforced on the PictureSlot's box (`maxHeight`) instead,
+          // and the slot sets its own height to the scaled picture, so the
+          // track hugs the picture up to the cap (phase 1c follow-up).
+          gridTemplateRows: hasLineRow
+            ? "auto auto auto auto auto"
+            : "auto auto auto auto",
           alignContent: "start",
           rowGap: compact ? "8px" : "10px",
           height: "auto",
@@ -210,25 +225,29 @@ export default function WrongAnswerReveal({
           </div>
 
           {/* Picture — scale-to-fill measuring wrapper */}
-          <PictureSlot>{picture}</PictureSlot>
+          <PictureSlot maxHeight={pictureMax}>{picture}</PictureSlot>
 
           {/* Derivation line (or the second-miss line, styled by the caller)
-              + (divide) partner chip */}
-          <div style={{ textAlign: "center", color: COLORS.black }}>
-            {line && (
-              <div style={{
-                fontFamily: "'Space Mono', monospace", fontSize: "clamp(16px, 4.8vw, 19px)", fontWeight: 700,
-                color: COLORS.black, lineHeight: 1.45,
-              }}>
-                {line}
-              </div>
-            )}
-            {extra && (
-              <div style={{ marginTop: 6, display: "flex", justifyContent: "center" }}>
-                {extra}
-              </div>
-            )}
-          </div>
+              + (divide) partner chip. No line/extra at all (phase 1c "Fold
+              the line") -> don't render the cell, so its track (dropped
+              from gridTemplateRows above) never costs a rowGap. */}
+          {hasLineRow && (
+            <div style={{ textAlign: "center", color: COLORS.black }}>
+              {line && (
+                <div style={{
+                  fontFamily: "'Space Mono', monospace", fontSize: "clamp(16px, 4.8vw, 19px)", fontWeight: 700,
+                  color: COLORS.black, lineHeight: 1.45,
+                }}>
+                  {line}
+                </div>
+              )}
+              {extra && (
+                <div style={{ marginTop: 6, display: "flex", justifyContent: "center" }}>
+                  {extra}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Re-ask prompt */}
           <div style={{ textAlign: "center", minHeight: 20 }}>
@@ -257,10 +276,16 @@ export default function WrongAnswerReveal({
 // 2.5x, never past the slot in either direction. Scales the shipped
 // component via CSS transform — never restyles it.
 // ---------------------------------------------------------------------------
-function PictureSlot({ children }) {
+function PictureSlot({ children, maxHeight }) {
   const outerRef = useRef(null);
   const innerRef = useRef(null);
   const [scale, setScale] = useState(1);
+  // The band is a CAP, not a fixed height (phase 1c follow-up): once the
+  // scale is known the slot takes exactly the scaled picture's height, so a
+  // wide-and-short array (9 × 1 in columns layout, ~100px scaled) doesn't
+  // leave an 80px hole under itself in a 180px band — the prompt and input
+  // move up to meet it. `height` is undefined until the first measure.
+  const [fitH, setFitH] = useState(undefined);
 
   useEffect(() => {
     const outer = outerRef.current;
@@ -268,7 +293,11 @@ function PictureSlot({ children }) {
     if (!outer || !inner || typeof ResizeObserver === "undefined") return undefined;
     const recompute = () => {
       const slotW = outer.clientWidth;
-      const slotH = outer.clientHeight;
+      // Cap comes from the resolved max-height (a px value once the browser
+      // has evaluated `min(…px, …dvh)`); fall back to the live box height
+      // if that ever isn't a number.
+      const capH = parseFloat(getComputedStyle(outer).maxHeight);
+      const slotH = Number.isFinite(capH) && capH > 0 ? capH : outer.clientHeight;
       // offsetWidth/Height are layout-box measurements — unaffected by the
       // CSS transform we apply below, so they stay "natural" at any scale.
       const naturalW = inner.offsetWidth;
@@ -279,6 +308,7 @@ function PictureSlot({ children }) {
       // the running totals nearest the answer — get clipped (design review).
       const k = Math.min(2.5, Math.min(slotW / naturalW, slotH / naturalH));
       setScale(k);
+      setFitH(Math.ceil(naturalH * k));
     };
     recompute();
     const ro = new ResizeObserver(recompute);
@@ -289,7 +319,7 @@ function PictureSlot({ children }) {
 
   return (
     <div ref={outerRef} style={{
-      width: "100%", height: "100%", minHeight: 0,
+      width: "100%", height: fitH != null ? `${fitH}px` : "100%", maxHeight: maxHeight || "100%", minHeight: 0,
       display: "flex", alignItems: "center", justifyContent: "center",
       overflow: "hidden",
     }}>

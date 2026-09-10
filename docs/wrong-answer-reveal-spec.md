@@ -286,3 +286,129 @@ with a two-line derivation (e.g. `10 tens: 10, 20, … [100]`).
 Main loop: measures card frame values equal the practice card's, input bottom
 ≤ ~410px at 375×667 for a two-line line, no inner scroll at 320×568, screenshots
 in all three modes for Adam.
+
+---
+
+# Phase 1c — tall arrays: orientation rule + fold the line into the picture
+
+Presentation + one small shared-component change. R1–R7, the Pedagogy
+section and the phase 1b typography are unchanged. No logic changes to
+`handleRetrySubmit`, the retry state machine, timings, or the comeback slot.
+
+## Why
+Adam on the 9s in the preview: "The array is small." The picture band is
+height-capped by R2 (the keyboard), and a tall array spends that height on
+one thin column of rows: 9 × 1 renders as nine rows of one dot inside a
+~300×140 slot, and 9 × 9's natural height (~190px, with the 16px label rows)
+is *larger* than the band, so it is scaled *down* to ~0.75×. Two levers,
+both used here:
+
+1. **Orientation rule** — draw the array along the axis we have room in.
+2. **Fold the derivation line into the picture** for the long facts — the
+   running totals already *are* the skip count, so the line is redundant and
+   its ~50px goes back to the band.
+
+Together: 9 × 1 … 9 × 5 become 1–5 rows tall and scale up to the 2.5× cap;
+the square facts (6–9 × 6–9) go from ~0.75× to ~1.0–1.4×. Nothing in this
+format can make 9 × 9 large — 81 dots in a 180px band is the ceiling — say
+so in the report rather than fudging the budget.
+
+## 1. Orientation rule (`DotArray`, `src/modules/multiply.jsx`)
+
+Props stay `rows = a` (groups), `cols = b` (dots per group). Add the rule:
+
+- `layout = cols < rows ? "columns" : "rows"` (ties → rows).
+- **rows layout** (today's): `a` rows of `b` dots; running totals down the
+  right edge (totals branch). Unchanged.
+- **columns layout**: `a` columns side by side, each a vertical stack of `b`
+  dots; running totals **under each column** (`(g + 1) × b`); the last total
+  is the emphasised one (18px / 700 / ink), the others 12px `#888` as today.
+  Picture height is now `min(a, b)` dots.
+
+Meaning is preserved — still "a groups of b" — so the derivation line
+("9 ones: 1, 2, …") and the columns picture agree; each column is one group.
+
+Columns-layout details:
+- Within a group the dot gap is the existing `gap`; **between groups use a
+  wider gap (≈ 8–10px)** so the groups read as groups.
+- Lay the columns on a uniform pitch wide enough for the widest
+  *intermediate* label at 12px Space Mono (`String(a*b).length` ch); centre
+  each column's dots and label in its cell. The emphasised final label may
+  overflow its cell (`overflow: visible`); the container's 8px padding
+  absorbs it. **Verify at 10 × 10 that nothing is clipped** by the
+  container's `overflow: hidden`.
+- `animate`: dots pop in group order (`g * cols + d`), each column's label
+  fades up after its last dot — same delays scheme as the rows branch.
+- **Totals mode uses a fixed `dotSize = 11`, `gap = 4`** regardless of count
+  (the reveal's PictureSlot scales to fit; the dot-count heuristic exists
+  for the 1× card, not for a scaled hero). Non-totals mode keeps the
+  heuristic exactly as is.
+- Apply the orientation rule to **both** branches (totals and non-totals) so
+  the Pictorial card's scaffold and the reveal's picture are the same shape —
+  Jack must not see a nine-tall column on the card and a nine-wide row a
+  second later. Non-totals rows layout stays byte-identical; only the new
+  columns branch is added. (Adam's call, made 2026-09-10: the card follows.)
+- Pictorial caption under the card scaffold (`multiplication-practice.jsx`
+  ~L1171, `"{a} rows × {b} columns"`): when layout is columns, read
+  **`"{a} groups of {b}"`** instead. Rows layout caption unchanged.
+- The Concrete-mode Equal-Groups Builder and Divide's BarModel are untouched.
+
+## 2. Fold the line (the long facts)
+
+Predicate: **`fold = operation !== "divide" && a >= 6`** — the same
+predicate that already selects the taller band (`pictureMax`, ~L1234). It
+tracks the *line* length (a steps → wraps to two lines at a ≥ 6), which is
+what the fold is paying for; it is independent of the picture's orientation.
+
+When `fold`:
+- `line` slot is `null` in stages 0–2 and on `done`. The second-miss line
+  ("Still tricky…", `retry.phase === "missed"`) still renders in the slot.
+- The answer token moves onto the array's **final total**. New `DotArray`
+  prop `finalToken: "numeral" | "blank" | "correct"` (default `"numeral"`,
+  meaningful only with `totals`): `"blank"` renders the final total as the
+  yellow blank chip (same width as the numeral — `${String(a*b).length}ch`
+  at the 18px font — no layout shift), `"correct"` renders it green.
+  Mapping from the practice screen: stage < 2 → `numeral`; stage ≥ 2 and
+  phase `ask` → `blank`; phase `done` → `correct`; phase `missed` →
+  `numeral`.
+- Move `DerivationToken` from `multiplication-practice.jsx` to
+  `src/shared/DerivationToken.jsx` and import it in both files, so the chip
+  is one component in one place. Keep its API (`value`, `state`).
+- Band: `pictureMax = "min(180px, 27dvh)"` for the fold case (was
+  `min(140px, 22dvh)`). Non-fold facts keep the shell default (120 / 20dvh)
+  and their derivation line exactly as today.
+- Shell (`WrongAnswerReveal.jsx`): when `line` **and** `extra` are both null,
+  don't render the line cell at all, so the prompt/input rows shift up and
+  the empty auto track falls to the bottom of the grid (otherwise an empty
+  row still costs a `rowGap`).
+- Timings unchanged: picture (with totals, final total shown as the numeral —
+  that *is* "the answer stated once") at 0 → nothing new at 400ms in the
+  fold case → at ~900ms the final total blanks and the input goes live.
+
+Budget, 375 × 667, fold case (compact shell): card top 16 · padding 16 ·
+header 30 · problem 34 · gap 8 · picture ≤ 180 · gap 8 · prompt 24 · gap 8 ·
+input 64 ≈ **388px** to the input's bottom edge (limit ~400–410). Report the
+measured number.
+
+## Do NOT
+No changes to `handleRetrySubmit`, the retry/comeback state, timings,
+mastery, stats, streak, or achievements (R1). No new dependencies, no
+`Math.random()`, tokens only, black text on colour chips. Don't touch
+`fractions-practice.jsx`, the Concrete builders, or `BarModel`.
+
+## Verify (builder, static)
+`npm --prefix <worktree> run build` green. Report: the layout chosen for
+9×1, 9×5, 5×9, 8×9, 9×8, 9×9, 10×10; natural (unscaled) width × height of
+the totals array for each; the resulting scale in a 300 × 180 slot; the
+budget arithmetic above; confirmation the non-totals rows branch is
+unchanged (diff shows only additions there). Builders don't commit.
+
+## Verify (main loop, preview)
+At 375 × 667 and 320 × 568: 9 × 1 (columns, one row, ≈2.5×), 9 × 9 (fold,
+≥1.0×), 6 × 7 (rows layout, fold), 5 × 9 (rows, no fold, line present),
+9 × 5 (columns, fold), 10 × 10 (no clipping). Re-ask blank sits on the
+final total; correct → green on the final total → next; second miss →
+numeral back + "Still tricky…" line + fill. Divide unchanged. Pictorial card
+shows the same orientation as the reveal, caption reads "groups of" in the
+columns case. R1 sanity via `localStorage.jackflash_data` unchanged from
+phase 1.
