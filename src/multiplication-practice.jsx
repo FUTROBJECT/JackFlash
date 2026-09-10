@@ -9,6 +9,7 @@ import { isContentAccessible } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
 import { computeSelection, tickErrorWindow, markErrorPriority, clearErrorPriority, dedupeFacts } from "./factSelectionPolicy.js";
 import WrongAnswerReveal from "./shared/WrongAnswerReveal.jsx";
+import DerivationToken from "./shared/DerivationToken.jsx";
 
 
 // Register the multiply module on first load
@@ -41,29 +42,10 @@ const HEADER_TAILS = [
 const PLURAL_WORDS = { 1: "ones", 2: "twos", 3: "threes", 4: "fours", 5: "fives", 6: "sixes", 7: "sevens", 8: "eights", 9: "nines", 10: "tens" };
 const SINGULAR_WORDS = { 1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten" };
 
-// The answer token inside the derivation line: a numeral (line just
-// appeared), a yellow blank chip (re-ask open — same width, no layout
-// shift), or green (correct re-answer).
-function DerivationToken({ value, state }) {
-  const width = `${String(value).length}ch`;
-  if (state === "blank") {
-    return (
-      <span style={{
-        display: "inline-block", width, height: "1em",
-        backgroundColor: COLORS.yellow, border: BRUTAL_BORDER_SM, borderRadius: "4px",
-        verticalAlign: "middle",
-      }} />
-    );
-  }
-  return (
-    <span style={{
-      display: "inline-block", width, textAlign: "center",
-      color: state === "correct" ? COLORS.green : COLORS.black,
-    }}>
-      {value}
-    </span>
-  );
-}
+// The answer token inside the derivation line is DerivationToken, moved to
+// src/shared/DerivationToken.jsx (phase 1c "tall arrays") so DotArray's
+// totals branch can reuse the same chip for the array's final total when
+// the line is folded into the picture. Same API (value, state).
 
 // Rule (Pedagogy → Derivation line): state a step he did not already have.
 // Multiply a×b=c: "a bs: b, 2b, …, [c]". Divide c÷b=a: "c in groups of b → [a] groups".
@@ -1172,7 +1154,13 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                 <div style={{ marginTop: "6px", fontSize: "11px", fontFamily: "'Space Mono', monospace", opacity: 0.45, fontWeight: 700 }}>
                   {currentFact.operation === "divide"
                     ? `${currentFact.a} split into groups of ${currentFact.b}`
-                    : `${currentFact.a} rows × ${currentFact.b} columns`}
+                    // DotArray's orientation rule (docs/wrong-answer-reveal-spec.md,
+                    // phase 1c): b < a draws a columns of b dots, so the caption
+                    // must read "groups of" to match what's on screen — the
+                    // rows-layout caption ("rows × columns") is unchanged.
+                    : currentFact.b < currentFact.a
+                      ? `${currentFact.a} groups of ${currentFact.b}`
+                      : `${currentFact.a} rows × ${currentFact.b} columns`}
                 </div>
               )}
               {/* "Show me" (CLAUDE.md: Abstract = symbols + "Show me" fallback) —
@@ -1217,21 +1205,40 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       {/* Wrong-answer reveal (docs/wrong-answer-reveal-spec.md) — replaces the
           old appended incorrect block. Full-screen; no knowledge of facts or
           mastery lives in the shell, all of that is composed here. */}
-      {currentFact && (
+      {currentFact && (() => {
+        // Fold predicate (docs/wrong-answer-reveal-spec.md, phase 1c "tall
+        // arrays"): the same predicate that already selects the taller
+        // picture band — it tracks the derivation line's length (a steps
+        // wraps to two lines at a >= 6), independent of the picture's
+        // orientation (rows vs columns).
+        const fold = currentFact.operation !== "divide" && currentFact.a >= 6;
+        // finalToken (fold case only): the answer token moves off the
+        // (hidden) derivation line and onto the array's final total.
+        // Mapping (spec "Fold the line"): stage < 2 -> numeral; stage >= 2
+        // and phase "ask" -> blank; phase "done" -> correct; phase "missed"
+        // -> numeral. Non-fold facts always show the final total as a plain
+        // numeral — the (unfolded) derivation line carries the blank/correct
+        // token instead.
+        const revealFinalToken = !fold
+          ? "numeral"
+          : retry.phase === "done"
+            ? "correct"
+            : retry.phase === "missed"
+              ? "numeral"
+              : revealStage >= 2
+                ? "blank"
+                : "numeral";
+        return (
         <WrongAnswerReveal
           open={feedback === "incorrect"}
           focusDelayMs={1000}
-          // Tall-array follow-up to phase 1b: a 6+ row DotArray (tables 6-10)
-          // with running totals is ~180px natural and the final total (the
-          // answer) needs to survive scale-to-fit — give it a taller band.
-          // Divide's BarModel is never tall, so it stays on the shell default.
-          // 140 (not 150) — R2 budget arithmetic for the two-line derivation
-          // case at 375×667 lands the retry input's bottom edge at ~410px
-          // with a 150px band (right at the limit, no margin for estimation
-          // error); 140px keeps it at ~400px with real headroom. Same
-          // px-caps-first/dvh-caps-on-short-screens ratio as the shell default
-          // (120px @ 20dvh, 150px @ 25dvh → 140px @ ~22dvh).
-          pictureMax={currentFact.operation !== "divide" && currentFact.a >= 6 ? "min(140px, 22dvh)" : undefined}
+          // Tall-array follow-up to phase 1b (docs/wrong-answer-reveal-spec.md,
+          // phase 1c "Fold the line"): the fold case pays back the derivation
+          // line's ~50px to the picture band, so the array (and its final
+          // total, now carrying the answer token) reads as a hero visual
+          // instead of a thumbnail. Divide's BarModel never folds and stays
+          // on the shell default (120px / 20dvh).
+          pictureMax={fold ? "min(180px, 27dvh)" : undefined}
           header={HEADER_TAILS[hashString(currentFact.factKey) % HEADER_TAILS.length]}
           problem={
             <span>
@@ -1246,22 +1253,26 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
             currentFact.operation === "divide" && DivisionScaffold ? (
               <DivisionScaffold rows={currentFact.a} cols={currentFact.b} opacity={1} animate={mode === "abstract"} />
             ) : MultiplyScaffold ? (
-              <MultiplyScaffold rows={currentFact.a} cols={currentFact.b} opacity={1} animate={mode === "abstract"} totals={true} />
+              <MultiplyScaffold rows={currentFact.a} cols={currentFact.b} opacity={1} animate={mode === "abstract"} totals={true} finalToken={revealFinalToken} />
             ) : null
           }
           line={
             retry.phase === "missed"
               // Second-miss line reads as spoken, not labelled — Space
               // Grotesk override on the shell's Space Mono default (spec
-              // "phase 1b" typography table).
+              // "phase 1b" typography table). Still renders in the fold
+              // case (spec "Fold the line": "the second-miss line ...
+              // still renders in the slot").
               ? (
                 <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(16px, 4.6vw, 18px)", fontWeight: 700, lineHeight: 1.3 }}>
                   Still tricky. Here it is — we'll come back to it.
                 </span>
               )
-              : revealStage >= 1
-                ? buildDerivationLine(currentFact, retry.phase === "done" ? "correct" : revealStage >= 2 ? "blank" : "numeral")
-                : null
+              : fold
+                ? null
+                : revealStage >= 1
+                  ? buildDerivationLine(currentFact, retry.phase === "done" ? "correct" : revealStage >= 2 ? "blank" : "numeral")
+                  : null
           }
           extra={
             currentFact.operation === "divide" && revealStage >= 1 ? (
@@ -1319,7 +1330,8 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
             </div>
           }
         />
-      )}
+        );
+      })()}
 
       {/* Legal/copyright moved to Parent Zone Settings */}
       {achievementQueue.length > 0 && (
