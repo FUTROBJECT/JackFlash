@@ -195,7 +195,14 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   const [pickedMode, setPickedMode] = useState(() => getPreferredMode(profileId, moduleId) || "pictorial");
   const lockedMode = getProfile(profileId)?.settings?.lockedMode || null;
   const mode = lockedMode || pickedMode;
-  const [operation, setOperation] = useState(mod?.defaultOperation || "mixed");
+  // Parent Zone "Lock Operation" (settings.lockedOperation: "multiply" |
+  // "divide" | null). Derived, not state — nothing in this screen changes
+  // it; the parent does, and the screen remounts per profile. Unknown ids
+  // (a stale setting from another module) fall back to the module default.
+  const lockedOperation = getProfile(profileId)?.settings?.lockedOperation || null;
+  const operation = lockedOperation && (mod?.operations || []).some((o) => o.id === lockedOperation)
+    ? lockedOperation
+    : (mod?.defaultOperation || "mixed");
   // Per-group operation tab in the progress grid ({ [groupId]: "multiply" | "divide" }).
   const [groupOp, setGroupOp] = useState({});
   const [currentFact, setCurrentFact] = useState(null);
