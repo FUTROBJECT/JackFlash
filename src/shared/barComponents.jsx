@@ -4,8 +4,10 @@
  * Extracted here so multiply, fractions, connections, and add modules can all
  * import without copying code (per NOTES-next-modules.md rule).
  *
- * Canonical original:  src/modules/fractions.jsx  (visual components)
- *                      src/multiplication-practice.jsx (NumberBond, MasteryDots)
+ * This is the ONLY copy of FractionDisplay / FractionBar / TwoStackedBars
+ * (and gcd / simplify): src/modules/fractions.jsx imports and re-exports
+ * them from here. NumberBond and MasteryDots originated in
+ * src/multiplication-practice.jsx.
  *
  * Add & Subtract additions (fourth consumer):
  *   TenFrame          — interactive two-row ten-frame for M-group CPA
