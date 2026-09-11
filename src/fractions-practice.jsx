@@ -101,7 +101,7 @@ function FractionInputFields({ numVal, denVal, onNumChange, onDenChange, onSubmi
       gap: 2,
     }}>
       <input
-        type="number" value={numVal} placeholder="?"
+        type="number" inputMode="numeric" value={numVal} placeholder="?"
         disabled={disabled}
         onChange={e => onNumChange(e.target.value)}
         onKeyDown={e => { if (e.key === "Enter") onSubmit(); }}
@@ -109,7 +109,7 @@ function FractionInputFields({ numVal, denVal, onNumChange, onDenChange, onSubmi
       />
       <div style={{ width: 96, height: 4, backgroundColor: COLORS.black, borderRadius: 2 }} />
       <input
-        type="number" value={denVal} placeholder="?"
+        type="number" inputMode="numeric" value={denVal} placeholder="?"
         disabled={disabled}
         onChange={e => onDenChange(e.target.value)}
         onKeyDown={e => { if (e.key === "Enter") onSubmit(); }}
@@ -1446,6 +1446,7 @@ export default function FractionsPractice({
                           <input
                             ref={inputRef}
                             type="number"
+                            inputMode="numeric"
                             value={userAnswer}
                             placeholder="?"
                             disabled={!!feedback}
