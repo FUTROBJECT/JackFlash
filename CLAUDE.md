@@ -92,16 +92,29 @@ submission). Read it before any store-facing work. Key state:
 
 - **Launch shape:** Multiply (free) + Fractions ($3.99, Foundations free). Bundle
   and the other modules stay off until they ship.
-- **Web is ready; native is not.** Capacitor deps + `capacitor.config.json` are
-  in, but `ios/`/`android/` aren't generated (needs Xcode/CocoaPods/Android
-  Studio — absent on the build machine as of this writing).
-- **IAP is scaffolded, not live.** RevenueCat keys are `…__TODO`; create
-  `module.fractions.full` in both stores + a RevenueCat `fractions` entitlement.
+- **Web and iOS are ready; Android is not.** Xcode 26 + CocoaPods are on the
+  build machine and `ios/` is generated and tracked (Capacitor 8, SPM plugins;
+  Xcode team `9BA8CS8TP8`, automatic signing). `android/` is not generated.
+  `ios/App/App/public` is gitignored — it holds whatever was last synced, so
+  **committing to `main` never updates the phone.**
+- **Phone test build** (Adam's iPhone 16 is usually connected; find its UDID
+  with `xcrun devicectl list devices`). Run from the primary checkout, where
+  `ios/` lives:
+  `npm run cap:sync` → `xcodebuild -project ios/App/App.xcodeproj -scheme App
+  -configuration Debug -destination id=<UDID> -allowProvisioningUpdates build`
+  → `xcrun devicectl device install app --device <UDID> <…/Debug-iphoneos/App.app>`
+  → `xcrun devicectl device process launch --device <UDID>
+  com.laserlabstudio.jackflash`. Installs in place; profiles/progress survive.
+- **IAP is scaffolded, not live.** The iOS RevenueCat key is set; the Android
+  key is `…__TODO`. Still needed: `module.fractions.full` in both stores
+  attached to the RevenueCat `fractions` entitlement, then a sandbox test.
 - **Store URLs:** `public/privacy.html` + `public/support.html` → live at the
   gh-pages URLs after `npm run deploy`. Contact = Laser Lab Studios /
   adamlaserlab@gmail.com (confirm before submitting).
-- **Icons/splash:** source assets ready in `assets/` — `npx capacitor-assets
-  generate` after platforms exist. See `assets/README.md`.
+- **Icons/splash:** generated into `ios/App/App/Assets.xcassets` from the
+  sources in `assets/` (`npx capacitor-assets generate`; re-run after
+  `android/` exists). The Xcode build's "Splash has 3 unassigned children"
+  warning is harmless. See `assets/README.md`.
 
 ## Vocabulary
 
