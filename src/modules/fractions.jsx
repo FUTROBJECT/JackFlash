@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { COLORS, BRUTAL_SHADOW_SM, BRUTAL_BORDER_SM, BRUTAL_BORDER } from "../constants.js";
+import DerivationToken from "../shared/DerivationToken.jsx";
 
 // ---------------------------------------------------------------------------
 // Utility helpers
@@ -66,14 +67,32 @@ export function FractionDisplay({ n, d, size = "normal", color = COLORS.black, h
  * interactive=true: segments are tappable (toggle shading).
  * shadedCount / onShadedChange: controlled externally when interactive.
  */
+// Phase-2 additions (docs/wrong-answer-reveal-spec.md, "Phase 2 — Fractions",
+// Part 1 item 1 — this is the copy actually imported by fractions-practice.jsx,
+// so the reveal's leak fixes and pictures depend on these, not on the
+// same-named component in src/shared/barComponents.jsx which was updated in
+// parallel for its own consumers, add/connections). All opt-in/default-off:
+//   counts     — number every segment (1…n ink COLORS.black 700 on shaded,
+//                n+1…d #888 400 on unshaded), 12px at 36px segments / 11px at
+//                `compact` 24px segments, centred.
+//   groupEvery — integer k: left edge of every k-th segment (0-based index a
+//                positive multiple of k) gets a 3px ink divider; other
+//                borders stay 2px.
+//   finalToken — "numeral"|"blank"|"correct", meaningful only with `counts`:
+//                the LAST shaded segment's number renders through the shared
+//                DerivationToken (the reveal's blank-chip re-ask token).
+// `label` may also be a node — already worked (renders as children); noted
+// for the record, no code change needed for that half of item 1.
 export function FractionBar({
   n, d, color = COLORS.purple, opacity = 1, animate = false,
   interactive = false, shadedCount = null, onShadedChange = null,
   label = null, compact = false,
+  counts = false, groupEvery = null, finalToken = null,
 }) {
   const segH = interactive ? 60 : (compact ? 24 : 36);
   const controlled = shadedCount !== null;
   const shaded = controlled ? shadedCount : n;
+  const countFont = compact ? 11 : 12;
 
   return (
     <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: interactive ? "none" : 340 }}>
@@ -86,6 +105,28 @@ export function FractionBar({
       <div style={{ display: "flex", gap: 3 }}>
         {Array.from({ length: d }).map((_, i) => {
           const isShaded = i < shaded;
+          const isLastShaded = counts && finalToken && isShaded && i === shaded - 1;
+          const heavyLeft = groupEvery && i > 0 && i % groupEvery === 0;
+          const segStyle = {
+            flex: 1,
+            height: segH,
+            backgroundColor: isShaded ? color : "#F0F0F0",
+            border: `2px solid ${COLORS.black}`,
+            borderRadius: 4,
+            cursor: interactive ? "pointer" : "default",
+            transition: "background-color 0.15s ease",
+            animation: animate && isShaded ? `dotPop 0.25s ease ${i * 40}ms both` : "none",
+          };
+          if (heavyLeft) segStyle.borderLeft = `3px solid ${COLORS.black}`;
+          if (counts) {
+            segStyle.display = "flex";
+            segStyle.alignItems = "center";
+            segStyle.justifyContent = "center";
+            segStyle.fontFamily = "'Space Mono', monospace";
+            segStyle.fontSize = countFont;
+            segStyle.fontWeight = isShaded ? 700 : 400;
+            segStyle.color = isShaded ? COLORS.black : "#888";
+          }
           return (
             <div
               key={i}
@@ -94,17 +135,10 @@ export function FractionBar({
                 const newCount = (shaded === i + 1) ? 0 : i + 1;
                 onShadedChange(newCount);
               } : undefined}
-              style={{
-                flex: 1,
-                height: segH,
-                backgroundColor: isShaded ? color : "#F0F0F0",
-                border: `2px solid ${COLORS.black}`,
-                borderRadius: 4,
-                cursor: interactive ? "pointer" : "default",
-                transition: "background-color 0.15s ease",
-                animation: animate && isShaded ? `dotPop 0.25s ease ${i * 40}ms both` : "none",
-              }}
-            />
+              style={segStyle}
+            >
+              {counts ? (isLastShaded ? <span style={{ fontSize: 18, fontWeight: 700, lineHeight: 1 }}><DerivationToken value={i + 1} state={finalToken} /></span> : i + 1) : null}
+            </div>
           );
         })}
       </div>
@@ -121,12 +155,25 @@ export function FractionBar({
  * top: { n, d, label? }   bottom: { n, d, color?, label? }
  * Optionally interactive on the bottom bar (split stepper).
  */
-export function TwoStackedBars({ top, bottom, animate = false, opacity = 1 }) {
+// Phase-2 additions (Part 1 item 3): counts/groupEvery/finalToken pass
+// through per-bar via the same spec object (`top.counts`, `top.groupEvery`,
+// `top.finalToken`, etc.); optional `third` bar (C2's three-fraction order
+// picture) renders under the same 8px gap. `label` as a node already worked.
+export function TwoStackedBars({ top, bottom, third = null, animate = false, opacity = 1 }) {
   return (
     <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: 340 }}>
-      <FractionBar n={top.n} d={top.d} color={COLORS.purple} label={top.label} animate={animate} />
+      <FractionBar n={top.n} d={top.d} color={top.color || COLORS.purple} label={top.label} animate={animate}
+        counts={top.counts} groupEvery={top.groupEvery} finalToken={top.finalToken} />
       <div style={{ height: 8 }} />
-      <FractionBar n={bottom.n} d={bottom.d} color={bottom.color || COLORS.blue} label={bottom.label} animate={animate} />
+      <FractionBar n={bottom.n} d={bottom.d} color={bottom.color || COLORS.blue} label={bottom.label} animate={animate}
+        counts={bottom.counts} groupEvery={bottom.groupEvery} finalToken={bottom.finalToken} />
+      {third && (
+        <>
+          <div style={{ height: 8 }} />
+          <FractionBar n={third.n} d={third.d} color={third.color || COLORS.green} label={third.label} animate={animate}
+            counts={third.counts} groupEvery={third.groupEvery} finalToken={third.finalToken} />
+        </>
+      )}
     </div>
   );
 }
@@ -136,33 +183,82 @@ export function TwoStackedBars({ top, bottom, animate = false, opacity = 1 }) {
  * a = { n, d }  b = { n, d }  result = { n, d }
  * For related fractions, shows the conversion step.
  */
-export function AddBarsScaffold({ a, b, result, isSubtract = false, opacity = 1, animate = false }) {
+// Phase-2 additions (Part 1 item 5), all opt-in/default-off:
+//   compact     — 24px segments (three bars must fit the reveal's 120px band).
+//   counts      — numbers every segment on the addend AND result bars.
+//   resultLabel — "value" (default, today's behaviour, but the caption is
+//                 now a stacked `<FractionDisplay>` node, not an inline
+//                 "n/d" string) | "question" (an EMPTY outline result bar —
+//                 shadedCount 0, so nothing is shaded pre-answer — with a
+//                 "?" caption) | "none" (shaded normally, no caption at all
+//                 — the reveal's own picture, which draws the result with
+//                 `counts` instead).
+//   groupEvery  — the A3/A4 "renamed coarse" addend: whichever of a/b isn't
+//                 already at the lcd gets redrawn in lcd parts (its
+//                 converted n/d) with a heavier divider (`groupEvery`)
+//                 marking its original cuts, via FractionBar's own
+//                 `groupEvery`. Auto-detected from the existing lcd/aConv/
+//                 bConv computation below — the caller only says "how many"
+//                 (the same mult factor already used for the conversion
+//                 arrow), not "which side".
+export function AddBarsScaffold({
+  a, b, result, isSubtract = false, opacity = 1, animate = false,
+  compact = false, counts = false, resultLabel = "value", groupEvery = null,
+}) {
   // For related fractions: find a common denominator
   const lcd = (a.d * b.d) / gcd(a.d, b.d);
   const aConv = { n: a.n * (lcd / a.d), d: lcd };
   const bConv = { n: b.n * (lcd / b.d), d: lcd };
   const isRelated = a.d !== b.d;
+  const aIsCoarse = !!groupEvery && isRelated && a.d !== lcd;
+  const bIsCoarse = !!groupEvery && isRelated && b.d !== lcd;
+  const aDraw = aIsCoarse ? aConv : a;
+  const bDraw = bIsCoarse ? bConv : b;
+
+  const convLabel = (orig, conv) => (
+    orig.d === conv.d
+      ? <FractionDisplay n={orig.n} d={orig.d} size="small" />
+      : (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <FractionDisplay n={orig.n} d={orig.d} size="small" />
+          <span>→</span>
+          <FractionDisplay n={conv.n} d={conv.d} size="small" />
+        </span>
+      )
+  );
+  const aLabel = isRelated ? convLabel(a, aConv) : <FractionDisplay n={a.n} d={a.d} size="small" />;
+  const bLabel = isRelated ? convLabel(b, bConv) : <FractionDisplay n={b.n} d={b.d} size="small" />;
+
+  const resultShaded = resultLabel === "question" ? 0 : result.n;
+  const resultCaption = resultLabel === "value"
+    ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>= <FractionDisplay n={result.n} d={result.d} size="small" /></span>
+    : resultLabel === "question"
+      ? "?"
+      : null;
 
   return (
     <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: 340 }}>
       <FractionBar
-        n={a.n} d={a.d} color={COLORS.purple}
-        label={isRelated && a.d !== lcd ? `${a.n}/${a.d} → ${aConv.n}/${aConv.d}` : `${a.n}/${a.d}`}
-        animate={animate}
+        n={aDraw.n} d={aDraw.d} color={COLORS.purple}
+        label={aLabel}
+        animate={animate} compact={compact} counts={counts}
+        groupEvery={aIsCoarse ? groupEvery : null}
       />
       <div style={{ height: 6 }} />
       {!isSubtract && (
         <FractionBar
-          n={b.n} d={b.d} color={COLORS.blue}
-          label={isRelated && b.d !== lcd ? `${b.n}/${b.d} → ${bConv.n}/${bConv.d}` : `${b.n}/${b.d}`}
-          animate={animate}
+          n={bDraw.n} d={bDraw.d} color={COLORS.blue}
+          label={bLabel}
+          animate={animate} compact={compact} counts={counts}
+          groupEvery={bIsCoarse ? groupEvery : null}
         />
       )}
       {isSubtract && (
         <FractionBar
-          n={b.n} d={b.d} color={COLORS.orange}
-          label={isRelated && b.d !== lcd ? `${b.n}/${b.d} → ${bConv.n}/${bConv.d}` : `${b.n}/${b.d}`}
-          animate={animate}
+          n={bDraw.n} d={bDraw.d} color={COLORS.orange}
+          label={bLabel}
+          animate={animate} compact={compact} counts={counts}
+          groupEvery={bIsCoarse ? groupEvery : null}
         />
       )}
       <div style={{ height: 4, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -170,8 +266,9 @@ export function AddBarsScaffold({ a, b, result, isSubtract = false, opacity = 1,
       </div>
       <FractionBar
         n={result.n} d={result.d} color={COLORS.green}
-        label={`= ${result.n}/${result.d}`}
-        animate={animate}
+        label={resultCaption}
+        shadedCount={resultShaded}
+        animate={animate} compact={compact} counts={counts}
       />
     </div>
   );
@@ -184,7 +281,10 @@ export function AddBarsScaffold({ a, b, result, isSubtract = false, opacity = 1,
 // `showValue` prints the fraction above the marker. It defaults to OFF because
 // E4 asks "What fraction is marked?" — printing it in the question would answer
 // it. Callers turn it on once the child has answered (or when teaching).
-export function NumberLineScaffold({ n, d, opacity = 1, animate = false, showValue = false }) {
+// `stepLabels` (Part 1 item 4, opt-in/default off): numbers every tick
+// i=0…d beneath the line in Space Mono 11 #888; the existing 0 and 1 labels
+// (i=0 and i=d) stay in their own ink styling, untouched.
+export function NumberLineScaffold({ n, d, opacity = 1, animate = false, showValue = false, stepLabels = false }) {
   const W = 300, H = 60, padL = 18, padR = 18;
   const lineW = W - padL - padR;
   const tickH = 10, lineY = 38;
@@ -208,6 +308,19 @@ export function NumberLineScaffold({ n, d, opacity = 1, animate = false, showVal
           return (
             <line key={i} x1={x} y1={lineY - tickH / 2} x2={x} y2={lineY + tickH / 2}
               stroke={COLORS.black} strokeWidth={2} />
+          );
+        })}
+        {/* Step labels (E4 reveal picture): every INTERNAL tick i=1…d-1
+            numbered beneath the line, small and grey — 0 and 1 (i=0, i=d)
+            already have their own ink labels above and are left alone. */}
+        {stepLabels && Array.from({ length: Math.max(0, d - 1) }).map((_, idx) => {
+          const i = idx + 1;
+          const x = padL + (i / d) * lineW;
+          return (
+            <text key={`step-${i}`} x={x} y={lineY + 18} textAnchor="middle"
+              fontFamily="'Space Mono', monospace" fontSize={11} fontWeight={400} fill="#888">
+              {i}
+            </text>
           );
         })}
         {/* Marker dot */}

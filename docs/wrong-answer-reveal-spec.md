@@ -412,3 +412,268 @@ numeral back + "Still tricky…" line + fill. Divide unchanged. Pictorial card
 shows the same orientation as the reveal, caption reads "groups of" in the
 columns case. R1 sanity via `localStorage.jackflash_data` unchanged from
 phase 1.
+
+---
+
+# Phase 2 — Fractions
+
+The same reveal, same shell, same rules (R1–R7), same timings (picture 0 →
+line 400ms → re-ask ~900ms → focus ~1000ms), same header rotation, same
+retry/comeback state machine as `multiplication-practice.jsx`. This section
+is the fractions contract: per-skill lines and pictures (curriculum pass,
+2026-09-11, decided), the re-ask per answerType, the pre-reveal leaks that
+must be fixed in the same pass, and the architecture. Build it in two
+parts, in order; each part builds green on its own.
+
+## Governing rulings
+
+- **One carrier per item.** The picture is countable (parts numbered); the
+  derivation line holds the single `[token]`. Exactly one place states the
+  answer. The phase-1c fold (no line, token on the picture) fires for **F2
+  only** — the only fraction skill whose answer is a single count.
+- **Fractions never appear inline** ("3/4") in child-facing text. The line
+  is a segment array: `text` runs, `frac` slots (`<FractionDisplay
+  size="small">`, inline-flex, `verticalAlign: middle`), and one `token`.
+- **Denominators are ordinal words**, singular when the count is 1: half /
+  halves, thirds, fourths (never "quarters"), fifths, sixths, sevenths,
+  eighths, ninths, tenths, elevenths, twelfths.
+- **Only `fractionInput` and `singleNumber` open a keyboard.** With
+  `inputMode="numeric"` the iOS pad is ~216px and (as of 2026-09-11) has no
+  accessory bar, so the usable height at 375×667 is ~450px — but the iOS
+  number pad has **no Return key**, so a Check button is mandatory on the
+  typed re-asks. Budgets:
+
+| answerType | picture cap (`pictureMax`) | notes |
+|---|---|---|
+| `choice4`, `tapTwo`, `tapTwoOrEqual`, `orderThree`, `buildBar` | `min(220px, 34dvh)` | no keyboard; the shell must **not** autofocus anything; no Enter handling |
+| `singleNumber` (E2) | `min(150px, 24dvh)` | as multiply: input 64 + full-width Check 48, input bottom ≤ ~400 |
+| `fractionInput` (E3, A1–A4) | `min(120px, 19dvh)` | **input row = stacked fraction boxes + Check side by side** (row ≈ 96px, Check `minHeight 48`, `flex:1`); target: Check's bottom edge ≤ ~430 |
+
+- The reveal's `problem` slot renders fractions at `size="normal"` (never
+  `hero`) and the operator in the module colour, e.g. `[1/4] + [2/4]`,
+  `Simplify [6/8]`, `[1/2] = [?/4]`, "What fraction is shaded?" for F1,
+  "Which is greater?" for F3/F4/C1, "Order them" for C2, "Shade [3/4]" for F2.
+
+## Per-skill contract
+
+`[…]` is the token. `{frac n/d}` is a stacked slot in the line.
+
+**Foundations**
+
+| Skill | Line | Token | Picture (reveal) |
+|---|---|---|---|
+| F1 `choice4` | `4 equal parts in all, 3 shaded → [3/4]` | stacked n/d | the item's own `FractionBar` or `CircleFraction` (the question's visual, brought forward — `ScaffoldForItem` returns null for F1, so the reveal renders it itself) with `counts`: shaded parts numbered 1…n in ink on the fill, unshaded n+1…d in `#888` |
+| F2 `buildBar` | **none — folded** | the picture's final shaded numeral (`finalToken`) | correctly-shaded `FractionBar` with `counts` and `finalToken` (numeral → blank at re-ask → green on correct → numeral on second miss) |
+| F3 `tapTwo` | `More parts, smaller pieces → [1/3]` | stacked winner | `TwoStackedBars`, equal length, labels **stacked** (`FractionDisplay`), no counts |
+| F4 `tapTwo` | `Same-size pieces — 5 is more than 3 → [5/8]` | stacked winner | `TwoStackedBars` with `counts` on both bars |
+
+**Equivalent**
+
+| Skill | Line | Token | Picture (reveal) |
+|---|---|---|---|
+| E1 `choice4` | `Cut every part into 2 → [2/4]` (2 = `item.mult`) | stacked target | `TwoStackedBars`: top = base; bottom = target with `groupEvery={mult}` (heavier divider every `mult` parts = the base's cuts) and `counts`; bottom **label suppressed** |
+| E2 `singleNumber` | numerator blank: `2 parts became 8, so 1 shaded becomes [4]` · denominator blank: `1 shaded became 2, so 2 parts become [4]` | numeral | as E1 |
+| E3 `fractionInput` | `Join the parts in 2s → [3/4]` (2 = `d / sd`) | stacked simplest form, **one chip covering both numbers** | `TwoStackedBars`: top = n/d with `counts` and `groupEvery={d/sd}`; bottom = sd parts with `counts`; bottom label suppressed |
+| E4 `choice4` | `4 steps make 1 whole; the dot is on 3 → [3/4]` | stacked n/d | `NumberLineScaffold` with `showValue={false}` and new `stepLabels` (every tick numbered 0…d beneath the line; 0 and 1 keep their labels) |
+
+**Compare & Order**
+
+| Skill | Line | Token | Picture (reveal) |
+|---|---|---|---|
+| C1 `tapTwoOrEqual` | unequal: `Both in fourths: 2 vs 3 → [3/4]` · equal: `Both in fourths: 2 vs 2 → [the same]` | stacked winner, or a word chip `the same` | `TwoStackedBars`, the coarser bar with `groupEvery` at its own cuts and faint lcd sub-cuts (i.e. render it as lcd parts with `groupEvery = lcd / d_coarse`), `counts` on both in lcd units |
+| C2 `orderThree` | `allUnit = fracs.every(f => f.n === 1)`. allUnit: `More parts, smaller pieces → smallest is [1/6]` · else: `All in eighths: 4, 6, 5 → smallest is [1/2]` (counts in **tile order**) | stacked smallest | **three** equal-length stacked bars in tile order, each labelled stacked; `counts` in lcd units on the non-unit branch only. Requires fixing B-1. Every shipped triple is `asc` — assert it, and if `direction === "desc"` ever appears use "greatest" wording |
+
+**Add & Subtract** (all `fractionInput`, token = stacked answer, one chip)
+
+| Skill | Line |
+|---|---|
+| A1 | `1 fourth and 2 fourths make [3/4]` · **override** when the entered denominator equals `a.d + b.d`: `Fourths plus fourths are still fourths → [3/4]` |
+| A2 | ordinary: `5 sixths take away 3 leaves [2/6]` · `showAsWhole`: `1 whole is 8 eighths; take 3 → [5/8]` |
+| A3 | `1 half is 2 fourths → 2 and 1 make [3/4]` · same override as A1 |
+| A4 | `1 half is 2 fourths → 3 take 2 leaves [1/4]` (the renamed one is `b`, the coarse fraction) |
+
+Picture for A1–A4: `AddBarsScaffold` **compact** (24px segments; three bars
+must fit the 120px band): addend bars with `counts`; result bar shaded with
+`counts` and **no `= n/d` caption**; A3/A4's coarse bar rendered in lcd
+parts with `groupEvery` at its original cuts. Second addend line wraps to
+two lines at 375 for the A2 whole case — allowed (≤ 2 lines).
+
+## Re-ask and second miss, per answerType
+
+Inside the reveal there is **no red and no shake** (R4): the wrong state is a
+dim. The card's own first-answer feedback outside the reveal is untouched.
+
+| answerType | blanked / disabled at re-ask | the child does | second-miss fill |
+|---|---|---|---|
+| `choice4` | line token; his wrong pick greyed `#EEE` @ 0.45 + disabled; **same four positions, no reshuffle** (reuse the `useShuffledChoices` value) | taps one of the other three | correct chip `COLORS.yellow` + ink border, all disabled, wrong stays grey |
+| `tapTwo` / `tapTwoOrEqual` | line token only — **both cards (and "They're equal") stay live and undimmed** (with two options, dimming the wrong one leaves nothing to read) | re-taps; prompt is specialised: **"Look at the bars. Tap the longer one."** (C1 equal items: "Look at the bars. Tap your answer.") | correct option yellow, others 0.45, all disabled |
+| `orderThree` | line token; tiles reset to white, un-numbered, same positions, all live | **one tap**; prompt **"Tap the smallest."** (`desc` → "Tap the greatest."); a correct first tap ends the re-ask | smallest tile yellow with a "1" badge, others 0.45, all disabled |
+| `fractionInput` | line token (one chip over both numbers); **both boxes emptied**, numerator focused after the delay | types both numbers, Check; `evaluateAnswer` unchanged (canonical, `altAnswer`, or any equivalent) | both boxes filled with the **canonical** `correctAnswer` (never `altAnswer`) on yellow, disabled |
+| `singleNumber` | line token; box emptied and focused | types the number, Check | box filled on yellow, disabled |
+| `buildBar` (concrete) | picture's `finalToken` → blank chip; the **input bar resets to 0 shaded**, live | counts the shaded parts in the picture, re-shades, Check | input bar auto-shades to n (existing 40ms stagger), yellow frame, disabled; picture numeral returns |
+| `buildBar` (pictorial/abstract) | picture's `finalToken` → blank; the wrong number button greyed + disabled, no reshuffle | taps one of the rest | correct button yellow, all disabled |
+
+Prompt everywhere else: "Now you — use the picture." Second-miss line
+unchanged: "Still tricky. Here it is — we'll come back to it." (for F2 the
+line slot appears for this message only, as in phase 1c).
+
+## Part 1 — shared components and the pre-reveal leaks (build first)
+
+All new props are **opt-in, default off**; with defaults the rendered markup
+of every shipped scaffold is unchanged (the `DotArray totals` precedent).
+
+1. **`FractionBar`** (`src/shared/barComponents.jsx`): add `counts`
+   (numbers each segment: 1…n ink `COLORS.black` 700 on shaded, n+1…d `#888`
+   400 on unshaded; Space Mono; `fontSize` 12 at 36px segments, 11 at
+   compact 24px; centred), `groupEvery` (integer k: the left edge of every
+   k-th segment gets a 3px ink divider so groups read as the original cuts;
+   segment borders stay 2px), and `finalToken` (`"numeral"|"blank"|"correct"`,
+   only with `counts`: the last **shaded** segment's number is rendered
+   through `DerivationToken`). The bar's `label` prop may now also be a React
+   node (a `<FractionDisplay>`), not just a string.
+2. **`CircleFraction`** (`fractions-practice.jsx`): add `counts` (slice
+   numbers at the slice centroid, same colours as the bar).
+3. **`TwoStackedBars`**: `top`/`bottom` accept `label` as a node, and pass
+   through `counts`, `groupEvery`, `finalToken`. Add optional `third` (a
+   third bar, for C2), rendered under the same 8px gap.
+4. **`NumberLineScaffold`** (`src/modules/fractions.jsx`): add `stepLabels`
+   (every tick i=0…d labelled beneath the line in Space Mono 11 `#888`; the
+   existing 0 and 1 labels stay in ink). `showValue` unchanged.
+5. **`AddBarsScaffold`**: add `compact` (24px segments), `counts`
+   (addends + result), `resultLabel` (`"value"` today's `= n/d` — but
+   rendered stacked via `FractionDisplay`, not a string — | `"question"` →
+   an empty outline result bar with a "?" label | `"none"`), `groupEvery`
+   for the renamed coarse bar (render it in lcd parts with the heavier
+   divider at its original cuts). Default `resultLabel="value"`.
+6. **`DerivationToken`** (`src/shared/DerivationToken.jsx`): accept
+   `children` (a stacked `FractionDisplay` or a word) as the token content.
+   Blank-chip width rule: when `state === "blank"` render the real content
+   inside the chip with `visibility: hidden` so the chip's width and height
+   are exact and nothing shifts (the `ch` trick only works for numerals —
+   keep it for the numeral-only case). Keep the 1.25em floor.
+7. **New `src/shared/DerivationLine.jsx`**: renders a segment array
+   `[{t:"text", v}, {t:"frac", n, d}, {t:"token", state, children | value}]`
+   in the phase-1b line style (Space Mono 700, `clamp(16px, 4.8vw, 19px)`,
+   `lineHeight 1.45`, centred, ≤ 2 lines). Frac slots are `size="small"`.
+8. **Pre-reveal leaks — fix now** (memory: scaffolds must not pre-reveal):
+   - `ScaffoldForItem` A1–A4: pass `resultLabel="question"` (empty outline
+     + "?") when `!feedback`; `"none"` inside the reveal (the reveal draws
+     the shaded result with counts). The `= n/d` caption never appears
+     pre-answer again.
+   - `ScaffoldForItem` E2/E3: the bottom bar keeps its shaded length (the
+     concept) but its label is dropped pre-answer (it printed the missing
+     number / the simplified answer).
+   - `ScaffoldForItem` C2 (B-1): draw **all three** bars (`third`), in tile
+     order — today the third fraction is never drawn.
+   - E4's `NumberLineScaffold` in `QuestionDisplay`: `showValue` stays off
+     during the reveal (the reveal owns the answer); keep it off entirely
+     — the reveal shows the token, and the inline `{n}/{d}` text violated
+     the stacked rule anyway.
+   - Every bar label in `ScaffoldForItem` and `AddBarsScaffold` that is an
+     inline `"n/d"` string becomes a `<FractionDisplay size="small">` node.
+9. **`WrongAnswerReveal`** (`src/shared/WrongAnswerReveal.jsx`): add
+   `fit="scale"|"width"` on the picture slot (default `"scale"`, multiply's
+   behaviour). `"width"`: the inner box is `width: 100%` (bars are
+   width-driven — as an inline block they'd collapse), no upscale; if the
+   natural height exceeds the cap, scale down by height only. Add
+   `autoFocus` (default `true`); when `false` the focus poll doesn't run and
+   Enter is not intercepted (tap-only re-asks). Everything else unchanged.
+
+## Part 2 — the practice screen (`src/fractions-practice.jsx`)
+
+Mirror multiply's integration exactly: `retry { phase: idle|ask|done|missed,
+value }` (value is `{ n, d }` for `fractionInput`, a string for
+`singleNumber`, a count for concrete `buildBar`, the picked value for taps),
+`missCount`, `revealStage` (0/1/2 timers keyed on `retry.phase === "ask"`),
+`comebackQueueRef` (offset `3 + hashString(itemKey) % 3`; queued keys
+excluded from the weighted pool; drop a pending comeback if `focusSkill` or
+`activeGroups` changes; a served comeback bypasses `shouldAllowSkill` — it
+was already served once).
+
+- `handleAnswer` incorrect branch: keep everything it does today (that is
+  the one logged record) and add `setRetry({ phase: "ask", value: <empty> })`,
+  `setMissCount(n => n + 1)`, `setOrderSubmitted(false)` / `setPickedChoice(null)`
+  are **not** reset (the card keeps its first-answer state; the reveal keeps
+  its own picked state).
+- `handleRetrySubmit` — with the **R1 paragraph as a comment above it** —
+  evaluates via the same `evaluateAnswer(currentItem, payload)`; correct →
+  `done`, green beat, `setTimeout(pickNewItem, 900)`; wrong → `missed`,
+  fill per the table, `setTimeout(pickNewItem, 2500)`, Enter/Tap advances
+  immediately, queue the comeback. **Nothing in it calls `updateMastery`,
+  `recordAnswerInSession`, `checkAfterAnswer`, the streak-milestone block,
+  `updateStreak`, or touches `sessionStats` / `streak`.**
+- `handleKeyDown`: remove the `feedback === "incorrect"` → `pickNewItem`
+  branch; the reveal owns Enter while open.
+- Remove from the card: the "It's [answer]" feedback line for the incorrect
+  case, `WrongAnswerHelpers` (delete the component: the `because` texts,
+  `FractionFamilyStrip` hint and `FractionPartWholeBond` bond leave the
+  wrong-answer path entirely — the strip and bond components stay for the
+  "Show me" path, unchanged), and the "Next →" button for `feedback ===
+  "incorrect"` (the orderThree "Next →" for a submitted-but-unanswered
+  state goes too: a submitted order is either correct or opens the reveal).
+- `<WrongAnswerReveal open={feedback === "incorrect"} pictureMax={…by
+  answerType} fit="width" autoFocus={typed} focusDelayMs={1000} …>` with
+  the slots per the contract; `line` built by a `buildFractionLine(item,
+  tokenState, retryValue)` that returns a segment array (the A1/A3
+  denominator override reads the **first-submit** `userDen`). `picture`
+  mounts with `animate={mode === "abstract"}`.
+- Re-ask components: give `Choice4Grid`, `TapTwoCards`, `OrderThreeTiles`
+  and the non-concrete buildBar buttons an opt-in `reveal` prop
+  `{ wrong: value|null, fill: value|null, singleTap?: boolean }`: `wrong`
+  → that option grey `#EEE` @0.45 + disabled; `fill` → that option yellow +
+  ink border, all disabled, others 0.45; no red, no shake, `animation:
+  "none"`; `singleTap` (orderThree) → one tap submits. With the prop
+  absent the components are byte-identical. Typed re-asks reuse
+  `FractionInputFields` (boxes at `fontSize 32`, width 90, so the row is
+  ≈ 96px) and the multiply retry input style for `singleNumber`.
+- Coerce `item.correctAnswer` to a string before any `.split("/")` —
+  `buildBar` stores a number (a shipped crash).
+- The correct-feedback strings: replace `Math.random()` in render with
+  `sessionStats.total % 5` (as multiply did).
+
+## Do NOT
+No changes to `evaluateAnswer`, `pickNewItem`'s weights, mastery, stats,
+streaks, achievements, `multiplication-practice.jsx`, `DotArray`. No
+dependencies, no `Math.random()` in render, tokens only, black text on
+colour chips, touch targets ≥ 44px, number inputs `WebkitAppearance:
+"none"` + `inputMode="numeric"`. Builders don't commit.
+
+## Verify
+Builder (static, each part): `npm --prefix <worktree> run build` green; Part 1
+reports that with default props the shipped scaffolds' JSX is unchanged
+(diff shows additions only inside the new-prop branches) and lists every
+pre-reveal leak fixed with file:line; Part 2 reports the R2 arithmetic for
+E3 (fractionInput) and E2 (singleNumber) at 375×667 and confirms the R1
+list above by grep of `handleRetrySubmit`.
+Main loop (preview): every answerType in every CPA mode with a wrong first
+answer (7 × 3), plus second-miss for each answerType, at 375×667 and
+320×568; no inner scroll; `localStorage.jackflash_data` unchanged by any
+re-answer; Progress grid unchanged; pre-answer cards no longer show the
+result (A group), the missing number (E2) or the simplified form (E3);
+C2 shows three bars; Multiply regression: one wrong answer, reveal works.
+
+## As built (2026-09-11, play-tested at 375×667 and 320×568)
+- `fractionInput` re-ask: boxes at 28px Shrikhand, `dense` (no padding) so
+  the row is ~68px; Check beside them. Measured denominator-box bottom edge:
+  A4 420px, E3 377px at 375×667.
+- `singleNumber` re-ask: input and Check share one row (Check bottom 397px).
+- Tap prompts shortened to one line at 320px: "Tap the longer bar." /
+  "Tap your answer." / "Tap the smallest.". Inside the reveal the two-card
+  re-ask is compact (64px cards, `large` fractions) so C1 fits 320×568.
+- Second-miss fill colour is passed as `reveal.fillColor` (green for a
+  correct re-answer's beat, yellow for the fill) — additive to the
+  `{ wrong, fill, singleTap }` contract.
+- `orderThree` re-ask compares the single tap to `item.order[0]` directly
+  (`evaluateAnswer` expects a 3-array and is unchanged).
+- `OrderThreeTiles` is keyed by `itemKey` in the card and the reveal: its
+  local tap state used to survive an item change, which froze the next
+  consecutive C2 item (pre-existing bug).
+- F2's final count on the bar is emphasised (18px / 700) like the dot
+  array's final total, so the blank chip is a real target.
+- Pre-answer leaks fixed in `ScaffoldForItem`: A-group result bar is an
+  empty outline with "?", E1/E2/E3 bottom-bar labels dropped, C2 draws all
+  three bars, E4 never prints the marked value.
+- `modules/fractions.jsx` carries its own `FractionBar`/`TwoStackedBars`
+  (the practice screen imports from there, not from `shared/barComponents`);
+  the new props exist on both copies. Folding the two into one is a cleanup
+  for later.

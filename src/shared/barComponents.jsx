@@ -16,6 +16,7 @@
 
 import React, { useState } from "react";
 import { COLORS, BRUTAL_BORDER_SM, BRUTAL_BORDER, BRUTAL_SHADOW_SM, DEFAULT_MASTERY_THRESHOLD } from "../constants.js";
+import DerivationToken from "./DerivationToken.jsx";
 
 // ---------------------------------------------------------------------------
 // Math helpers
@@ -121,15 +122,36 @@ export function FractionDisplay({ n, d, size = "normal", color = COLORS.black, h
 
 // ---------------------------------------------------------------------------
 // FractionBar – horizontal bar split into d parts with n shaded
+//
+// Phase-2 additions (docs/wrong-answer-reveal-spec.md, "Phase 2 — Fractions",
+// Part 1 item 1), all opt-in/default-off so the shipped markup is unchanged
+// when they're not passed:
+//   counts     — number every segment (1…n ink COLORS.black 700 on shaded,
+//                n+1…d #888 400 on unshaded), Space Mono, 12px at 36px
+//                segments / 11px at `compact` 24px segments, centred.
+//   groupEvery — integer k: the left edge of every k-th segment (i.e. i, a
+//                0-based index, is a positive multiple of k) gets a 3px ink
+//                divider so the bar's *original* cuts still read once it's
+//                been redrawn at a finer denominator (e.g. E1/E3's base cuts
+//                inside the lcd-parts bar). Segment borders otherwise stay 2px.
+//   finalToken — "numeral"|"blank"|"correct", meaningful only together with
+//                `counts`: the LAST shaded segment's number renders through
+//                the shared DerivationToken (the reveal's blank-chip re-ask
+//                token) instead of a plain numeral.
+// `label` may now also be a React node (e.g. a `<FractionDisplay>`), not
+// just a string — it already renders as `children` of a div, so no code
+// change was needed for that half of item 1; noted here for the record.
 // ---------------------------------------------------------------------------
 export function FractionBar({
   n, d, color = COLORS.purple, opacity = 1, animate = false,
   interactive = false, shadedCount = null, onShadedChange = null,
   label = null, compact = false,
+  counts = false, groupEvery = null, finalToken = null,
 }) {
   const segH = interactive ? 60 : (compact ? 24 : 36);
   const controlled = shadedCount !== null;
   const shaded = controlled ? shadedCount : n;
+  const countFont = compact ? 11 : 12;
 
   return (
     <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: interactive ? "none" : 340 }}>
@@ -142,22 +164,37 @@ export function FractionBar({
       <div style={{ display: "flex", gap: 3 }}>
         {Array.from({ length: d }).map((_, i) => {
           const isShaded = i < shaded;
+          const isLastShaded = counts && finalToken && isShaded && i === shaded - 1;
+          const heavyLeft = groupEvery && i > 0 && i % groupEvery === 0;
+          const segStyle = {
+            flex: 1, height: segH,
+            backgroundColor: isShaded ? color : "#F0F0F0",
+            border: `2px solid ${COLORS.black}`,
+            borderRadius: 4,
+            cursor: interactive ? "pointer" : "default",
+            transition: "background-color 0.15s ease",
+            animation: animate && isShaded ? `dotPop 0.25s ease ${i * 40}ms both` : "none",
+          };
+          if (heavyLeft) segStyle.borderLeft = `3px solid ${COLORS.black}`;
+          if (counts) {
+            segStyle.display = "flex";
+            segStyle.alignItems = "center";
+            segStyle.justifyContent = "center";
+            segStyle.fontFamily = "'Space Mono', monospace";
+            segStyle.fontSize = countFont;
+            segStyle.fontWeight = isShaded ? 700 : 400;
+            segStyle.color = isShaded ? COLORS.black : "#888";
+          }
           return (
             <div key={i}
               onClick={interactive && onShadedChange ? () => {
                 const newCount = (shaded === i + 1) ? 0 : i + 1;
                 onShadedChange(newCount);
               } : undefined}
-              style={{
-                flex: 1, height: segH,
-                backgroundColor: isShaded ? color : "#F0F0F0",
-                border: `2px solid ${COLORS.black}`,
-                borderRadius: 4,
-                cursor: interactive ? "pointer" : "default",
-                transition: "background-color 0.15s ease",
-                animation: animate && isShaded ? `dotPop 0.25s ease ${i * 40}ms both` : "none",
-              }}
-            />
+              style={segStyle}
+            >
+              {counts ? (isLastShaded ? <span style={{ fontSize: 18, fontWeight: 700, lineHeight: 1 }}><DerivationToken value={i + 1} state={finalToken} /></span> : i + 1) : null}
+            </div>
           );
         })}
       </div>
@@ -170,14 +207,31 @@ export function FractionBar({
 }
 
 // ---------------------------------------------------------------------------
-// TwoStackedBars – two bars of identical length (equivalence / comparison)
+// TwoStackedBars – two (optionally three) bars of identical length
+// (equivalence / comparison / C2 ordering).
+//
+// Phase-2 additions (Part 1 item 3): `top`/`bottom` already accepted `label`
+// as a node (FractionBar renders it as `children` — no code change needed);
+// counts/groupEvery/finalToken now pass through per-bar via the same spec
+// object (`top.counts`, `top.groupEvery`, `top.finalToken`, etc.), so each
+// bar can be numbered/grouped independently. Optional `third` (a third bar,
+// for C2's three-fraction order picture) renders under the same 8px gap.
 // ---------------------------------------------------------------------------
-export function TwoStackedBars({ top, bottom, animate = false, opacity = 1 }) {
+export function TwoStackedBars({ top, bottom, third = null, animate = false, opacity = 1 }) {
   return (
     <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: 340 }}>
-      <FractionBar n={top.n} d={top.d} color={COLORS.purple} label={top.label} animate={animate} />
+      <FractionBar n={top.n} d={top.d} color={top.color || COLORS.purple} label={top.label} animate={animate}
+        counts={top.counts} groupEvery={top.groupEvery} finalToken={top.finalToken} />
       <div style={{ height: 8 }} />
-      <FractionBar n={bottom.n} d={bottom.d} color={bottom.color || COLORS.blue} label={bottom.label} animate={animate} />
+      <FractionBar n={bottom.n} d={bottom.d} color={bottom.color || COLORS.blue} label={bottom.label} animate={animate}
+        counts={bottom.counts} groupEvery={bottom.groupEvery} finalToken={bottom.finalToken} />
+      {third && (
+        <>
+          <div style={{ height: 8 }} />
+          <FractionBar n={third.n} d={third.d} color={third.color || COLORS.green} label={third.label} animate={animate}
+            counts={third.counts} groupEvery={third.groupEvery} finalToken={third.finalToken} />
+        </>
+      )}
     </div>
   );
 }

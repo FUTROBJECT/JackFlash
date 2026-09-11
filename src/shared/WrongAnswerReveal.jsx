@@ -43,6 +43,19 @@ export default function WrongAnswerReveal({
   input,
   focusDelayMs = 1000,
   pictureMax = DEFAULT_PICTURE_MAX,
+  // Phase 2 — Fractions (Part 1 item 9), both opt-in/default off (i.e.
+  // default to multiply's existing behaviour):
+  //   fit       — "scale" (default) is multiply's picture-fit (scale up to
+  //               fill, capped 2.5x, both axes). "width" is for bars
+  //               (width-driven — as an inline block they'd collapse): the
+  //               inner box is `width: 100%`, never upscaled, scaled down by
+  //               HEIGHT only if the natural height overflows the cap.
+  //   autoFocus — false skips the focus poll below entirely (tap-only
+  //               re-asks: choice4/tapTwo/orderThree/concrete-buildBar have
+  //               no input to focus, and forcing one would pop a keyboard
+  //               with nothing to type into).
+  fit = "scale",
+  autoFocus = true,
 }) {
   const containerRef = useRef(null);
   // Tall case: caller asked for a bigger picture band than the phase-1b
@@ -65,7 +78,10 @@ export default function WrongAnswerReveal({
   // activeElement still wasn't the input at 1.5s/2.7s). Poll for an enabled
   // input for a bounded window instead of one shot.
   useEffect(() => {
-    if (!open) return undefined;
+    // autoFocus=false (tap-only re-asks): don't run the poll at all — no
+    // input exists to focus, and not stealing focus means Enter is never
+    // intercepted here either (item 9).
+    if (!open || !autoFocus) return undefined;
     const active = document.activeElement;
     if (active && containerRef.current && !containerRef.current.contains(active) && typeof active.blur === "function") {
       active.blur();
@@ -88,7 +104,7 @@ export default function WrongAnswerReveal({
     };
     timers.push(setTimeout(() => tryFocus(6), focusDelayMs));
     return () => { cancelled = true; timers.forEach(clearTimeout); };
-  }, [open, focusDelayMs]);
+  }, [open, focusDelayMs, autoFocus]);
 
   // R5 — no escape hatch: Escape is swallowed, Tab is trapped inside.
   useEffect(() => {
@@ -225,7 +241,7 @@ export default function WrongAnswerReveal({
           </div>
 
           {/* Picture — scale-to-fill measuring wrapper */}
-          <PictureSlot maxHeight={pictureMax}>{picture}</PictureSlot>
+          <PictureSlot maxHeight={pictureMax} fit={fit}>{picture}</PictureSlot>
 
           {/* Derivation line (or the second-miss line, styled by the caller)
               + (divide) partner chip. No line/extra at all (phase 1c "Fold
@@ -276,7 +292,7 @@ export default function WrongAnswerReveal({
 // 2.5x, never past the slot in either direction. Scales the shipped
 // component via CSS transform — never restyles it.
 // ---------------------------------------------------------------------------
-function PictureSlot({ children, maxHeight }) {
+function PictureSlot({ children, maxHeight, fit = "scale" }) {
   const outerRef = useRef(null);
   const innerRef = useRef(null);
   const [scale, setScale] = useState(1);
@@ -303,6 +319,16 @@ function PictureSlot({ children, maxHeight }) {
       const naturalW = inner.offsetWidth;
       const naturalH = inner.offsetHeight;
       if (!slotW || !slotH || !naturalW || !naturalH) return;
+      if (fit === "width") {
+        // Width-driven content (fraction bars): the inner box is already
+        // `width: 100%` of the slot below, so there's no horizontal ratio to
+        // apply — only scale DOWN if the natural height (at that width)
+        // overflows the cap, and never magnify past natural size (item 9).
+        const k = Math.min(1, slotH / naturalH);
+        setScale(k);
+        setFitH(Math.ceil(naturalH * k));
+        return;
+      }
       // No floor at 1: a tall DotArray (tables 6-10, ~110-210px natural) must
       // be able to scale DOWN to fit the 120px band, or its bottom rows —
       // the running totals nearest the answer — get clipped (design review).
@@ -315,7 +341,7 @@ function PictureSlot({ children, maxHeight }) {
     ro.observe(outer);
     ro.observe(inner);
     return () => ro.disconnect();
-  }, [children]);
+  }, [children, fit]);
 
   return (
     <div ref={outerRef} style={{
@@ -323,7 +349,9 @@ function PictureSlot({ children, maxHeight }) {
       display: "flex", alignItems: "center", justifyContent: "center",
       overflow: "hidden",
     }}>
-      <div ref={innerRef} style={{ display: "inline-block", transform: `scale(${scale})`, transformOrigin: "center" }}>
+      <div ref={innerRef} style={fit === "width"
+        ? { display: "block", width: "100%", transform: `scale(${scale})`, transformOrigin: "center" }
+        : { display: "inline-block", transform: `scale(${scale})`, transformOrigin: "center" }}>
         {children}
       </div>
     </div>
