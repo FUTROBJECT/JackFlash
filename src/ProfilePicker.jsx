@@ -548,6 +548,7 @@ export function ProfilePicker({
   onTabChange,
   masteryData = {},
   streakData = {},
+  lastSession = null,
 }) {
   const [pendingProfile, setPendingProfile] = useState(null);
   const [avatarEditProfileId, setAvatarEditProfileId] = useState(null);
@@ -595,6 +596,29 @@ export function ProfilePicker({
         }}>
           <LogoLockup size="large" />
         </div>
+
+        {/* End-of-session line (docs/wrong-answer-reveal-spec.md, "End-of-session
+            line"): shown once, right after practice. "With the picture" counts
+            misses recovered inside the wrong-answer reveal — named as a good
+            thing, never as a score. Zero parts are left out. */}
+        {lastSession && lastSession.total > 0 && (
+          <div style={{
+            margin: "-16px auto 20px", maxWidth: 340,
+            background: COLORS.cream, border: BRUTAL_BORDER_SM, borderRadius: "8px",
+            padding: "10px 14px", textAlign: "center",
+          }}>
+            <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "15px", fontWeight: 700, color: COLORS.black }}>
+              Nice work, {lastSession.name}!
+            </div>
+            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "12px", fontWeight: 700, color: COLORS.black, marginTop: "4px", lineHeight: 1.5 }}>
+              {[
+                `${lastSession.total} tried`,
+                lastSession.correct > 0 ? `${lastSession.correct} on your own` : null,
+                lastSession.assisted > 0 ? `${lastSession.assisted} with the picture` : null,
+              ].filter(Boolean).join(" · ")}
+            </div>
+          </div>
+        )}
 
         {/* Profile Cards Grid — 2 columns */}
         <div style={{

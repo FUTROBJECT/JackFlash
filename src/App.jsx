@@ -44,6 +44,8 @@ export default function App() {
   const [gateDestination, setGateDestination] = useState("parentZone");
   // Track which profile's progress to view
   const [progressProfileId, setProgressProfileId] = useState(null);
+  // Just-finished session summary for the home screen banner (see handleBackToProfiles).
+  const [lastSession, setLastSession] = useState(null);
   // Module selected during parent onboarding — passed to first profile creation
   const [onboardingModule, setOnboardingModule] = useState(null);
 
@@ -84,6 +86,7 @@ export default function App() {
 
   // Handlers
   const handleSelectProfile = (profileId, moduleId) => {
+    setLastSession(null);
     // If the kid chose a different module from the overlay, persist it now
     if (moduleId) {
       const profile = getProfile(profileId);
@@ -97,6 +100,7 @@ export default function App() {
   };
 
   const handleAddProfile = () => {
+    setLastSession(null);
     setScreen("createProfile");
   };
 
@@ -109,6 +113,7 @@ export default function App() {
   };
 
   const handleOpenParentZone = () => {
+    setLastSession(null);
     setGateDestination("parentZone");
     setScreen("parentGate");
   };
@@ -118,6 +123,15 @@ export default function App() {
   };
 
   const handleBackToProfiles = () => {
+    // End-of-session line (docs/wrong-answer-reveal-spec.md, "End-of-session
+    // line"): read the live session NOW — the practice screen's unmount
+    // cleanup finalizes it into sessionHistory after the home screen has
+    // already rendered. One-shot: cleared by every handler that leaves home.
+    const p = getActiveProfile();
+    const live = p?.liveSession;
+    setLastSession(live && live.total > 0
+      ? { name: p.name, correct: live.correct, total: live.total, assisted: live.assisted || 0 }
+      : null);
     refresh();
     setHomeTab("players");
     setScreen("profilePicker");
@@ -160,6 +174,7 @@ export default function App() {
   };
 
   const handleViewProgress = (profileId) => {
+    setLastSession(null);
     setActiveProfile(profileId);
     setProgressProfileId(profileId);
     refresh();
@@ -168,6 +183,7 @@ export default function App() {
   };
 
   const handleTabChange = (tabId) => {
+    if (tabId !== "players") setLastSession(null);
     if (tabId === "players") {
       setHomeTab("players");
       setScreen("profilePicker");
@@ -204,6 +220,7 @@ export default function App() {
           onTabChange={handleTabChange}
           masteryData={masteryData}
           streakData={streakData}
+          lastSession={lastSession}
         />
       );
     case "createProfile":
@@ -270,6 +287,7 @@ export default function App() {
           onTabChange={handleTabChange}
           masteryData={masteryData}
           streakData={streakData}
+          lastSession={lastSession}
         />
       );
   }

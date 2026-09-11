@@ -183,11 +183,10 @@ items, no reshuffle; `orderThree` re-ask reduces to one tap ("Tap the
 smallest"); derivation lines per skill per the curriculum note (to be added to
 this spec before phase 2). `correctAnswer` may be a number (buildBar) — coerce.
 
-## Deferred (do not build now)
-End-of-session "with the picture" line (the `assisted` session count it
-needs now exists — see "Assisted counters"). The Abstract-mode "Show me"
-pulse, the fact-family chip and the parent-facing assisted counters were
-built 2026-09-11 — see the sections at the end of this file.
+## Deferred
+Nothing. The Abstract-mode "Show me" pulse, the fact-family chip, the
+parent-facing assisted counters and the end-of-session line were all built
+2026-09-11 — see the sections at the end of this file.
 
 ## Do NOT
 No dependencies, TypeScript, CSS frameworks, test frameworks. Tokens only from
@@ -745,3 +744,23 @@ submit already opened.
   score or toward mastery." Records from before the field show "–".
 - No schema migration: old live sessions read `assisted` as 0; old history
   rows have no field and render "–".
+
+# End-of-session line (built 2026-09-11)
+
+There is no end-of-session screen — a session ends when Jack taps Home (the
+practice screen's unmount finalizes the live session) or after a 30-minute
+gap. So the line lives where he lands: a one-shot cream banner under the
+logo on the home screen, shown only right after practice.
+
+- Copy: "Nice work, {name}!" then, in Space Mono, `{total} tried · {correct}
+  on your own · {assisted} with the picture`. Zero parts are dropped ("3
+  tried · 3 on your own"; "2 tried · 2 with the picture"). "With the
+  picture" is named as a good thing, in the reveal's own words, never as a
+  score. Second misses are not called out (total − correct − assisted).
+- Mechanics: `App.handleBackToProfiles` reads `profile.liveSession` **before**
+  `refresh()` — the practice screen's cleanup finalizes it into
+  `sessionHistory` only after the home screen has rendered — and stores
+  `{ name, correct, total, assisted }` in `lastSession` state, passed to
+  `ProfilePicker`. Every handler that leaves home (select profile, add
+  player, parent zone, view progress, non-players tab) clears it, so it
+  never shows twice. Not shown when `total` is 0.
