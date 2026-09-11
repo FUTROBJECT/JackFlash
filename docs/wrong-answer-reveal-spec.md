@@ -184,9 +184,9 @@ smallest"); derivation lines per skill per the curriculum note (to be added to
 this spec before phase 2). `correctAnswer` may be a number (buildBar) — coerce.
 
 ## Deferred (do not build now)
-Fact-family chip in "Show me"; parent-facing assisted counters;
-end-of-session "with the picture" line. (The Abstract-mode "Show me" pulse
-was built 2026-09-11 — see "Show me pulse" at the end of this file.)
+Parent-facing assisted counters; end-of-session "with the picture" line.
+(The Abstract-mode "Show me" pulse and the fact-family chip were built
+2026-09-11 — see the sections at the end of this file.)
 
 ## Do NOT
 No dependencies, TypeScript, CSS frameworks, test frameworks. Tokens only from
@@ -699,3 +699,25 @@ and nothing about logging changes.
   (inline-block), not on the button, so the button's own pressed transform
   is unaffected. `@media (prefers-reduced-motion: reduce)` disables it.
 - Tapping "Show me" does not reset the run; the next unassisted correct does.
+
+# Fact-family chip (built 2026-09-11, Multiply only)
+
+On the pre-answer Abstract "Show me" detour, a cream chip renders under the
+picture listing the members of the current fact's family with the **unknown
+role blanked in every member** (fixed-width yellow blank, the reveal's
+`DerivationToken` in its `blank` state). It states the structure — you know
+two of the three numbers, and here is how they relate — without
+pre-revealing: every number shown is already on the card.
+
+- Roles: `F1 × F2 = P`. A multiply fact `a × b` asks `P`; a divide fact
+  `a ÷ b` is `P ÷ F1` and asks `F2`. Members: `F1 × F2 = P`, `F2 × F1 = P`,
+  `P ÷ F1 = F2`, `P ÷ F2 = F1`, with the asked role blanked wherever it
+  appears. So `6 × 2` shows `6 × 2 = ▢ · 2 × 6 = ▢ · ▢ ÷ 6 = 2 · ▢ ÷ 2 = 6`
+  and `12 ÷ 2` shows `2 × ▢ = 12 · ▢ × 2 = 12 · 12 ÷ 2 = ▢ · 12 ÷ ▢ = 2`.
+- Squares dedupe by rendered text (`6 × 6 = ▢` and `▢ ÷ 6 = 6` once each;
+  the chip drops to one column).
+- The blank is always 2ch wide so the chip never hints at digit count.
+- Gate: `mode === "abstract" && showScaffold && !feedback` — never in the
+  reveal (R3), never in Pictorial's finish-line "Show me" (the faded picture
+  is the invitation there), never in Concrete. Not built for Fractions, which
+  has no fact families.

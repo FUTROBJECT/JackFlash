@@ -49,6 +49,75 @@ const SINGULAR_WORDS = { 1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6
 
 // Rule (Pedagogy → Derivation line): state a step he did not already have.
 // Multiply a×b=c: "a bs: b, 2b, …, [c]". Divide c÷b=a: "c in groups of b → [a] groups".
+// ---------------------------------------------------------------------------
+// Fact-family chip (docs/wrong-answer-reveal-spec.md, "Fact-family chip").
+// Shown ONLY on the pre-answer Abstract "Show me" detour, under the picture:
+// the members of the current fact's family with the UNKNOWN ROLE blanked in
+// every member, so it states the structure ("you know two of the three
+// numbers; here is how they relate") without pre-revealing the answer —
+// the given numbers are already on the card, the blank is the one being
+// asked. R3: a chosen detour may be long; a forced one may not, so this
+// never appears in the reveal.
+//
+// Roles: F1 × F2 = P. A multiply fact a × b asks P; a divide fact a ÷ b is
+// P ÷ F1 and asks F2. Squares dedupe (6 × 6 = ▢ appears once).
+// ---------------------------------------------------------------------------
+function factFamilyMembers(fact) {
+  const isDiv = fact.operation === "divide";
+  const F1 = isDiv ? fact.b : fact.a;
+  const F2 = isDiv ? null : fact.b;   // null = the blank (unknown role)
+  const P = isDiv ? fact.a : null;
+  const rows = [
+    [F1, "×", F2, "=", P],
+    [F2, "×", F1, "=", P],
+    [P, "÷", F1, "=", F2],
+    [P, "÷", F2, "=", F1],
+  ];
+  const seen = new Set();
+  return rows.filter((r) => {
+    const key = r.map((t) => (t === null ? "_" : t)).join(" ");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function FactFamilyChip({ fact }) {
+  const members = factFamilyMembers(fact);
+  return (
+    <div style={{
+      marginTop: "14px", display: "inline-block",
+      backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM, borderRadius: "8px",
+      padding: "8px 14px 10px",
+    }}>
+      <div style={{
+        fontFamily: "'Space Mono', monospace", fontSize: "11px", fontWeight: 700,
+        letterSpacing: "0.06em", opacity: 0.6, marginBottom: "6px", textAlign: "center",
+      }}>
+        FACT FAMILY
+      </div>
+      <div style={{
+        display: "grid", gridTemplateColumns: members.length > 2 ? "auto auto" : "auto",
+        columnGap: "18px", rowGap: "6px",
+        fontFamily: "'Space Mono', monospace", fontSize: "15px", fontWeight: 700,
+        color: COLORS.black, whiteSpace: "nowrap",
+      }}>
+        {members.map((row, i) => (
+          <div key={i} style={{ display: "inline-flex", alignItems: "center", gap: "5px", justifyContent: "center" }}>
+            {row.map((t, j) => (
+              t === null
+                // Fixed 2ch blank for every member — the chip's width never
+                // hints at how many digits the answer has.
+                ? <DerivationToken key={j} value="00" state="blank" />
+                : <span key={j}>{t}</span>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function buildDerivationLine(fact, tokenState) {
   if (!fact) return null;
   if (fact.operation === "divide") {
@@ -1172,6 +1241,13 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                     : currentFact.b < currentFact.a
                       ? `${currentFact.a} groups of ${currentFact.b}`
                       : `${currentFact.a} rows × ${currentFact.b} columns`}
+                </div>
+              )}
+              {/* Fact-family chip: Abstract "Show me" detour only, pre-answer.
+                  Never in the reveal (R3) and never before "Show me" is tapped. */}
+              {mode === "abstract" && showScaffold && !feedback && (
+                <div style={{ textAlign: "center" }}>
+                  <FactFamilyChip fact={currentFact} />
                 </div>
               )}
               {/* "Show me" (CLAUDE.md: Abstract = symbols + "Show me" fallback) —
