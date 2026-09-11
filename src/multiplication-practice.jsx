@@ -1073,7 +1073,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                       borderRadius: "2px", marginTop: "10px",
                     }} />
                     {/* Answer input */}
-                    <input ref={inputRef} type="number" value={userAnswer}
+                    <input ref={inputRef} type="number" inputMode="numeric" value={userAnswer}
                       onChange={(e) => setUserAnswer(e.target.value)}
                       onKeyDown={handleKeyDown}
                       disabled={feedback === "correct" || feedback === "incorrect"}
