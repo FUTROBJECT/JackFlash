@@ -497,6 +497,10 @@ function _finalizeLiveSessionOn(profile) {
       moduleId: live.moduleId,
       correct: live.correct,
       total: live.total,
+      // Misses recovered with the picture (wrong-answer reveal re-answer).
+      // Parent-facing only; never part of correct/total. Older live
+      // sessions predate the field.
+      assisted: live.assisted || 0,
       duration: live.activeMs,
       recordedAt: new Date(live.lastAnswerAt).toISOString(),
     });
@@ -529,7 +533,7 @@ export function recordAnswerInSession(profileId, moduleId, isCorrect) {
   }
 
   if (!live) {
-    live = { moduleId, correct: 0, total: 0, startedAt: now, lastAnswerAt: now, activeMs: 0 };
+    live = { moduleId, correct: 0, total: 0, assisted: 0, startedAt: now, lastAnswerAt: now, activeMs: 0 };
     profile.liveSession = live;
   } else {
     live.activeMs += Math.min(now - live.lastAnswerAt, SESSION_ACTIVE_CAP_MS);
@@ -545,6 +549,24 @@ export function recordAnswerInSession(profileId, moduleId, isCorrect) {
 
 // Call on unmount/navigation-away to close out the current sitting. Cheap
 // no-op if there's nothing live.
+/**
+ * Wrong-answer reveal (docs/wrong-answer-reveal-spec.md, "Assisted
+ * counters"): a correct RE-answer inside the reveal — the child missed, then
+ * got it with the picture. R1: this is not an answer. It never touches
+ * mastery, correct/total, streaks, lastAnswerAt or activeMs; it only bumps
+ * the parent-facing `assisted` count on the live session that the first
+ * (logged) submit already opened. No-op without a matching live session.
+ */
+export function recordAssistedInSession(profileId, moduleId) {
+  initData();
+  const profile = getProfile(profileId);
+  const live = profile?.liveSession;
+  if (!live || live.moduleId !== moduleId) return null;
+  live.assisted = (live.assisted || 0) + 1;
+  saveData();
+  return live;
+}
+
 export function finalizeLiveSession(profileId) {
   initData();
   const profile = getProfile(profileId);

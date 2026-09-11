@@ -301,23 +301,32 @@ function ProgressReport({ profile }) {
           </p>
         ) : (
           <>
-            {/* Column headers */}
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "0 0 4px 0", fontSize: "11px", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, color: "#888", borderBottom: `1px solid ${COLORS.black}20` }}>
+            {/* Column headers. "Helped" = misses recovered with the picture
+                in the wrong-answer reveal (docs/wrong-answer-reveal-spec.md,
+                "Assisted counters") — parent-facing only, never in Score. */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto auto", columnGap: "12px", padding: "0 0 4px 0", fontSize: "11px", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, color: "#888", borderBottom: `1px solid ${COLORS.black}20` }}>
               <span>Date</span>
-              <span>Score</span>
-              <span>Time</span>
+              <span style={{ textAlign: "right" }}>Score</span>
+              <span style={{ textAlign: "right" }}>Helped</span>
+              <span style={{ textAlign: "right" }}>Time</span>
             </div>
             {sessions.slice(0, 10).map((s, i) => {
               const accuracy = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
               const mins = Math.round((s.duration || 0) / 1000 / 60);
+              // Sessions recorded before the counter existed have no field.
+              const helped = typeof s.assisted === "number" ? s.assisted : null;
               return (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: "12px", fontFamily: "'Space Mono', monospace", borderBottom: "1px solid #eee" }}>
+                <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr auto auto auto", columnGap: "12px", padding: "6px 0", fontSize: "12px", fontFamily: "'Space Mono', monospace", borderBottom: "1px solid #eee" }}>
                   <span>{new Date(s.recordedAt).toLocaleDateString()}</span>
-                  <span>{s.correct}/{s.total} ({accuracy}%)</span>
-                  <span>{mins > 0 ? `${mins}m` : "<1m"}</span>
+                  <span style={{ textAlign: "right" }}>{s.correct}/{s.total} ({accuracy}%)</span>
+                  <span style={{ textAlign: "right", color: helped ? COLORS.black : "#AAA" }}>{helped === null ? "–" : helped}</span>
+                  <span style={{ textAlign: "right" }}>{mins > 0 ? `${mins}m` : "<1m"}</span>
                 </div>
               );
             })}
+            <p style={{ fontSize: "11px", color: "#888", margin: "8px 0 0 0", fontFamily: "'Space Grotesk', sans-serif", lineHeight: 1.4 }}>
+              Helped = missed it, then got it with the picture. Understanding, not fluency — never counted in the score or toward mastery.
+            </p>
             {sessions.length > 10 && (
               <div style={{ fontSize: "11px", color: "#888", textAlign: "center", marginTop: "6px", fontFamily: "'Space Mono', monospace" }}>
                 Showing 10 of {sessions.length} sessions

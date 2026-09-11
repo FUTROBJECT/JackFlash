@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, DEFAULT_MASTERY_THRESHOLD, AVATARS, fluencyLimitMs as computeFluencyLimitMs } from "./constants.js";
 import multiplyModule from "./modules/multiply.jsx";
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
-import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordAnswerInSession, finalizeLiveSession, getProfile, updateChildSettings, getPreferredMode, setPreferredMode } from "./dataManager.js";
+import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordAnswerInSession, recordAssistedInSession, finalizeLiveSession, getProfile, updateChildSettings, getPreferredMode, setPreferredMode } from "./dataManager.js";
 import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
@@ -585,6 +585,8 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     }
     if (isCorrect) {
       setRetry((r) => ({ ...r, phase: "done" }));
+      // Parent-facing "helped" count only — not mastery, not the score (R1).
+      recordAssistedInSession(profileId, moduleId);
       advanceTimeoutRef.current = setTimeout(() => pickNewFact(), 900);
     } else {
       // Wrong twice: fill the answer, hold the picture, queue the comeback.
@@ -593,7 +595,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       comebackQueueRef.current = [...comebackQueueRef.current, { factKey: currentFact.factKey, dueIn: offset }];
       advanceTimeoutRef.current = setTimeout(() => pickNewFact(), 2500);
     }
-  }, [currentFact, retry, pickNewFact]);
+  }, [currentFact, retry, pickNewFact, profileId, moduleId]);
 
   // Enter: submits the re-answer in "ask", advances immediately in "missed".
   const handleRetryKeyDown = (e) => {

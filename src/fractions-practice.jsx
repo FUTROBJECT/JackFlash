@@ -30,7 +30,7 @@ import fractionsModule, {
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
 import {
   initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch,
-  recordAnswerInSession, finalizeLiveSession, getProfile, getPreferredMode, setPreferredMode,
+  recordAnswerInSession, recordAssistedInSession, finalizeLiveSession, getProfile, getPreferredMode, setPreferredMode,
 } from "./dataManager.js";
 import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
@@ -1691,6 +1691,8 @@ export default function FractionsPractice({
     }
     if (isCorrect) {
       setRetry({ phase: "done", value: displayValue });
+      // Parent-facing "helped" count only — not mastery, not the score (R1).
+      recordAssistedInSession(profileId, moduleId);
       advanceTimeoutRef.current = setTimeout(() => pickNewItem(), 900);
     } else {
       // Wrong twice: fill the canonical answer, hold the picture, queue the
@@ -1700,7 +1702,7 @@ export default function FractionsPractice({
       comebackQueueRef.current = [...comebackQueueRef.current, { itemKey: currentItem.itemKey, dueIn: offset }];
       advanceTimeoutRef.current = setTimeout(() => pickNewItem(), 2500);
     }
-  }, [currentItem, pickNewItem]);
+  }, [currentItem, pickNewItem, profileId, moduleId]);
 
   // Typed re-asks (singleNumber, fractionInput, concrete buildBar's Check
   // button): reads the live `retry.value` the child has been editing.

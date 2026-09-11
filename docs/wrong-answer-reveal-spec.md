@@ -184,9 +184,10 @@ smallest"); derivation lines per skill per the curriculum note (to be added to
 this spec before phase 2). `correctAnswer` may be a number (buildBar) — coerce.
 
 ## Deferred (do not build now)
-Parent-facing assisted counters; end-of-session "with the picture" line.
-(The Abstract-mode "Show me" pulse and the fact-family chip were built
-2026-09-11 — see the sections at the end of this file.)
+End-of-session "with the picture" line (the `assisted` session count it
+needs now exists — see "Assisted counters"). The Abstract-mode "Show me"
+pulse, the fact-family chip and the parent-facing assisted counters were
+built 2026-09-11 — see the sections at the end of this file.
 
 ## Do NOT
 No dependencies, TypeScript, CSS frameworks, test frameworks. Tokens only from
@@ -721,3 +722,26 @@ pre-revealing: every number shown is already on the card.
   reveal (R3), never in Pictorial's finish-line "Show me" (the faded picture
   is the invitation there), never in Concrete. Not built for Fractions, which
   has no fact families.
+
+# Assisted counters (built 2026-09-11)
+
+A parent can see how often the picture did the teaching. One additive
+field, `assisted`, on the live session and on each `sessionHistory` record:
+the number of misses in that session that were recovered with a correct
+re-answer inside the reveal. R1 is untouched — the re-answer still never
+changes mastery, `correct`/`total`, streaks, `lastAnswerAt` or `activeMs`;
+it only bumps this count on the live session that the first (logged)
+submit already opened.
+
+- `dataManager.recordAssistedInSession(profileId, moduleId)` — called from
+  the correct branch of Multiply's `handleRetrySubmit` and Fractions'
+  `finishRetry` (both the typed and tapped re-asks). No-op without a
+  matching live session. `_finalizeLiveSessionOn` copies it into the record
+  (`assisted: live.assisted || 0`).
+- Second misses are not stored separately: `total − correct − assisted`.
+- Parent Zone session history gains a **Helped** column (Date · Score ·
+  Helped · Time, a 4-column grid) with the caption "Helped = missed it, then
+  got it with the picture. Understanding, not fluency — never counted in the
+  score or toward mastery." Records from before the field show "–".
+- No schema migration: old live sessions read `assisted` as 0; old history
+  rows have no field and render "–".
