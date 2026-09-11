@@ -749,7 +749,10 @@ export function ParentZone({
                         {/* Lock Operation dropdown — operations from active module */}
                         {(() => {
                           const profileMod = getModule(profile.activeModule);
-                          const operations = profileMod?.operations || [];
+                          // "mixed" IS "Any Operation" (the module default the
+                          // practice screen falls back to), so it isn't offered
+                          // as a lock — one way to say it, not two.
+                          const operations = (profileMod?.operations || []).filter((op) => op.id !== "mixed");
                           return (
                             <div>
                               <label style={{
@@ -762,7 +765,7 @@ export function ParentZone({
                                 Lock Operation
                               </label>
                               <Dropdown
-                                value={profile.settings.lockedOperation || ""}
+                                value={profile.settings.lockedOperation === "mixed" ? "" : (profile.settings.lockedOperation || "")}
                                 onChange={(val) => handleChangeDropdown(profile.id, "lockedOperation", val || null)}
                                 options={[
                                   { value: "", label: "Any Operation" },
