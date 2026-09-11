@@ -184,8 +184,9 @@ smallest"); derivation lines per skill per the curriculum note (to be added to
 this spec before phase 2). `correctAnswer` may be a number (buildBar) — coerce.
 
 ## Deferred (do not build now)
-Fact-family chip in "Show me"; Abstract-mode "Show me" pulse after two misses;
-parent-facing assisted counters; end-of-session "with the picture" line.
+Fact-family chip in "Show me"; parent-facing assisted counters;
+end-of-session "with the picture" line. (The Abstract-mode "Show me" pulse
+was built 2026-09-11 — see "Show me pulse" at the end of this file.)
 
 ## Do NOT
 No dependencies, TypeScript, CSS frameworks, test frameworks. Tokens only from
@@ -677,3 +678,24 @@ C2 shows three bars; Multiply regression: one wrong answer, reveal works.
   (the practice screen imports from there, not from `shared/barComponents`);
   the new props exist on both copies. Folding the two into one is a cleanup
   for later.
+
+# Show me pulse (built 2026-09-11)
+
+In Abstract mode, after **two consecutive unassisted misses**, the pre-answer
+"Show me" button pulses (scale 1 → 1.06 → 1, 1.4s, ease-in-out, infinite) on
+every following item until an unassisted correct answer resets the run. It is
+an invitation to look at the picture before answering, not a penalty: the
+picture is never forced, the button's tap and press behaviour are unchanged,
+and nothing about logging changes.
+
+- State: `missRun` in both practice screens, beside `missCount`. `+1` in
+  `handleSubmit`'s incorrect branch, `0` in its correct branch. The reveal's
+  re-answer (`handleRetrySubmit`) never touches it (R1 — a scaffolded
+  re-answer is neither a miss nor a recovery).
+- Trigger: `mode === "abstract" && missRun >= 2`, on the same `!feedback`
+  condition the button already has. Pictorial's finish-line "Show me" (the
+  `userHidScaffold` on-ramp) does not pulse.
+- Mechanics: the animation is on a wrapping `<span class="showMePulse">`
+  (inline-block), not on the button, so the button's own pressed transform
+  is unaffected. `@media (prefers-reduced-motion: reduce)` disables it.
+- Tapping "Show me" does not reset the run; the next unassisted correct does.

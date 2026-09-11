@@ -1275,6 +1275,12 @@ export default function FractionsPractice({
   // Session-scoped miss count (header rotation) — unused directly (the
   // header hashes the itemKey, same as multiply) but tracked for parity/QA.
   const [missCount, setMissCount] = useState(0);
+  // Consecutive unassisted misses (reset by an unassisted correct; the
+  // reveal's re-answer never touches it — R1). At 2+ in Abstract mode the
+  // "Show me" button pulses: an invitation to look before answering, not a
+  // penalty — the picture is never forced (docs/wrong-answer-reveal-spec.md,
+  // "Show me pulse").
+  const [missRun, setMissRun] = useState(0);
   // 0 = picture only, 1 = derivation line shown (numeral), 2 = blank chip +
   // live re-ask input/taps. Driven by timers keyed off retry.phase === "ask".
   const [revealStage, setRevealStage] = useState(0);
@@ -1580,6 +1586,7 @@ export default function FractionsPractice({
 
     if (isCorrect) {
       setStreak(s => s + 1);
+      setMissRun(0);
       setFeedback("correct");
       setTimeout(() => pickNewItem(), 900);
     } else {
@@ -1593,6 +1600,7 @@ export default function FractionsPractice({
       // its own picked state via `retry`.
       setRetry({ phase: "ask", value: initialRetryValue(currentItem, mode) });
       setMissCount(n => n + 1);
+      setMissRun(n => n + 1);
     }
   }, [currentItem, evaluateAnswer, profileId, moduleId, streak, sessionStats, sessionStartTime, mod, pickNewItem, mode, lockedMode, userHidScaffold, showScaffold]);
 
@@ -1793,6 +1801,9 @@ export default function FractionsPractice({
         @keyframes fadeSlideUp { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes correctPulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
         @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+        @keyframes showMePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+        .showMePulse { display: inline-block; animation: showMePulse 1.4s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .showMePulse { animation: none; } }
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; }
@@ -2247,13 +2258,16 @@ export default function FractionsPractice({
                     (mode === "pictorial" && userHidScaffold)
                   ) && (
                     <div style={{ marginTop: 12, textAlign: "center" }}>
-                      <BrutalButton
-                        small
-                        onClick={() => mode === "pictorial" ? setUserHidScaffold(false) : setShowScaffold(true)}
-                        bg={COLORS.cream}
-                      >
-                        Show me
-                      </BrutalButton>
+                      {/* Pulses after two consecutive misses in Abstract (see missRun). */}
+                      <span className={mode === "abstract" && missRun >= 2 ? "showMePulse" : undefined}>
+                        <BrutalButton
+                          small
+                          onClick={() => mode === "pictorial" ? setUserHidScaffold(false) : setShowScaffold(true)}
+                          bg={COLORS.cream}
+                        >
+                          Show me
+                        </BrutalButton>
+                      </span>
                     </div>
                   )}
 
