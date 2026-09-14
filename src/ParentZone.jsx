@@ -758,6 +758,14 @@ export function ParentZone({
                           // practice screen falls back to), so it isn't offered
                           // as a lock — one way to say it, not two.
                           const operations = (profileMod?.operations || []).filter((op) => op.id !== "mixed");
+                          // Modules with nothing to lock (Fractions) don't get
+                          // the control at all — it used to render blank there
+                          // when a Multiply lock was stored on the profile.
+                          if (operations.length === 0) return null;
+                          // A stored value from another module (or "mixed")
+                          // matches no option: show it as Any Operation.
+                          const stored = profile.settings.lockedOperation;
+                          const lockValue = operations.some((op) => op.id === stored) ? stored : "";
                           return (
                             <div>
                               <label style={{
@@ -770,7 +778,7 @@ export function ParentZone({
                                 Lock Operation
                               </label>
                               <Dropdown
-                                value={profile.settings.lockedOperation === "mixed" ? "" : (profile.settings.lockedOperation || "")}
+                                value={lockValue}
                                 onChange={(val) => handleChangeDropdown(profile.id, "lockedOperation", val || null)}
                                 options={[
                                   { value: "", label: "Any Operation" },
