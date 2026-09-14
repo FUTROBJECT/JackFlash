@@ -249,4 +249,14 @@ grid renders for a profile with a stored `speed-demon` id.
 - Known, pre-existing: with Fractions active the Parent Zone's Lock
   Operation dropdown shows blank (Fractions has no operations; a stored
   Multiply lock has no matching option). Cosmetic; not changed here.
+- **C4 revised (2026-09-14, after Adam's test drive):** the pill is framed
+  against the **working group** — the first group in module order with an
+  enabled table (Multiply) or accessible (Fractions) that is not yet fully
+  mastered — and stays there until that group is done; all done → the last
+  such group. The first build used the *current item's* group, which read as
+  "the working set" but sat on "2S, 5S & 10S" with every set enabled and
+  would have flickered between groups as facts drew from different tables.
+  Multiply counts run over the group's enabled tables only. Verified: easy
+  group mastered in storage → "18/56 · 3S & 4S" while a 10 × 9 review fact
+  is on screen.
 

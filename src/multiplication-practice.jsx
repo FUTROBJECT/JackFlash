@@ -778,32 +778,31 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
             const totalFacts = distinctFacts.length;
             const masteredFacts = totalFacts > 0 ? distinctFacts.filter(f => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length : 0;
             const masteryPct = totalFacts > 0 ? Math.round((masteredFacts / totalFacts) * 100) : 0;
-            // C4 (docs/confidence-pass-spec.md): the MASTERED pill is framed
-            // against the current fact's table group, not the whole module —
-            // "8/30 · 2s, 5s & 10s" is a reachable target; "12/189" isn't.
-            // multiply: table = a; divide: table = b, falling back to answer
-            // (a fact drawn under Lock Operation could have a b not in any
-            // group — e.g. none here, but future-proof). No currentFact ->
-            // today's totals, label "MASTERED", as before.
-            const currentGroupTable = currentFact
-              ? (currentFact.operation === "divide" ? currentFact.b : currentFact.a)
-              : null;
-            let currentGroup = currentFact
-              ? mod.groups.find((g) => g.tables.includes(currentGroupTable))
-              : null;
-            if (currentFact && currentFact.operation === "divide" && !currentGroup) {
-              currentGroup = mod.groups.find((g) => g.tables.includes(currentFact.answer));
-            }
+            // C4 (docs/confidence-pass-spec.md, "As built" 2026-09-14): the
+            // MASTERED pill is framed against the WORKING group — the first
+            // group (module order) with an enabled table that isn't fully
+            // mastered yet — and stays there until that group is done. It is
+            // NOT the current fact's group (that flickered between groups as
+            // facts drew from different tables). Counts run over the group's
+            // enabled tables only, so "only 2s on" reads 0/19, not 0/81. All
+            // enabled groups mastered -> the last one (100%, green).
+            const enabledSet = new Set(currentTables);
+            const groupStats = mod.groups
+              .map((g) => {
+                const tables = g.tables.filter((t) => enabledSet.has(t));
+                if (tables.length === 0) return null;
+                const groupFacts = dedupeFacts(mod.generateFacts({ tables, operation }));
+                const total = groupFacts.length;
+                const done = groupFacts.filter((f) => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length;
+                return { group: g, total, done };
+              })
+              .filter(Boolean);
+            const working = groupStats.find((gs) => gs.done < gs.total) || groupStats[groupStats.length - 1] || null;
             let pillValue = `${masteredFacts}/${totalFacts}`;
             let pillLabel = "Mastered";
-            if (currentGroup) {
-              const groupFacts = dedupeFacts(mod.generateFacts({ tables: currentGroup.tables, operation }));
-              const groupTotal = groupFacts.length;
-              const masteredInGroup = groupTotal > 0
-                ? groupFacts.filter((f) => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length
-                : 0;
-              pillValue = `${masteredInGroup}/${groupTotal}`;
-              pillLabel = currentGroup.label;
+            if (working) {
+              pillValue = `${working.done}/${working.total}`;
+              pillLabel = working.group.label;
             }
             return (
               <div style={{ display: "flex", gap: "6px", alignItems: "stretch", marginBottom: "8px", minHeight: "56px" }}>

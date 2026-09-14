@@ -1935,17 +1935,25 @@ export default function FractionsPractice({
             // against the current item's group, not the whole module —
             // "3/25 · FOUNDATIONS" is a reachable target. No currentItem ->
             // today's totals, label "Mastered", as before.
-            const currentGroup = currentItem ? mod.groups.find(g => g.id === currentItem.group) : null;
+            // C4 (docs/confidence-pass-spec.md, "As built" 2026-09-14): frame
+            // the pill against the WORKING group — the first accessible group
+            // (module order) not yet fully mastered — not the current item's
+            // group, which flickers. All mastered -> the last accessible group.
+            const groupStats = mod.groups
+              .filter(g => isContentAccessible(moduleId, g.id))
+              .map(g => {
+                const items = FRACTION_POOL.filter(i => i.group === g.id);
+                const total = items.length;
+                const done = items.filter(i => (masteryData[i.itemKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length;
+                return { group: g, total, done };
+              })
+              .filter(gs => gs.total > 0);
+            const working = groupStats.find(gs => gs.done < gs.total) || groupStats[groupStats.length - 1] || null;
             let pillValue = `${masteredItems}/${totalItems}`;
             let pillLabel = "Mastered";
-            if (currentGroup) {
-              const groupItems = FRACTION_POOL.filter(i => i.group === currentGroup.id && isContentAccessible(moduleId, i.group));
-              const groupTotal = groupItems.length;
-              const masteredInGroup = groupTotal > 0
-                ? groupItems.filter(i => (masteryData[i.itemKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length
-                : 0;
-              pillValue = `${masteredInGroup}/${groupTotal}`;
-              pillLabel = currentGroup.label;
+            if (working) {
+              pillValue = `${working.done}/${working.total}`;
+              pillLabel = working.group.label;
             }
             return (
               <div style={{ display: "flex", gap: 6, alignItems: "stretch", marginBottom: 8, minHeight: 56 }}>
