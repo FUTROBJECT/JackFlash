@@ -59,12 +59,17 @@ export const UNIVERSAL_ACHIEVEMENTS = [
     params: { count: 100 },
   },
   {
-    id: "speed-demon",
-    name: "Speed Demon",
-    description: "20 correct in under 60 seconds",
-    icon: "⏱️",
-    trigger: "speedRun",
-    params: { count: 20, seconds: 60 },
+    // Confidence pass (docs/confidence-pass-spec.md, C3): Speed Demon is
+    // retired — rewards are for sticking with it, not for speed. Profiles
+    // that already unlocked "speed-demon" keep the stored id (harmless,
+    // just no longer rendered — getAllAchievementsForProfile only iterates
+    // this list, not stored ids, so an unknown id is skipped, not crashed).
+    id: "comeback-kid",
+    name: "Comeback Kid",
+    description: "Came back to 5 missed facts and got them right",
+    icon: "🔁",
+    trigger: "comebacks",
+    params: { count: 5 },
   },
 ];
 
@@ -124,12 +129,8 @@ function checkTrigger(triggerType, params, values) {
     case "sessionTotal":
       return values.sessionTotal >= params.count;
 
-    case "speedRun":
-      return (
-        values.sessionTotal >= params.count &&
-        values.sessionStartTime &&
-        Date.now() - values.sessionStartTime <= params.seconds * 1000
-      );
+    case "comebacks":
+      return values.comebacks >= params.count;
 
     case "dailyStreak":
       return values.dailyStreak && values.dailyStreak.current >= params.count;
@@ -275,6 +276,8 @@ function checkDivisionCount(targetCount, mastery) {
  * @param {number} options.sessionStartTime - Session start timestamp (ms)
  * @param {Object} options.mastery - Mastery data for the module
  * @param {number} options.masteryThreshold - Mastery threshold
+ * @param {number} [options.comebacks] - Count of facts missed earlier this
+ *   session and later answered correctly, unassisted (docs/confidence-pass-spec.md C3)
  * @returns {Array} Array of newly unlocked achievements
  */
 export function checkAfterAnswer({
@@ -286,6 +289,7 @@ export function checkAfterAnswer({
   sessionStartTime,
   mastery,
   masteryThreshold,
+  comebacks = 0,
 }) {
   const newlyUnlocked = [];
   const unlockedIds = getAchievements(profileId) || [];
@@ -301,6 +305,7 @@ export function checkAfterAnswer({
     mastery,
     masteryThreshold: threshold,
     module,
+    comebacks,
     dailyStreak: null, // Not relevant for after-answer checks
   };
 

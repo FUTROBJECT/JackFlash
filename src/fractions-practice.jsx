@@ -17,7 +17,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM,
-  DEFAULT_MASTERY_THRESHOLD, AVATARS,
+  DEFAULT_MASTERY_THRESHOLD, AVATARS, GUESS_MS,
 } from "./constants.js";
 // Note: fractions is a conceptual module — no speed gate is passed to
 // updateMastery here (curriculum ruling), so FLUENCY_MS_* is not imported.
@@ -30,7 +30,7 @@ import fractionsModule, {
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
 import {
   initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch,
-  recordAnswerInSession, recordAssistedInSession, finalizeLiveSession, getProfile, getPreferredMode, setPreferredMode,
+  recordAnswerInSession, recordAssistedInSession, recordPeekInSession, finalizeLiveSession, getProfile, getPreferredMode, setPreferredMode,
 } from "./dataManager.js";
 import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
@@ -938,8 +938,14 @@ function buildFractionLine(item, tokenState, firstSubmitDen) {
   }
 
   if (skill === "E4") {
+    // C1 leak fix (docs/confidence-pass-spec.md): "the dot is on {n}" used to
+    // state the answer's numerator in plain text right beside a token that
+    // then re-displayed the exact same n/d — the E-group's target fraction,
+    // verbatim, requiring zero derivation (unlike E1, where the stated
+    // number — the multiplier — differs from the target). d (the ruler's
+    // step count) is a given; n is dropped from the text.
     return [
-      { t: "text", v: `${item.d} steps make 1 whole; the dot is on ${item.n} → ` },
+      { t: "text", v: `${item.d} steps make 1 whole — count to the dot → ` },
       { t: "token", state: tokenState, children: <FractionDisplay n={item.n} d={item.d} size="small" color={color} /> },
     ];
   }
@@ -1275,6 +1281,18 @@ export default function FractionsPractice({
   // Session-scoped miss count (header rotation) — unused directly (the
   // header hashes the itemKey, same as multiply) but tracked for parity/QA.
   const [missCount, setMissCount] = useState(0);
+  // "Not sure" (docs/confidence-pass-spec.md C2): true once the picture has
+  // been requested for the CURRENT item (via "Show me" or a converted fast
+  // wrong guess) — reset on every new item. Gates the guess-conversion to
+  // once per item, and gates recordPeekInSession on a later correct submit.
+  const [pictureRequested, setPictureRequested] = useState(false);
+  // Nudge shown under the problem after a converted "not sure" — cleared on
+  // the next submit (of any kind) or the next item.
+  const [nudge, setNudge] = useState(null);
+  // Forces BuildBarInput / the card's OrderThreeTiles (both keep LOCAL tap
+  // state uncontrolled by this component) to remount and clear that local
+  // state on a converted "not sure" — bumped alongside the other resets.
+  const [retryResetKey, setRetryResetKey] = useState(0);
   // Consecutive unassisted misses (reset by an unassisted correct; the
   // reveal's re-answer never touches it — R1). At 2+ in Abstract mode the
   // "Show me" button pulses: an invitation to look before answering, not a
@@ -1296,6 +1314,11 @@ export default function FractionsPractice({
   // Pending pickNewItem() timeout from the retry flow (done -> 900ms, missed
   // -> 2500ms) — cleared when the child advances early via Enter/tap.
   const advanceTimeoutRef = useRef(null);
+  // Comeback Kid tracking (docs/confidence-pass-spec.md C3): itemKeys logged
+  // as a miss THIS session, session-scoped. A later unassisted correct on a
+  // key in this set removes it and counts once toward the achievement.
+  const missedKeysRef = useRef(new Set());
+  const comebacksRef = useRef(0);
 
   // Shuffled choices (stable per item)
   const shuffledChoices = useShuffledChoices(currentItem);
@@ -1451,6 +1474,8 @@ export default function FractionsPractice({
     setShowScaffold(false); setUserHidScaffold(false);
     setOrderSubmitted(false);
     setRetry({ phase: "idle", value: null });
+    setPictureRequested(false);
+    setNudge(null);
 
     // Finish-line on-ramp: at threshold−1 in pictorial (and not parent-locked),
     // start the scaffold hidden behind "Show me" — a non-punitive invitation
@@ -1529,16 +1554,44 @@ export default function FractionsPractice({
   const handleAnswer = useCallback((answerPayload) => {
     if (!currentItem) return;
     const isCorrect = evaluateAnswer(currentItem, answerPayload);
+    const responseMs = factShownAtRef.current ? Date.now() - factShownAtRef.current : undefined;
+
+    // C2 "Not sure" (docs/confidence-pass-spec.md): a wrong answer submitted
+    // before GUESS_MS, before the picture was requested, is treated as "not
+    // sure" rather than a miss — nothing is logged. Converts at most once per
+    // item — once the picture is up (pictureRequested), a wrong answer is a
+    // real miss (below). responseMs === undefined never converts.
+    if (!isCorrect && !pictureRequested && responseMs !== undefined && responseMs < GUESS_MS) {
+      setShowScaffold(true);
+      setPictureRequested(true);
+      setNudge("notSure");
+      // Clear the tap/selection state for every answerType (mirrors
+      // pickNewItem's reset, minus the item/feedback/retry fields — this is
+      // NOT a new item). BuildBarInput/the card's OrderThreeTiles hold their
+      // own local state uncontrolled by this component — remount them.
+      setUserNum(""); setUserDen(""); setUserAnswer("");
+      setPickedChoice(null); setOrderSubmitted(false);
+      setRetryResetKey(k => k + 1);
+      return;
+    }
+    setNudge(null);
 
     if (profileId) {
       // Scaffolded = a mathematically informative visual VISIBLE at submit time.
       const scaffolded = (mode !== "abstract" && !userHidScaffold) || showScaffold === true;
       const masteryGatesExempt = lockedMode === "concrete" || lockedMode === "pictorial";
       // Fractions is a conceptual module — no speed gate (no responseMs /
-      // fluencyLimitMs passed). Timing is still logged in DEV for QA data.
-      if (import.meta.env.DEV) console.debug("[JF] responseMs", currentItem.itemKey, factShownAtRef.current ? Date.now() - factShownAtRef.current : undefined);
+      // fluencyLimitMs passed to updateMastery). Timing is still logged in
+      // DEV for QA data.
+      if (import.meta.env.DEV) console.debug("[JF] responseMs", currentItem.itemKey, responseMs);
       updateMastery(profileId, moduleId, currentItem.itemKey, isCorrect, { scaffolded, masteryGatesExempt });
       recordAnswerInSession(profileId, moduleId, isCorrect);
+      // Confidence pass C2: a later correct submit after the picture was
+      // requested (either "Show me" or a converted guess) — parent-facing
+      // "peeked" count only, same footing as recordAssistedInSession.
+      if (isCorrect && pictureRequested) {
+        recordPeekInSession(profileId, moduleId);
+      }
     } else {
       // Anonymous practice (no profileId) is legacy-ungated: a dev-only path,
       // since the shipped app always passes a profile.
@@ -1554,9 +1607,22 @@ export default function FractionsPractice({
 
     setSessionStats(prev => ({ correct: prev.correct + (isCorrect ? 1 : 0), total: prev.total + 1 }));
 
+    // Confidence pass C3: Comeback Kid — an item logged as a miss earlier
+    // THIS session, now answered correctly unassisted (handleAnswer IS the
+    // unassisted path — the reveal's re-answer, finishRetry, never reaches
+    // here). Counts once, then leaves the set.
+    if (isCorrect && missedKeysRef.current.has(currentItem.itemKey)) {
+      missedKeysRef.current.delete(currentItem.itemKey);
+      comebacksRef.current += 1;
+    } else if (!isCorrect) {
+      missedKeysRef.current.add(currentItem.itemKey);
+    }
+
     if (profileId) {
       const profile = getProfile(profileId);
-      const newStreak = isCorrect ? streak + 1 : 0;
+      // C3: the streak is unchanged by a (first) miss — it only resets on a
+      // second miss, inside finishRetry's "missed" branch.
+      const newStreak = isCorrect ? streak + 1 : streak;
       const newAchievements = checkAfterAnswer({
         profileId, moduleId, module: mod,
         streak: newStreak,
@@ -1564,6 +1630,7 @@ export default function FractionsPractice({
         sessionStartTime,
         mastery: profile?.mastery?.[moduleId] || {},
         masteryThreshold: DEFAULT_MASTERY_THRESHOLD,
+        comebacks: comebacksRef.current,
       });
       if (newAchievements.length > 0) {
         setAchievementQueue(prev => [...prev, ...newAchievements]);
@@ -1590,7 +1657,9 @@ export default function FractionsPractice({
       setFeedback("correct");
       setTimeout(() => pickNewItem(), 900);
     } else {
-      setStreak(0);
+      // C3: streak is NOT reset here — a first miss he then recovers with
+      // the picture doesn't cost the streak. It resets to 0 only on a
+      // second miss (finishRetry's "missed" branch, below).
       setFeedback("incorrect");
       setShowScaffold(true);
       // Wrong-answer reveal (docs/wrong-answer-reveal-spec.md): open the
@@ -1602,7 +1671,7 @@ export default function FractionsPractice({
       setMissCount(n => n + 1);
       setMissRun(n => n + 1);
     }
-  }, [currentItem, evaluateAnswer, profileId, moduleId, streak, sessionStats, sessionStartTime, mod, pickNewItem, mode, lockedMode, userHidScaffold, showScaffold]);
+  }, [currentItem, evaluateAnswer, profileId, moduleId, streak, sessionStats, sessionStartTime, mod, pickNewItem, mode, lockedMode, userHidScaffold, showScaffold, pictureRequested]);
 
   // Submit handlers per answer type
   const handleSubmit = useCallback(() => {
@@ -1668,20 +1737,25 @@ export default function FractionsPractice({
   }, [retry.phase, currentItem?.itemKey]);
 
   // R1 — Record once, at first submit; the re-answer is never logged.
+  // (Amended by docs/confidence-pass-spec.md C3 — streak clause only,
+  // everything else below is unchanged.)
   // The outcome of an item is recorded exactly once, at the first submission.
   // When that answer is wrong the app calls updateMastery(profileId, moduleId,
   // itemKey, false) (level −1, floor 0), increments sessionStats.total with no
-  // increment to sessionStats.correct, resets streak to 0, and enters the
-  // reveal (all in handleAnswer's incorrect branch, above). That is the
-  // complete record for the item.
+  // increment to sessionStats.correct, and enters the reveal (all in
+  // handleAnswer's incorrect branch, above). That is the complete record for
+  // the item. Streak (C3): a first miss does NOT reset the streak — it's
+  // unchanged by a miss he then recovers with the picture.
   // The re-answer inside the reveal is an assisted attempt (picture,
   // derivation line on screen). It is understanding, not fluency, and is NOT
   // logged. A re-answer — correct or wrong — must NOT: call updateMastery or
   // change correct, attempts, masteredAt, lastSeen or the review interval;
-  // change sessionStats; change streak (stays 0 — the next unassisted correct
-  // starts it at 1); call checkAfterAnswer or any streak milestone; count
-  // toward the ≥10-problem daily-streak threshold. Nothing below (finishRetry,
-  // handleRetrySubmit, handleRetryTap) touches mastery, stats, streak, or
+  // change sessionStats; increment streak on a correct re-answer (the next
+  // unassisted correct still starts the next run); call checkAfterAnswer or
+  // any streak milestone; count toward the ≥10-problem daily-streak
+  // threshold. A SECOND miss (this same reveal, wrong again) DOES reset
+  // streak to 0 — see the "missed" branch below. Nothing below (finishRetry,
+  // handleRetrySubmit, handleRetryTap) touches mastery, stats, or
   // achievements — they only call evaluateAnswer (pure) and pickNewItem.
   const finishRetry = useCallback((isCorrect, displayValue) => {
     if (!currentItem) return;
@@ -1696,7 +1770,9 @@ export default function FractionsPractice({
       advanceTimeoutRef.current = setTimeout(() => pickNewItem(), 900);
     } else {
       // Wrong twice: fill the canonical answer, hold the picture, queue the
-      // comeback (spec "Comeback slot").
+      // comeback (spec "Comeback slot"). C3: THIS is where the streak resets
+      // — a second miss, not the first.
+      setStreak(0);
       setRetry({ phase: "missed", value: fillValueFor(currentItem) });
       const offset = 3 + (hashString(currentItem.itemKey) % 3); // 3–5 draws
       comebackQueueRef.current = [...comebackQueueRef.current, { itemKey: currentItem.itemKey, dueIn: offset }];
@@ -1855,6 +1931,22 @@ export default function FractionsPractice({
               (masteryData[i.itemKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD
             ).length;
             const masteryPct = totalItems > 0 ? Math.round((masteredItems / totalItems) * 100) : 0;
+            // C4 (docs/confidence-pass-spec.md): the MASTERED pill is framed
+            // against the current item's group, not the whole module —
+            // "3/25 · FOUNDATIONS" is a reachable target. No currentItem ->
+            // today's totals, label "Mastered", as before.
+            const currentGroup = currentItem ? mod.groups.find(g => g.id === currentItem.group) : null;
+            let pillValue = `${masteredItems}/${totalItems}`;
+            let pillLabel = "Mastered";
+            if (currentGroup) {
+              const groupItems = FRACTION_POOL.filter(i => i.group === currentGroup.id && isContentAccessible(moduleId, i.group));
+              const groupTotal = groupItems.length;
+              const masteredInGroup = groupTotal > 0
+                ? groupItems.filter(i => (masteryData[i.itemKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length
+                : 0;
+              pillValue = `${masteredInGroup}/${groupTotal}`;
+              pillLabel = currentGroup.label;
+            }
             return (
               <div style={{ display: "flex", gap: 6, alignItems: "stretch", marginBottom: 8, minHeight: 56 }}>
                 <div style={{
@@ -1865,8 +1957,8 @@ export default function FractionsPractice({
                   border: BRUTAL_BORDER_SM, borderRadius: 8, padding: "8px 12px",
                   boxShadow: BRUTAL_SHADOW_SM, gap: 3,
                 }}>
-                  <span style={{ fontSize: "clamp(14px, 5vw, 20px)", lineHeight: 1, whiteSpace: "nowrap" }}>⭐ {masteredItems}/{totalItems}</span>
-                  <span style={{ fontSize: 10, opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Mastered</span>
+                  <span style={{ fontSize: "clamp(14px, 5vw, 20px)", lineHeight: 1, whiteSpace: "nowrap" }}>⭐ {pillValue}</span>
+                  <span style={{ fontSize: 9, opacity: 0.6, textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "center", lineHeight: 1.15 }}>{pillLabel}</span>
                 </div>
                 <div style={{
                   flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -2133,7 +2225,11 @@ export default function FractionsPractice({
 
                   {/* Answer input */}
                   {!feedback && currentItem.answerType === "buildBar" && mode === "concrete" ? (
-                    <BuildBarInput item={currentItem} onSubmit={handleBuildBarSubmit} disabled={false} />
+                    // Keyed by retryResetKey too (docs/confidence-pass-spec.md
+                    // C2): BuildBarInput's shaded count is LOCAL state this
+                    // component doesn't control — a converted "not sure" must
+                    // remount it to clear the shading, without picking a new item.
+                    <BuildBarInput key={`${currentItem.itemKey}:${retryResetKey}`} item={currentItem} onSubmit={handleBuildBarSubmit} disabled={false} />
                   ) : (
                     <div onKeyDown={handleKeyDown}>
                       {currentItem.answerType === "choice4" ? (
@@ -2153,8 +2249,11 @@ export default function FractionsPractice({
                           showEqual={currentItem.answerType === "tapTwoOrEqual"}
                         />
                       ) : currentItem.answerType === "orderThree" ? (
+                        // Keyed by retryResetKey too (docs/confidence-pass-spec.md
+                        // C2): tapOrder is LOCAL state — a converted "not sure"
+                        // remounts to clear the taps without a new item.
                         <OrderThreeTiles
-                          key={currentItem.itemKey}
+                          key={`${currentItem.itemKey}:${retryResetKey}`}
                           fracs={currentItem.fracs}
                           direction={currentItem.direction}
                           onSubmitOrder={handleOrderSubmit}
@@ -2221,6 +2320,21 @@ export default function FractionsPractice({
                     </div>
                   )}
 
+                  {/* "Not sure" nudge (docs/confidence-pass-spec.md C2) — under
+                      the problem/input, above the scaffold. Stays until the
+                      next submit or item. */}
+                  {nudge === "notSure" && (
+                    <div style={{
+                      marginTop: 16, display: "inline-block",
+                      fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
+                      fontSize: "clamp(14px, 4vw, 16px)", color: COLORS.black,
+                      backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM,
+                      borderRadius: 8, padding: "6px 12px",
+                    }}>
+                      Not sure? Count the picture.
+                    </div>
+                  )}
+
                   {/* Scaffold — skipped where the question already embeds the visual
                       (F1 bar/circle, E4 number line) and in concrete F2, where the
                       interactive bar is the input and a pre-shaded bar would reveal
@@ -2253,18 +2367,21 @@ export default function FractionsPractice({
                   )}
 
                   {/* Show me button: abstract mode (reveals the scaffold), or
-                      pictorial mode with the scaffold tapped-hidden / on-ramped
-                      via the finish-line invitation (un-hides it, faded). */}
+                      pictorial mode whenever the scaffold isn't already at full
+                      opacity — tapped-hidden (userHidScaffold) OR simply faded
+                      below 1 with mastery (docs/confidence-pass-spec.md C2),
+                      not just the fully-hidden case. Tapping sets showScaffold
+                      (full opacity) rather than only un-hiding, in both modes. */}
                   {scaffoldRendered && !feedback && (
                     (mode === "abstract" && !showScaffold) ||
-                    (mode === "pictorial" && userHidScaffold)
+                    (mode === "pictorial" && !showScaffold && (userHidScaffold || scaffoldOpacity < 1))
                   ) && (
                     <div style={{ marginTop: 12, textAlign: "center" }}>
                       {/* Pulses after two consecutive misses in Abstract (see missRun). */}
                       <span className={mode === "abstract" && missRun >= 2 ? "showMePulse" : undefined}>
                         <BrutalButton
                           small
-                          onClick={() => mode === "pictorial" ? setUserHidScaffold(false) : setShowScaffold(true)}
+                          onClick={() => { setShowScaffold(true); setPictureRequested(true); }}
                           bg={COLORS.cream}
                         >
                           Show me
@@ -2276,8 +2393,9 @@ export default function FractionsPractice({
                   {/* Feedback — correct only. The incorrect-case "It's …"
                       line and WrongAnswerHelpers (because/hint/bond) are
                       gone (docs/wrong-answer-reveal-spec.md R3): the reveal
-                      overlay is the whole story on a miss now. Deterministic
-                      pick (was Math.random() in render). */}
+                      overlay is the whole story on a miss now. Flat rotation,
+                      no streak escalation strings (docs/confidence-pass-spec.md
+                      C3): rewards are for sticking with it, not speed/streaks. */}
                   {feedback === "correct" && (
                     <div style={{
                       marginTop: 16, fontSize: 16, fontWeight: 700,
@@ -2285,7 +2403,7 @@ export default function FractionsPractice({
                       color: COLORS.green,
                       animation: "fadeSlideUp 0.3s ease both",
                     }}>
-                      {streak >= 5 ? "OUTSTANDING! ⚡" : streak >= 3 ? "🔥 STREAK! KEEP GOING!" : ["NICE!", "GOT IT!", "YES!", "CORRECT!", "BOOM!"][sessionStats.total % 5]}
+                      {["NICE!", "GOT IT!", "YES!", "CORRECT!", "BOOM!"][sessionStats.total % 5]}
                     </div>
                   )}
                 </div>
@@ -2327,15 +2445,18 @@ export default function FractionsPractice({
           multiplication-practice.jsx's placement/shape exactly: full-screen,
           no knowledge of items/mastery lives in the shell, all composed here. */}
       {currentItem && (() => {
-        // Same phase/stage -> state mapping for both the derivation line's
-        // token AND (F2 only) the picture's finalToken (phase 1c fold).
+        // C1 (docs/confidence-pass-spec.md): the answer's slot is the blank
+        // token from the moment the line/picture appears — no stage shows
+        // the numeral first. "correct" when done, "numeral" when missed
+        // (second miss — the fill), "blank" otherwise. Same rule for both
+        // the derivation line's token AND (F2 only) the picture's
+        // finalToken (phase 1c fold) — previously this gated on revealStage,
+        // showing the numeral before stage 2.
         const tokenState = retry.phase === "done"
           ? "correct"
           : retry.phase === "missed"
             ? "numeral"
-            : revealStage >= 2
-              ? "blank"
-              : "numeral";
+            : "blank";
         const isF2 = currentItem.skill === "F2";
         const line = retry.phase === "missed"
           ? (

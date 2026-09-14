@@ -611,11 +611,20 @@ export function ProfilePicker({
               Nice work, {lastSession.name}!
             </div>
             <div style={{ fontFamily: "'Space Mono', monospace", fontSize: "12px", fontWeight: 700, color: COLORS.black, marginTop: "4px", lineHeight: 1.5 }}>
-              {[
-                `${lastSession.total} tried`,
-                lastSession.correct > 0 ? `${lastSession.correct} on your own` : null,
-                lastSession.assisted > 0 ? `${lastSession.assisted} with the picture` : null,
-              ].filter(Boolean).join(" · ")}
+              {(() => {
+                // docs/confidence-pass-spec.md, "Assisted counters": peeked
+                // (asked for the picture, then got it on the first/logged
+                // submit) moves from "on your own" to "with the picture" —
+                // it was never unassisted. Zero parts still dropped.
+                const peeked = lastSession.peeked || 0;
+                const onYourOwn = lastSession.correct - peeked;
+                const withPicture = (lastSession.assisted || 0) + peeked;
+                return [
+                  `${lastSession.total} tried`,
+                  onYourOwn > 0 ? `${onYourOwn} on your own` : null,
+                  withPicture > 0 ? `${withPicture} with the picture` : null,
+                ].filter(Boolean).join(" · ");
+              })()}
             </div>
           </div>
         )}

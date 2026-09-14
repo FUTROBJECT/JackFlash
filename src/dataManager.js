@@ -501,6 +501,10 @@ function _finalizeLiveSessionOn(profile) {
       // Parent-facing only; never part of correct/total. Older live
       // sessions predate the field.
       assisted: live.assisted || 0,
+      // "Not sure" picture requests that were later answered correctly on the
+      // first (logged) submit (docs/confidence-pass-spec.md C2). Parent-facing
+      // only, same footing as `assisted`; older live sessions predate it.
+      peeked: live.peeked || 0,
       duration: live.activeMs,
       recordedAt: new Date(live.lastAnswerAt).toISOString(),
     });
@@ -533,7 +537,7 @@ export function recordAnswerInSession(profileId, moduleId, isCorrect) {
   }
 
   if (!live) {
-    live = { moduleId, correct: 0, total: 0, assisted: 0, startedAt: now, lastAnswerAt: now, activeMs: 0 };
+    live = { moduleId, correct: 0, total: 0, assisted: 0, peeked: 0, startedAt: now, lastAnswerAt: now, activeMs: 0 };
     profile.liveSession = live;
   } else {
     live.activeMs += Math.min(now - live.lastAnswerAt, SESSION_ACTIVE_CAP_MS);
@@ -563,6 +567,23 @@ export function recordAssistedInSession(profileId, moduleId) {
   const live = profile?.liveSession;
   if (!live || live.moduleId !== moduleId) return null;
   live.assisted = (live.assisted || 0) + 1;
+  saveData();
+  return live;
+}
+
+/**
+ * Confidence pass (docs/confidence-pass-spec.md, C2 "Not sure"): a picture
+ * requested pre-answer (via "Show me" or a converted fast wrong guess) that
+ * the child then answers correctly on the next (logged) submit. Mirrors
+ * recordAssistedInSession exactly — parent-facing only, touches nothing else.
+ * No-op without a matching live session.
+ */
+export function recordPeekInSession(profileId, moduleId) {
+  initData();
+  const profile = getProfile(profileId);
+  const live = profile?.liveSession;
+  if (!live || live.moduleId !== moduleId) return null;
+  live.peeked = (live.peeked || 0) + 1;
   saveData();
   return live;
 }

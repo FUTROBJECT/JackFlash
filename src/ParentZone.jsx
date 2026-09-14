@@ -313,8 +313,13 @@ function ProgressReport({ profile }) {
             {sessions.slice(0, 10).map((s, i) => {
               const accuracy = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
               const mins = Math.round((s.duration || 0) / 1000 / 60);
-              // Sessions recorded before the counter existed have no field.
-              const helped = typeof s.assisted === "number" ? s.assisted : null;
+              // Helped = assisted (missed then got it with the picture) +
+              // peeked (asked for the picture, then got it) — either field
+              // may be missing on old rows; "–" only when BOTH are undefined
+              // (docs/confidence-pass-spec.md C2, "Assisted counters").
+              const hasAssisted = typeof s.assisted === "number";
+              const hasPeeked = typeof s.peeked === "number";
+              const helped = (hasAssisted || hasPeeked) ? (s.assisted || 0) + (s.peeked || 0) : null;
               return (
                 <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr auto auto auto", columnGap: "12px", padding: "6px 0", fontSize: "12px", fontFamily: "'Space Mono', monospace", borderBottom: "1px solid #eee" }}>
                   <span>{new Date(s.recordedAt).toLocaleDateString()}</span>
@@ -325,7 +330,7 @@ function ProgressReport({ profile }) {
               );
             })}
             <p style={{ fontSize: "11px", color: "#888", margin: "8px 0 0 0", fontFamily: "'Space Grotesk', sans-serif", lineHeight: 1.4 }}>
-              Helped = missed it, then got it with the picture. Understanding, not fluency — never counted in the score or toward mastery.
+              Helped = got it with the picture, after a miss or after asking for it. Understanding, not fluency — never counted in the score or toward mastery.
             </p>
             {sessions.length > 10 && (
               <div style={{ fontSize: "11px", color: "#888", textAlign: "center", marginTop: "6px", fontFamily: "'Space Mono', monospace" }}>

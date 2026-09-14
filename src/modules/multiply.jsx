@@ -377,7 +377,13 @@ export function ConcreteDivideBuilder({ dividend, divisor, groupsMade, onMakeGro
  *   rows = dividend (a), cols = divisor (b), opacity, animate
  *   answer is derived: rows / cols
  */
-function BarModel({ rows: dividend, cols: divisor, opacity = 1, animate = false }) {
+// `countToken` (confidence pass, docs/confidence-pass-spec.md C1): the caption
+// under the bar says "N groups" — and N IS the answer. When a token state is
+// passed ("blank" | "numeral" | "correct") the count renders through the
+// shared DerivationToken so it can be blank while the question is open
+// (pre-answer card, reveal re-ask) and fill only when it should. The bar
+// itself keeps drawing one segment per group — counting them is the work.
+function BarModel({ rows: dividend, cols: divisor, opacity = 1, animate = false, countToken = null }) {
   const answer = dividend / divisor;
   // Cap visible segments to keep it clean — if answer > 12, show grouped
   const segments = Math.min(answer, 12);
@@ -485,9 +491,13 @@ function BarModel({ rows: dividend, cols: divisor, opacity = 1, animate = false 
         marginTop: "6px",
         color: "#999",
       }}>
-        {isGrouped
-          ? `${answer} groups of ${divisor}`
-          : `${segments} group${segments !== 1 ? "s" : ""}`
+        {countToken
+          ? (isGrouped
+              ? <><DerivationToken value={answer} state={countToken} /> groups of {divisor}</>
+              : <><DerivationToken value={segments} state={countToken} /> {countToken === "blank" ? "groups" : `group${segments !== 1 ? "s" : ""}`}</>)
+          : (isGrouped
+              ? `${answer} groups of ${divisor}`
+              : `${segments} group${segments !== 1 ? "s" : ""}`)
         }
       </div>
     </div>

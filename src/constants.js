@@ -94,5 +94,11 @@ export function fluencyLimitMs(operation, answer) {
 // Streak minimum problems to count a day
 export const STREAK_MIN_PROBLEMS = 10;
 
+// "Not sure" conversion window (docs/confidence-pass-spec.md, C2): a wrong
+// answer submitted faster than this, before the picture was requested, is
+// treated as "not sure" rather than a miss — nothing is logged, the scaffold
+// shows, and a nudge invites counting the picture instead of guessing.
+export const GUESS_MS = 1500;
+
 // Session history cap
 export const SESSION_HISTORY_CAP = 30;

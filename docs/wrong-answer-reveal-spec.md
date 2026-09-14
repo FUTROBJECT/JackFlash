@@ -30,8 +30,9 @@ button. Enter submits the re-answer. Correct answers are unchanged.
 > line on screen). It is understanding, not fluency, and is **not logged**. A
 > re-answer — correct or wrong — must NOT: call `updateMastery` or change
 > `correct`, `attempts`, `masteredAt`, `lastSeen` or the review interval;
-> change `sessionStats`; change `streak` (stays 0 — the next *unassisted*
-> correct starts it at 1); call `checkAfterAnswer` or any streak milestone;
+> change `sessionStats`; change `streak` (**amended 2026-09-14,
+> docs/confidence-pass-spec.md C3:** a first miss no longer resets the streak;
+> a picture recovery leaves it unchanged and a second miss resets it to 0); call `checkAfterAnswer` or any streak milestone;
 > count toward the ≥10-problem daily-streak threshold. Put this paragraph as a
 > comment above the retry handler.
 Why: counting a scaffolded answer would let "3 correct = mastered" be reached

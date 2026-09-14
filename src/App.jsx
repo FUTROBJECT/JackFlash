@@ -130,7 +130,7 @@ export default function App() {
     const p = getActiveProfile();
     const live = p?.liveSession;
     setLastSession(live && live.total > 0
-      ? { name: p.name, correct: live.correct, total: live.total, assisted: live.assisted || 0 }
+      ? { name: p.name, correct: live.correct, total: live.total, assisted: live.assisted || 0, peeked: live.peeked || 0 }
       : null);
     refresh();
     setHomeTab("players");

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, DEFAULT_MASTERY_THRESHOLD, AVATARS, fluencyLimitMs as computeFluencyLimitMs } from "./constants.js";
+import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, DEFAULT_MASTERY_THRESHOLD, AVATARS, GUESS_MS, fluencyLimitMs as computeFluencyLimitMs } from "./constants.js";
 import multiplyModule from "./modules/multiply.jsx";
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
-import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordAnswerInSession, recordAssistedInSession, finalizeLiveSession, getProfile, updateChildSettings, getPreferredMode, setPreferredMode } from "./dataManager.js";
+import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordAnswerInSession, recordAssistedInSession, recordPeekInSession, finalizeLiveSession, getProfile, updateChildSettings, getPreferredMode, setPreferredMode } from "./dataManager.js";
 import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
@@ -233,6 +233,14 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   const [retry, setRetry] = useState({ phase: "idle", value: "" });
   // Session-scoped miss count, for the header line's deterministic rotation.
   const [missCount, setMissCount] = useState(0);
+  // "Not sure" (docs/confidence-pass-spec.md C2): true once the picture has
+  // been requested for the CURRENT item (via "Show me" or a converted fast
+  // wrong guess) — reset on every new fact. Gates the guess-conversion to
+  // once per item, and gates recordPeekInSession on a later correct submit.
+  const [pictureRequested, setPictureRequested] = useState(false);
+  // Nudge shown under the problem after a converted "not sure" — cleared on
+  // the next submit (of any kind) or the next item.
+  const [nudge, setNudge] = useState(null);
   // Consecutive unassisted misses (reset by an unassisted correct; the
   // reveal's re-answer never touches it — R1). At 2+ in Abstract mode the
   // "Show me" button pulses: an invitation to look before answering, not a
@@ -256,6 +264,12 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   // Pending pickNewFact() timeout from the retry flow (done → 900ms, missed →
   // 2500ms) — cleared when the child advances early via Enter.
   const advanceTimeoutRef = useRef(null);
+  // Comeback Kid tracking (docs/confidence-pass-spec.md C3): factKeys logged
+  // as a miss THIS session, session-scoped (cleared implicitly — a fresh Set
+  // on mount, never persisted). A later unassisted correct on a key in this
+  // set removes it and counts once toward the achievement.
+  const missedKeysRef = useRef(new Set());
+  const comebacksRef = useRef(0);
 
   // Initialize data manager
   useEffect(() => {
@@ -390,6 +404,8 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     setUserHidScaffold(false);
     setBuilderGroups(0);
     setRetry({ phase: "idle", value: "" });
+    setPictureRequested(false);
+    setNudge(null);
 
     // Finish-line on-ramp: at threshold−1 in pictorial (and not parent-locked),
     // start the scaffold hidden behind "Show me" — a non-punitive invitation
@@ -456,6 +472,23 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
 
     const isCorrect = parseInt(userAnswer) === currentFact.answer;
     const masteryThreshold = DEFAULT_MASTERY_THRESHOLD;
+    const responseMs = factShownAtRef.current ? Date.now() - factShownAtRef.current : undefined;
+
+    // C2 "Not sure" (docs/confidence-pass-spec.md): a wrong answer submitted
+    // before GUESS_MS, before the picture was requested, is treated as "not
+    // sure" rather than a miss — nothing is logged (no updateMastery, no
+    // recordAnswerInSession, no sessionStats, no streak change, no
+    // achievements, no missCount/missRun). Converts at most once per item —
+    // once the picture is up (pictureRequested), a wrong answer is a real
+    // miss (below). responseMs === undefined never converts.
+    if (!isCorrect && !pictureRequested && responseMs !== undefined && responseMs < GUESS_MS) {
+      setShowScaffold(true);
+      setPictureRequested(true);
+      setNudge("notSure");
+      setUserAnswer("");
+      return;
+    }
+    setNudge(null);
 
     // Error-priority window (docs/fact-selection-policy.md §8): a missed fact
     // returns within ~6 draws via a ×4 within-category weight boost; a correct
@@ -468,7 +501,6 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
 
     // Update mastery via data manager if profileId exists, otherwise via local state
     if (profileId) {
-      const responseMs = factShownAtRef.current ? Date.now() - factShownAtRef.current : undefined;
       // Scaffolded = a mathematically informative visual VISIBLE at submit time.
       // Pictorial with the scaffold tapped-hidden (userHidScaffold) counts as
       // UNSCAFFOLDED — that's the on-ramp.
@@ -478,6 +510,12 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       if (import.meta.env.DEV) console.debug("[JF] responseMs", currentFact.factKey, responseMs);
       updateMastery(profileId, moduleId, currentFact.factKey, isCorrect, { responseMs, fluencyLimitMs, scaffolded, masteryGatesExempt });
       recordAnswerInSession(profileId, moduleId, isCorrect);
+      // Confidence pass C2: a later correct submit after the picture was
+      // requested (either "Show me" or a converted guess) — parent-facing
+      // "peeked" count only, same footing as recordAssistedInSession.
+      if (isCorrect && pictureRequested) {
+        recordPeekInSession(profileId, moduleId);
+      }
     } else {
       // Anonymous practice (no profileId) is legacy-ungated: a dev-only path,
       // since the shipped app always passes a profile.
@@ -492,10 +530,23 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
 
     setSessionStats((prev) => ({ correct: prev.correct + (isCorrect ? 1 : 0), total: prev.total + 1 }));
 
+    // Confidence pass C3: Comeback Kid — a fact logged as a miss earlier THIS
+    // session, now answered correctly unassisted (this IS the unassisted
+    // path — the reveal's re-answer never reaches here). Counts once, then
+    // leaves the set (re-missing and re-recovering the same fact counts again).
+    if (isCorrect && missedKeysRef.current.has(currentFact.factKey)) {
+      missedKeysRef.current.delete(currentFact.factKey);
+      comebacksRef.current += 1;
+    } else if (!isCorrect) {
+      missedKeysRef.current.add(currentFact.factKey);
+    }
+
     // Check achievements after each answer (one-time unlocks like table mastery)
     if (profileId) {
       const profile = getProfile(profileId);
-      const newStreak = isCorrect ? streak + 1 : 0;
+      // C3: the streak is unchanged by a (first) miss — it only resets on a
+      // second miss, inside handleRetrySubmit's "missed" branch.
+      const newStreak = isCorrect ? streak + 1 : streak;
       const newAchievements = checkAfterAnswer({
         profileId,
         moduleId,
@@ -505,6 +556,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
         sessionStartTime,
         mastery: profile?.mastery?.[moduleId] || {},
         masteryThreshold: DEFAULT_MASTERY_THRESHOLD,
+        comebacks: comebacksRef.current,
       });
       if (newAchievements.length > 0) {
         setAchievementQueue(prev => [...prev, ...newAchievements]);
@@ -536,14 +588,16 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       setFeedback("correct");
       setTimeout(() => pickNewFact(), 900);
     } else {
-      setStreak(0);
+      // C3: streak is NOT reset here — a first miss he then recovers with
+      // the picture doesn't cost the streak. It resets to 0 only on a
+      // second miss (handleRetrySubmit's "missed" branch, below).
       setFeedback("incorrect");
       setShowScaffold(true);
       setRetry({ phase: "ask", value: "" });
       setMissCount((n) => n + 1);
       setMissRun((n) => n + 1);
     }
-  }, [currentFact, userAnswer, profileId, moduleId, pickNewFact, streak, sessionStats, sessionStartTime, mod, mode, lockedMode, userHidScaffold, showScaffold]);
+  }, [currentFact, userAnswer, profileId, moduleId, pickNewFact, streak, sessionStats, sessionStartTime, mod, mode, lockedMode, userHidScaffold, showScaffold, pictureRequested]);
 
   // The reveal owns Enter while open (see handleRetryKeyDown below) — this
   // card's own input is hidden behind it whenever feedback === "incorrect".
@@ -570,19 +624,24 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   }, [retry.phase, currentFact?.factKey]);
 
   // R1 — Record once, at first submit; the re-answer is never logged.
+  // (Amended by docs/confidence-pass-spec.md C3 — streak clause only,
+  // everything else below is unchanged.)
   // The outcome of an item is recorded exactly once, at the first submission.
   // When that answer is wrong the app calls updateMastery(profileId, moduleId,
   // itemKey, false) (level −1, floor 0), increments sessionStats.total with no
-  // increment to sessionStats.correct, resets streak to 0, and enters the
-  // reveal. That is the complete record for the item.
+  // increment to sessionStats.correct, and enters the reveal. That is the
+  // complete record for the item. Streak (C3): a first miss does NOT reset
+  // the streak — it's unchanged by a miss he then recovers with the picture.
   // The re-answer inside the reveal is an assisted attempt (picture, derivation
   // line on screen). It is understanding, not fluency, and is NOT logged. A
   // re-answer — correct or wrong — must NOT: call updateMastery or change
   // correct, attempts, masteredAt, lastSeen or the review interval; change
-  // sessionStats; change streak (stays 0 — the next unassisted correct starts
-  // it at 1); call checkAfterAnswer or any streak milestone; count toward the
-  // ≥10-problem daily-streak threshold. Nothing below touches mastery, stats,
-  // streak, or achievements.
+  // sessionStats; increment streak on a correct re-answer (the next unassisted
+  // correct still starts the next run); call checkAfterAnswer or any streak
+  // milestone; count toward the ≥10-problem daily-streak threshold. A SECOND
+  // miss (this same reveal, wrong again) DOES reset streak to 0 — see the
+  // "missed" branch below. Nothing below touches mastery, stats, or
+  // achievements.
   const handleRetrySubmit = useCallback(() => {
     if (!currentFact || retry.phase !== "ask" || retry.value === "") return;
     const isCorrect = parseInt(retry.value, 10) === currentFact.answer;
@@ -597,6 +656,8 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       advanceTimeoutRef.current = setTimeout(() => pickNewFact(), 900);
     } else {
       // Wrong twice: fill the answer, hold the picture, queue the comeback.
+      // C3: THIS is where the streak resets — a second miss, not the first.
+      setStreak(0);
       setRetry({ phase: "missed", value: String(currentFact.answer) });
       const offset = 3 + (hashString(currentFact.factKey) % 3); // 3–5 draws
       comebackQueueRef.current = [...comebackQueueRef.current, { factKey: currentFact.factKey, dueIn: offset }];
@@ -717,6 +778,33 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
             const totalFacts = distinctFacts.length;
             const masteredFacts = totalFacts > 0 ? distinctFacts.filter(f => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length : 0;
             const masteryPct = totalFacts > 0 ? Math.round((masteredFacts / totalFacts) * 100) : 0;
+            // C4 (docs/confidence-pass-spec.md): the MASTERED pill is framed
+            // against the current fact's table group, not the whole module —
+            // "8/30 · 2s, 5s & 10s" is a reachable target; "12/189" isn't.
+            // multiply: table = a; divide: table = b, falling back to answer
+            // (a fact drawn under Lock Operation could have a b not in any
+            // group — e.g. none here, but future-proof). No currentFact ->
+            // today's totals, label "MASTERED", as before.
+            const currentGroupTable = currentFact
+              ? (currentFact.operation === "divide" ? currentFact.b : currentFact.a)
+              : null;
+            let currentGroup = currentFact
+              ? mod.groups.find((g) => g.tables.includes(currentGroupTable))
+              : null;
+            if (currentFact && currentFact.operation === "divide" && !currentGroup) {
+              currentGroup = mod.groups.find((g) => g.tables.includes(currentFact.answer));
+            }
+            let pillValue = `${masteredFacts}/${totalFacts}`;
+            let pillLabel = "Mastered";
+            if (currentGroup) {
+              const groupFacts = dedupeFacts(mod.generateFacts({ tables: currentGroup.tables, operation }));
+              const groupTotal = groupFacts.length;
+              const masteredInGroup = groupTotal > 0
+                ? groupFacts.filter((f) => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length
+                : 0;
+              pillValue = `${masteredInGroup}/${groupTotal}`;
+              pillLabel = currentGroup.label;
+            }
             return (
               <div style={{ display: "flex", gap: "6px", alignItems: "stretch", marginBottom: "8px", minHeight: "56px" }}>
                 {/* Mastery progress — cumulative, persisted */}
@@ -730,8 +818,8 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                   transition: "all 0.3s ease",
                   gap: "3px",
                 }}>
-                  <span style={{ fontSize: "clamp(14px, 5vw, 20px)", lineHeight: 1, whiteSpace: "nowrap" }}>⭐ {masteredFacts}/{totalFacts}</span>
-                  <span style={{ fontSize: "10px", opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Mastered</span>
+                  <span style={{ fontSize: "clamp(14px, 5vw, 20px)", lineHeight: 1, whiteSpace: "nowrap" }}>⭐ {pillValue}</span>
+                  <span style={{ fontSize: "9px", opacity: 0.6, textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "center", lineHeight: 1.15 }}>{pillLabel}</span>
                 </div>
                 {/* Session score */}
                 <div style={{
@@ -1184,6 +1272,20 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                 );
               })()}
 
+              {/* "Not sure" nudge (docs/confidence-pass-spec.md C2) — under the
+                  problem, above the scaffold. Stays until the next submit or item. */}
+              {nudge === "notSure" && (
+                <div style={{
+                  marginTop: "12px", display: "inline-block",
+                  fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
+                  fontSize: "clamp(14px, 4vw, 16px)", color: COLORS.black,
+                  backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM,
+                  borderRadius: "8px", padding: "6px 12px",
+                }}>
+                  Not sure? Count the picture.
+                </div>
+              )}
+
               {/* Concrete: interactive builder — the tap gesture IS the operation
                   (docs/multiply-concrete-spec.md). Pictorial: passive scaffold that
                   fades with mastery. Abstract: nothing (unchanged). */}
@@ -1227,6 +1329,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                         cols={currentFact.b}
                         opacity={showScaffold ? 1 : scaffoldOpacity}
                         animate={true}
+                        countToken={feedback === "correct" ? "correct" : "blank"}
                       />
                     ) : (
                       <MultiplyScaffold
@@ -1261,12 +1364,20 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               )}
               {/* "Show me" (CLAUDE.md: Abstract = symbols + "Show me" fallback) —
                   pre-answer only, doesn't affect logging. Ported from the
-                  fractions pattern (fractions-practice.jsx). */}
-              {!feedback && ((mode === "abstract" && !showScaffold) || (mode === "pictorial" && userHidScaffold)) && (
+                  fractions pattern (fractions-practice.jsx). Pictorial
+                  (docs/confidence-pass-spec.md C2): shown whenever the
+                  scaffold isn't already at full opacity — tapped-hidden
+                  (userHidScaffold) OR simply faded below 1 with mastery —
+                  not just the fully-hidden case. Tapping sets showScaffold
+                  (full opacity) rather than only un-hiding, in both modes. */}
+              {!feedback && (
+                (mode === "abstract" && !showScaffold) ||
+                (mode === "pictorial" && !showScaffold && (userHidScaffold || scaffoldOpacity < 1))
+              ) && (
                 <div style={{ marginTop: "12px", textAlign: "center" }}>
                   {/* Pulses after two consecutive misses in Abstract (see missRun). */}
                   <span className={mode === "abstract" && missRun >= 2 ? "showMePulse" : undefined}>
-                    <BrutalButton small onClick={() => mode === "pictorial" ? setUserHidScaffold(false) : setShowScaffold(true)} bg={COLORS.cream} style={{ minHeight: 44 }}>
+                    <BrutalButton small onClick={() => { setShowScaffold(true); setPictureRequested(true); }} bg={COLORS.cream} style={{ minHeight: 44 }}>
                       Show me
                     </BrutalButton>
                   </span>
@@ -1276,7 +1387,9 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               {/* Correct feedback only — the wrong-answer chip/because/hint/bond
                   are gone (docs/wrong-answer-reveal-spec.md R3): the reveal
                   overlay is the whole story on a miss now. Deterministic pick
-                  (was Math.random() in render). */}
+                  (was Math.random() in render). Flat rotation, no streak
+                  escalation strings (docs/confidence-pass-spec.md C3): rewards
+                  are for sticking with it, not for speed/streaks. */}
               {feedback === "correct" && (
                 <div style={{
                   marginTop: "16px", fontSize: "16px", fontWeight: 700,
@@ -1284,7 +1397,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                   color: COLORS.green,
                   animation: "fadeSlideUp 0.3s ease both",
                 }}>
-                  {streak >= 5 ? "OUTSTANDING! ⚡" : streak >= 3 ? "🔥 STREAK! KEEP GOING!" : ["NICE!", "GOT IT!", "YES!", "CORRECT!", "BOOM!"][sessionStats.total % 5]}
+                  {["NICE!", "GOT IT!", "YES!", "CORRECT!", "BOOM!"][sessionStats.total % 5]}
                 </div>
               )}
             </div>
@@ -1311,22 +1424,21 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
         // wraps to two lines at a >= 6), independent of the picture's
         // orientation (rows vs columns).
         const fold = currentFact.operation !== "divide" && currentFact.a >= 6;
-        // finalToken (fold case only): the answer token moves off the
-        // (hidden) derivation line and onto the array's final total.
-        // Mapping (spec "Fold the line"): stage < 2 -> numeral; stage >= 2
-        // and phase "ask" -> blank; phase "done" -> correct; phase "missed"
-        // -> numeral. Non-fold facts always show the final total as a plain
-        // numeral — the (unfolded) derivation line carries the blank/correct
-        // token instead.
-        const revealFinalToken = !fold
-          ? "numeral"
-          : retry.phase === "done"
-            ? "correct"
-            : retry.phase === "missed"
-              ? "numeral"
-              : revealStage >= 2
-                ? "blank"
-                : "numeral";
+        // C1 (docs/confidence-pass-spec.md): the answer's slot is the blank
+        // token from the moment the line/picture appears — no stage shows
+        // the numeral first. "correct" when done, "numeral" when missed
+        // (second miss — the fill), "blank" otherwise. ONE rule, used at
+        // every site that could carry the answer: the picture's final total
+        // (fold case), the derivation line's token, and the divide chip's
+        // quotient below. (Previously the non-fold picture was hard-coded
+        // "numeral" throughout "ask" — the 2×2 leak — and the fold case
+        // additionally gated on revealStage, showing the numeral before
+        // stage 2; both are gone.)
+        const tokenState = retry.phase === "done"
+          ? "correct"
+          : retry.phase === "missed"
+            ? "numeral"
+            : "blank";
         return (
         <WrongAnswerReveal
           open={feedback === "incorrect"}
@@ -1350,9 +1462,9 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
           }
           picture={
             currentFact.operation === "divide" && DivisionScaffold ? (
-              <DivisionScaffold rows={currentFact.a} cols={currentFact.b} opacity={1} animate={mode === "abstract"} />
+              <DivisionScaffold rows={currentFact.a} cols={currentFact.b} opacity={1} animate={mode === "abstract"} countToken={tokenState} />
             ) : MultiplyScaffold ? (
-              <MultiplyScaffold rows={currentFact.a} cols={currentFact.b} opacity={1} animate={mode === "abstract"} totals={true} finalToken={revealFinalToken} />
+              <MultiplyScaffold rows={currentFact.a} cols={currentFact.b} opacity={1} animate={mode === "abstract"} totals={true} finalToken={tokenState} />
             ) : null
           }
           line={
@@ -1370,7 +1482,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               : fold
                 ? null
                 : revealStage >= 1
-                  ? buildDerivationLine(currentFact, retry.phase === "done" ? "correct" : revealStage >= 2 ? "blank" : "numeral")
+                  ? buildDerivationLine(currentFact, tokenState)
                   : null
           }
           extra={
@@ -1381,7 +1493,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                 backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM, borderRadius: "6px",
                 color: COLORS.black, // black text on a colour chip, by token not by accident
               }}>
-                {currentFact.b} × {currentFact.answer} = {currentFact.a}
+                {currentFact.b} × <DerivationToken value={currentFact.answer} state={tokenState} /> = {currentFact.a}
               </div>
             ) : null
           }
