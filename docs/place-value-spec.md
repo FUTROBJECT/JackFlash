@@ -1,6 +1,6 @@
 # JackFlash Module Specification: **Place Value** (Grade 3 / Primary 3)
 
-**Author:** Curriculum agent · **Date:** 2026-09-18 · **Status:** Draft for Adam's review
+**Author:** Curriculum agent · **Date:** 2026-09-18 · **Status:** Approved for build (Adam, 2026-09-18: US number words, thousands comma, Groups B+V first)
 **Audience:** React developer with no pedagogy background. Everything behavioural is spelled out.
 **Template:** `docs/fractions-spec.md` (section-for-section).
 **Binding companions (reuse as-is, do not reinvent):** `docs/mastery-fluency-spec.md`,
@@ -110,8 +110,8 @@ Four groups, in fixed pedagogical order.
 - **B1. Read the chart.** Discs are on the place-value chart; the child types the number.
 - **B2. Build the number.** Inverse of B1: given the numeral, the child puts the right number
   of discs in each column.
-- **B3. Numeral → number word.** 3,452 → "three thousand, four hundred and fifty-two".
-- **B4. Number word → numeral.** "four thousand and twelve" → 4,012.
+- **B3. Numeral → number word.** 3,452 → "three thousand four hundred fifty-two".
+- **B4. Number word → numeral.** "four thousand twelve" → 4,012.
 
 ### Group V — Digit Values *(P3 core; "number notation and place values")*
 - **V1. Which digit is in the ___ place?** (answer is a digit 0–9; zeros included.)
@@ -226,7 +226,7 @@ keys stay parseable; commas are display-only (§8).
 |---|---|---|---|---|
 | B1 read the chart | 8 three-digit (2 with a zero place) + 16 four-digit (5 with one zero, 2 with two zeros) | 24 | `singleNumber` | `pv:read:3452` |
 | B2 build the number | **the same 24 numbers as B1** (inverse pair, the F1/F2 precedent) | 24 | `buildNumber` *(new)* | `pv:build:3452` |
-| B3 numeral → word | 16 four-digit, incl. 4 "…and twelve"-type traps, 3 with a zero place, 1 = 10,000 | 16 | `choice4` | `pv:word:3452` |
+| B3 numeral → word | 16 four-digit, incl. 4 "…thousand twelve"-type traps (a zero place spoken as a small number), 3 with a zero place, 1 = 10,000 | 16 | `choice4` | `pv:word:3452` |
 | B4 word → numeral | 16 four-digit, incl. the same 4 trap shapes (different numbers) | 16 | `singleNumber` | `pv:num:4012` |
 | V1 which digit | 20 items: 5 source numbers × 4 places, 2 of the 5 containing a zero | 20 | `choice4` | `pv:dig:3452:h` |
 | V2 what is it worth | 24 items: 6 source numbers × 4 places; all digits distinct and non-zero | 24 | `choice4` | `pv:val:3452:h` |
@@ -275,7 +275,7 @@ correct answer plus three of the following, positions shuffled once per item vis
 | **Zero digits transposed** | C1, C2, X3 | 3,052 vs 3,520 as the pair |
 | **Longer numeral = bigger / digit count ignored** | C1, C2 | 987 chosen over 1,002 |
 | **Left-to-right first-digit-only compare** | C1, C2 | 3,520 vs 3,452 decided on "5 > 4" without aligning places |
-| **Number-word "and" trap** | B3, B4 | "four thousand **and** twelve" → **4,120** offered beside 4,012 |
+| **Small-number trap (zero place spoken)** | B3, B4 | "four thousand twelve" → **4,120** (or **412**) offered beside 4,012 |
 | **Word-order trap** | B3 | "four thousand, two hundred" vs "two thousand, four hundred" |
 | **Digit-sum expansion** | X3 | 3 + 4 + 5 + 2 |
 | **Step applied to the wrong column** | C3 | 2,360 + 10 → **3,360** or **2,361** |
@@ -348,7 +348,7 @@ Governed by `docs/wrong-answer-reveal-spec.md` R1–R7 + Phase 2, and
 |---|---|---|---|
 | B1 | `4 thousands, 0 hundreds, 5 tens, 2 ones → [4,052]` | numeral | chart with discs, per-column count chips shown (givens), no assembled numeral |
 | B2 | **none — folded** (the answer is a build, not a number) | the four column count chips, all blank | empty chart **with the strips above the columns** (3,000 · 400 · 50 · 2, split) — the decomposition is the step he lacked; the counts stay his to place |
-| B3 | `3 thousands, 4 hundreds, and 52 → [three thousand, four hundred and fifty-two]` | word chip (wraps to 2 lines) | chart with discs and count chips |
+| B3 | `3 thousands, 4 hundreds, 52 → [three thousand four hundred fifty-two]` | word chip (wraps to 2 lines) | chart with discs and count chips |
 | B4 | `four thousand → thousands column; twelve → 1 ten, 2 ones → [4,012]` | numeral | empty chart with the word's phrase chips under the columns they name |
 | V1 | `Hundreds is the 3rd column from the right — count its discs → [4]` | digit | chart with discs; the asked column outlined; its count chip is the token, other columns' chips shown |
 | V2 | `4 discs in this column, each worth 100 → [400]` | numeral | chart with discs, asked column outlined and its discs stamped 100 |
@@ -439,22 +439,23 @@ precedent). `src/add-practice.jsx`'s R group must render byte-identically.
    nested rounded cards 3,000 / 400 / 50 / 2, prop `split: boolean` (stacked → assembled
    numeral; split → four cards in a row) and `assembledToken` for the blank chip on the
    composed card. Tap toggles `split` when `interactive`. Used by X1–X3 and B2's reveal only.
-4. **Comma formatting — decided: one rule, no exceptions.** Every 4-digit numeral **displayed
-   to the child** carries a thousands **comma**: `3,452`, and also `3,000` inside an expanded
-   form. Rationale: the comma is what Jack meets in his own school materials and in this
-   app's market; MOE's thin-space convention (`10 000`) is unreachable from a numeric input
+4. **Comma formatting — decided (Adam, 2026-09-18): one rule, no exceptions.** Every 4-digit
+   numeral **displayed to the child** carries a thousands **comma**: `3,452`, and also `3,000`
+   inside an expanded form. Rationale: the comma is what Jack meets in his own school
+   materials and in this app's market; MOE's thin-space convention (`10 000`) is unreachable from a numeric input
    and reads as two numbers to an 8-year-old. Consequences the builder must honour:
    - A single helper `formatNumber(n)` does all display formatting; nothing else formats.
    - **Never** in `itemKey`s, never in `correctAnswer`, never inside an input.
    - `singleNumber` inputs accept digits only (`inputMode="numeric"`,
      `WebkitAppearance: "none"`); strip any non-digit before comparison so a pasted "3,452"
      still evaluates. `correctAnswer` for `singleNumber` is a **Number** (fractions precedent).
-5. **Number-word rendering — decided: British / Singapore convention**, which is what think!
-   Mathematics prints: hyphenated compound tens-ones (`fifty-two`), a comma after the
-   thousands part, and **"and" before the final tens/ones part** — `three thousand, four
-   hundred and fifty-two`; `four thousand and twelve`; `three thousand and five`; `three
-   thousand, five hundred`. A pure `numberToWords(n)` helper in `src/modules/placeValue.jsx`
-   produces both the correct answer and the B3 distractors. Word cards in `choice4` wrap to
+5. **Number-word rendering — decided (Adam, 2026-09-18): US classroom convention**, which is
+   what Jack's school uses: hyphenated compound tens-ones (`fifty-two`), **no "and"
+   anywhere, no commas in words** — `three thousand four hundred fifty-two`; `four thousand
+   twelve`; `three thousand five`; `three thousand five hundred`; `ten thousand`. A pure
+   `numberToWords(n)` helper in `src/modules/placeValue.jsx` produces both the correct answer
+   and the B3 distractors; the B3/B4 trap is the zero place spoken as a small number
+   ("four thousand twelve" → 4,120 / 412 as distractors beside 4,012). Word cards in `choice4` wrap to
    three lines: min card height 64px, Space Grotesk 700, `clamp(13px, 3.8vw, 16px)`,
    black text, `overflowWrap: "anywhere"` — check at 320px.
 6. **New practice screen `src/place-value-practice.jsx`**, a sibling of
@@ -538,3 +539,13 @@ least one **wrong** answer each, plus one **second miss** each, plus one **fast 
 
 **End of specification.** The build can start with Group B (free tier) and Group V, then X and
 C behind the existing content gate, without any spec changes.
+
+## Build plan (Adam, 2026-09-18)
+
+**Pass 1 — Groups B and V** (what P3 opens with and what Jack is doing now): module
+definition with the B and V pools, the practice screen, `PlaceValueChart` disc mode,
+`buildNumber`, `App.jsx` routing, catalog entry. **Until launch pricing is wired, Group V
+is listed in `freeContent` alongside B** so the test-drive build reaches it on the phone
+(the native purchase provider is still a stub); the $3.99 gate moves V out of
+`freeContent` at launch. **Pass 2 — Groups X and C**, no spec changes.
+
