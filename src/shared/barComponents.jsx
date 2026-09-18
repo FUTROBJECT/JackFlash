@@ -671,17 +671,84 @@ export function TenFrame({
 }
 
 // ---------------------------------------------------------------------------
-// PlaceValueChart — place-value disc visualisation for R-group.
-// Shows ones / tens / hundreds / thousands as colored discs.
-// Responsive: viewBox + width:100%.
+// PlaceValueChart — place-value disc visualisation.
+//
+// Default behaviour (mode="digits") is add-practice.jsx's R-group chart,
+// BYTE-IDENTICAL to before: ones/tens/hundreds/thousands as colored discs
+// each printed with its digit, `digits` array [ones, tens, hundreds?,
+// thousands?], `highlightCol` (index) for the carry/borrow trade animation.
+//
+// docs/place-value-spec.md §8.1 additions, all opt-in/default-off, for the
+// Place Value module's number-discs chart (thousand/hundred/ten/one discs —
+// the column carries the value, not the disc size):
+//   mode          — "digits" (default, unchanged) | "discs"
+//   counts        — discs mode: [k,h,t,o] (or [h,t,o] for the 3-digit
+//                   bridge), LEFT-TO-RIGHT display order, replaces `digits`.
+//   countTokens   — parallel array, one of "numeral"|"blank"|"correct"|null
+//                   per column: the count CHIP under that column, through
+//                   the shared DerivationToken. null/omitted = no chip at
+//                   all (§3's no-pre-reveal rule: the digit chip stays
+//                   blank/hidden until the scaffold is allowed to show it).
+//   columns       — 3 | 4, defaults to counts.length.
+//   highlightPlace— "k"|"h"|"t"|"o": outlines that column (V1/V2/V3).
+//   valueCaption  — parallel array of nodes (or null), rendered under that
+//                   column's count chip (V1/V2's "4 × 100 = ▢" caption —
+//                   callers build the node, chart just places it).
+//   phrases       — array of { span, text } covering all columns
+//                   left-to-right (spans sum to `columns`); when present,
+//                   REPLACES disc rendering for the columns it covers with
+//                   a centered phrase chip (or a dashed empty box when
+//                   text is null) — B4's "empty chart with the word's
+//                   phrase chips" scaffold.
+//   compact       — smaller discs/columns (disc r=6, column width 44) —
+//                   for C2's three-stacked-chart picture (pass 2; wired
+//                   here since it's part of this extension, unused this pass).
+//   interactive + onChange(counts) — per-column −/+ steppers (≥44px), for
+//                   BuildNumberInput (B2's buildNumber answerType).
+//   emptyMarker   — an empty (0-count) column draws a dashed pen-outline
+//                   placeholder disc instead of blank space (zero is a
+//                   thing, not an absence).
+//   animate       — disc pop-in stagger (discs mode only).
+//
+// Responsive: viewBox + width:100% in both modes — never a fixed px width.
 // ---------------------------------------------------------------------------
+const PV_PLACE_LABELS = { k: "Thousands", h: "Hundreds", t: "Tens", o: "Ones" };
+const PV_PLACE_COLOR = { k: COLORS.purple, h: COLORS.green, t: COLORS.blue, o: COLORS.pink };
+
+function pvColumnPlaces(columns) {
+  return columns === 3 ? ["h", "t", "o"] : ["k", "h", "t", "o"];
+}
+
 export function PlaceValueChart({
-  digits,       // array [onesDigit, tensDigit, hundredsDigit?, thousandsDigit?]
+  digits,       // array [onesDigit, tensDigit, hundredsDigit?, thousandsDigit?] (mode="digits")
   op = "+",
   opacity = 1,
   animate = false,
-  highlightCol = null,  // column index to highlight (shows trade)
+  highlightCol = null,  // column index to highlight (shows trade) — mode="digits" only
+  mode = "digits",
+  counts = null,
+  countTokens = null,
+  columns = null,
+  highlightPlace = null,
+  valueCaption = null,
+  phrases = null,
+  compact = false,
+  interactive = false,
+  onChange = null,
+  emptyMarker = false,
 }) {
+  if (mode === "discs") {
+    return (
+      <PlaceValueDiscChart
+        counts={counts} countTokens={countTokens}
+        columns={columns || counts?.length || 4}
+        highlightPlace={highlightPlace} valueCaption={valueCaption}
+        phrases={phrases} compact={compact}
+        interactive={interactive} onChange={onChange}
+        emptyMarker={emptyMarker} opacity={opacity} animate={animate}
+      />
+    );
+  }
   const labels = ["Ones", "Tens", "Hundreds", "Thousands"];
   const discColors = [COLORS.pink, COLORS.blue, COLORS.green, COLORS.purple];
   const colCount = digits.length; // 3 or 4
@@ -734,6 +801,270 @@ export function PlaceValueChart({
           );
         })}
       </svg>
+    </div>
+  );
+}
+
+const PV_STEP_BTN_STYLE = {
+  width: 44, height: 44, borderRadius: 8, border: BRUTAL_BORDER_SM,
+  backgroundColor: "white", fontFamily: "'Space Mono', monospace",
+  fontWeight: 700, fontSize: 20, cursor: "pointer", boxShadow: BRUTAL_SHADOW_SM,
+  display: "flex", alignItems: "center", justifyContent: "center",
+};
+
+// One column box: header label, a 5-per-row disc frame (or a phrase chip /
+// dashed empty-marker in place of discs), an optional count chip (through
+// DerivationToken), an optional caption node, and optional ±steppers.
+function PlaceValueColumnBox({
+  label, count = 0, color = COLORS.black, token, caption,
+  highlighted = false, emptyMarker = false, compact = false, animate = false,
+  interactive = false, onDec, onInc,
+  phraseOnly = false, phraseText = null,
+  columnDelay = 0, // ms offset so multi-column auto-fills animate left column first
+}) {
+  const r = compact ? 6 : 9;
+  const gap = compact ? 2 : 3;
+  const rowCap = 5;
+  const rows = count > 0 ? Math.ceil(count / rowCap) : 0;
+  const frameMinH = compact ? 40 : 56;
+
+  return (
+    <div style={{
+      flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center",
+      padding: compact ? "4px 2px" : "6px 4px", borderRadius: 8,
+      border: highlighted ? `3px solid ${COLORS.orange}` : `2px solid ${COLORS.black}`,
+      backgroundColor: highlighted ? "#FFF4E5" : "transparent",
+      transition: "border-color 0.2s ease, background-color 0.2s ease",
+    }}>
+      <div style={{
+        fontFamily: "'Space Mono', monospace", fontWeight: 700,
+        // Scales with the viewport so "Thousands" fits a 4-column chart at 320px.
+        fontSize: compact ? 9 : "clamp(9px, 2.8vw, 11px)", color: COLORS.black, marginBottom: 4, textAlign: "center",
+        lineHeight: 1.2, whiteSpace: "nowrap", maxWidth: "100%", overflow: "hidden",
+      }}>
+        {label}
+      </div>
+
+      {phraseOnly ? (
+        <div style={{
+          minHeight: frameMinH, display: "flex", alignItems: "center", justifyContent: "center",
+          fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, textAlign: "center",
+          fontSize: "clamp(11px, 3.2vw, 14px)", color: COLORS.black, padding: "2px 2px",
+        }}>
+          {phraseText || (
+            <span style={{
+              display: "block", width: 16, height: 16,
+              borderRadius: "50%", border: `2px dashed ${COLORS.black}`, opacity: 0.4,
+            }} />
+          )}
+        </div>
+      ) : (
+        <div style={{
+          display: "flex", flexDirection: "column", gap: compact ? 2 : 3,
+          alignItems: "center", justifyContent: "center", minHeight: frameMinH,
+          // Stretch to the column so the 5-cell disc rows have a real width
+          // to divide (a centred flex child otherwise shrinks to nothing).
+          alignSelf: "stretch", width: "100%",
+        }}>
+          {count === 0 ? (
+            emptyMarker ? (
+              <span style={{
+                display: "inline-block", width: r * 2, height: r * 2, borderRadius: "50%",
+                border: `2px dashed ${COLORS.black}`, opacity: 0.4,
+              }} />
+            ) : <div style={{ height: r * 2 }} />
+          ) : (
+            // Each row is a 5-cell grid that fills the column, so discs shrink
+            // with the column instead of spilling out of it at 320px (four
+            // columns of nine discs must fit). r*2 is the cap, not the size.
+            Array.from({ length: rows }).map((_, rowIdx) => {
+              const startIdx = rowIdx * rowCap;
+              const inRow = Math.min(rowCap, count - startIdx);
+              return (
+                <div key={rowIdx} style={{
+                  display: "grid", gridTemplateColumns: `repeat(${rowCap}, 1fr)`, gap,
+                  width: "100%", maxWidth: rowCap * r * 2 + (rowCap - 1) * gap, justifyItems: "center",
+                }}>
+                  {Array.from({ length: inRow }).map((_, i) => (
+                    <span key={i} style={{
+                      display: "block", width: "100%", maxWidth: r * 2, aspectRatio: "1 / 1", borderRadius: "50%",
+                      backgroundColor: color, border: "2px solid " + COLORS.black, boxSizing: "border-box",
+                      animation: animate ? `dotPop 0.25s ease ${columnDelay + (startIdx + i) * 40}ms both` : "none",
+                    }} />
+                  ))}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {token !== undefined && token !== null && (
+        <div style={{ marginTop: 4 }}>
+          <DerivationToken value={count} state={token} />
+        </div>
+      )}
+      {caption && <div style={{ marginTop: 3, textAlign: "center" }}>{caption}</div>}
+      {interactive && (
+        // Stacked, not side by side: two 44px buttons don't fit a four-column
+        // chart at 375px (a column is ~70px), and at 320px even less. "+" on
+        // top — adding a disc is the primary action.
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
+          <button onClick={onInc} style={PV_STEP_BTN_STYLE} aria-label={`Add a ${label} disc`}>+</button>
+          <button onClick={onDec} style={PV_STEP_BTN_STYLE} aria-label={`Remove a ${label} disc`}>−</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// The discs-mode body of PlaceValueChart (see the extended docstring above
+// the digits-mode component). Plain flex/CSS, not SVG — the interactive
+// stepper buttons are real <button>s (SVG foreignObject would complicate
+// touch targets for no benefit here); font sizes and disc sizes are fixed
+// px, matching DotArray's 6-11px dot precedent, verified to fit 320px with
+// 4 columns.
+function PlaceValueDiscChart({
+  counts, countTokens, columns, highlightPlace, valueCaption, phrases,
+  compact, interactive, onChange, emptyMarker, opacity, animate,
+}) {
+  const places = pvColumnPlaces(columns);
+  const safeCounts = counts || places.map(() => 0);
+
+  const handleDelta = (idx, delta) => {
+    if (!onChange) return;
+    const next = [...safeCounts];
+    next[idx] = Math.max(0, Math.min(15, (next[idx] || 0) + delta));
+    onChange(next);
+  };
+
+  let running = 0;
+  const phraseBoxes = (phrases || []).map((p) => {
+    const startIdx = running;
+    running += p.span || 1;
+    return { ...p, startIdx };
+  });
+
+  return (
+    <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: compact ? 300 : 360 }}>
+      <div style={{ display: "flex", gap: compact ? 4 : 6, width: "100%" }}>
+        {phrases
+          ? phraseBoxes.map((pb, i) => {
+            const label = pb.span > 1
+              ? places.slice(pb.startIdx, pb.startIdx + pb.span).map((p) => PV_PLACE_LABELS[p]).join(" & ")
+              : PV_PLACE_LABELS[places[pb.startIdx]];
+            return (
+              <div key={i} style={{ flex: pb.span || 1, minWidth: 0 }}>
+                <PlaceValueColumnBox label={label} phraseOnly phraseText={pb.text} compact={compact} />
+              </div>
+            );
+          })
+          : places.map((place, idx) => (
+            <PlaceValueColumnBox
+              key={place}
+              label={PV_PLACE_LABELS[place]}
+              count={safeCounts[idx] || 0}
+              color={PV_PLACE_COLOR[place]}
+              token={countTokens ? countTokens[idx] : undefined}
+              caption={valueCaption ? valueCaption[idx] : null}
+              highlighted={highlightPlace === place}
+              emptyMarker={emptyMarker}
+              compact={compact}
+              animate={animate}
+              columnDelay={idx * 150}
+              interactive={interactive}
+              onDec={() => handleDelta(idx, -1)}
+              onInc={() => handleDelta(idx, 1)}
+            />
+          ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// BuildNumberInput — the `buildNumber` answerType's interactive input
+// (docs/place-value-spec.md §8.2, the `buildBar` analogue): an interactive
+// discs-mode PlaceValueChart with ±steppers per column, plus a full-width
+// "Check!" button. `counts`/`onChange` are controlled by the caller (the
+// practice screen owns the array so it survives a converted "not sure").
+// Over-filling a column past 9 is allowed for a beat (no auto-trade) — the
+// cream chip names it (docs/place-value-spec.md §3).
+// ---------------------------------------------------------------------------
+export function BuildNumberInput({ columns, counts, onChange, onSubmit, disabled = false }) {
+  const overfill = (counts || []).some((c) => c > 9);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: "100%" }}>
+      <PlaceValueChart
+        mode="discs" columns={columns} counts={counts}
+        countTokens={(counts || []).map(() => "numeral")}
+        interactive={!disabled} onChange={onChange}
+        emptyMarker
+      />
+      {overfill && (
+        <div style={{
+          fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 13,
+          color: COLORS.black, backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM,
+          borderRadius: 8, padding: "6px 12px", textAlign: "center",
+        }}>
+          A column only holds 9 — the next one is worth ten times more.
+        </div>
+      )}
+      {!disabled && (
+        <button onClick={onSubmit} style={{
+          width: "100%", minHeight: 48, borderRadius: 10, border: BRUTAL_BORDER_SM,
+          backgroundColor: COLORS.yellow, color: COLORS.black,
+          fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 16,
+          cursor: "pointer", boxShadow: BRUTAL_SHADOW_SM,
+        }}>
+          Check!
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PlaceValueStrips — Singapore arrow-card decomposition (docs/place-value-
+// spec.md §8.3). Pass 1 implements only what B2's reveal needs: the split
+// (nested-cards-pulled-apart) view and `assembledToken`. The interactive
+// tap-to-toggle stacked/split view is X-group's job (pass 2).
+//   values       — place values already multiplied (e.g. [4000, 0, 10, 2]),
+//                  left-to-right, sliced to the item's column count.
+//   split        — true (default): render each value as its own card in a
+//                  row. false: one card holding the assembled total.
+//   assembledToken — "numeral"|"blank"|"correct", only meaningful when
+//                  split=false: renders the total through DerivationToken
+//                  instead of the plain number.
+// ---------------------------------------------------------------------------
+export function PlaceValueStrips({ values, split = true, assembledToken = null, opacity = 1 }) {
+  if (split) {
+    return (
+      <div style={{ opacity, transition: "opacity 0.6s ease", display: "flex", gap: 6, justifyContent: "center", width: "100%", flexWrap: "wrap" }}>
+        {values.map((v, i) => (
+          <div key={i} style={{
+            minWidth: 52, padding: "8px 10px", borderRadius: 10, border: BRUTAL_BORDER_SM,
+            backgroundColor: "white", boxShadow: BRUTAL_SHADOW_SM,
+            fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 14,
+            textAlign: "center", color: COLORS.black,
+          }}>
+            {Number(v).toLocaleString("en-US")}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  const total = values.reduce((a, b) => a + b, 0);
+  return (
+    <div style={{ opacity, transition: "opacity 0.6s ease", display: "flex", justifyContent: "center", width: "100%" }}>
+      <div style={{
+        minWidth: 90, padding: "10px 16px", borderRadius: 10, border: BRUTAL_BORDER,
+        backgroundColor: "white", boxShadow: BRUTAL_SHADOW,
+        fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 18,
+        textAlign: "center", color: COLORS.black,
+      }}>
+        {assembledToken ? <DerivationToken value={total} state={assembledToken} /> : total}
+      </div>
     </div>
   );
 }

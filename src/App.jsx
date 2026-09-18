@@ -23,8 +23,11 @@ import { ParentGate, ParentZone } from "./ParentZone.jsx";
 import { initPurchases } from "./purchaseManager.js";
 import MultiplicationPractice from "./multiplication-practice.jsx";
 import FractionsPractice from "./fractions-practice.jsx";
+import PlaceValuePractice from "./place-value-practice.jsx";
 // v1 ships Multiply/Divide + Fractions only. Connections (capstone) and Add & Subtract are
 // built but intentionally NOT registered in v1 — re-enable these imports in v1.1/v1.2 to ship them.
+// Place Value (pass 1: Groups B + V) is registered for test-driving in the preview/on-device
+// build but its catalog product stays `available: false` until launch pricing is wired.
 // import ConnectionsPractice from "./connections-practice.jsx";
 // import AddPractice from "./add-practice.jsx";
 import Onboarding from "./Onboarding.jsx";
@@ -270,6 +273,9 @@ export default function App() {
       };
       if (activeModuleId === "fractions") {
         return <FractionsPractice key={profile?.id} {...commonProps} />;
+      }
+      if (activeModuleId === "placeValue") {
+        return <PlaceValuePractice key={profile?.id} {...commonProps} />;
       }
       // v1.1+: connections / add branches re-enabled when those modules ship.
       return <MultiplicationPractice key={profile?.id} {...commonProps} />;

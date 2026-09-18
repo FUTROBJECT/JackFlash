@@ -549,3 +549,50 @@ is listed in `freeContent` alongside B** so the test-drive build reaches it on t
 (the native purchase provider is still a stub); the $3.99 gate moves V out of
 `freeContent` at launch. **Pass 2 — Groups X and C**, no spec changes.
 
+## As built — pass 1 (2026-09-18, Groups B + V, play-tested at 375×667 and 320×568)
+
+Shipped: `src/modules/placeValue.jsx` (140 items: B1 24, B2 24, B3 16, B4 16,
+V1 20, V2 24, V3 16 — deterministic literal pools, verified by executing the
+pool builder), `src/place-value-practice.jsx`, `PlaceValueChart` disc mode +
+`BuildNumberInput` + `PlaceValueStrips` in `src/shared/barComponents.jsx`
+(add-practice's digits-mode call unchanged), `App.jsx` routing, three
+achievement icons. `freeContent: ["build", "digits"]` until launch pricing.
+
+Fixed in the main loop after the builder's static pass:
+- **B1 reveal header printed the answer** (the "problem" slot restated the
+  numeral). Now "What number is this?" — the picture is the problem.
+- Disc rows are a 5-cell grid that fills the column (discs used to spill out
+  of a four-column chart at 320px, then collapsed to dots once centred);
+  column labels scale (`clamp(9px, 2.8vw, 11px)`) so "Thousands" fits.
+- Stepper buttons stack vertically (+ above −): two 44px buttons don't fit a
+  ~70px column at 375px.
+- Strip cards carry the thousands comma (2,000, not 2000).
+- V2's value caption wraps inside its column instead of clipping.
+- B4's derivation line is "7 thousands, 8 hundreds, 1 ten, 3 ones → [7,813]"
+  (two lines) — the picture already maps each phrase to its column.
+
+Verified in the preview: B1 (slow miss → reveal with count chips as givens
+and the numeral only in the token; recovery green; R1 by storage: attempts
++1, correct −1, assisted +1); B2 (empty chart, own counts, wrong build →
+strips + blank counts, input reset; second miss → auto-fill on a yellow
+frame, streak 0, mastery −1); B3 (US words, zero-place trap distractors,
+reveal line ends in the token, wrong pick dimmed); B4 (phrase chips under
+columns, no digits; reveal line); V1 (asked column outlined, its count blank;
+reveal; recovery); V2 (caption "9 × 100 = ▢"; second miss fills 900); V3 (no
+column outlined pre-answer or during the re-ask); Abstract "Show me" → chart,
+correct answer logged as `peeked`; header "0/80 · BUILD & READ" → 47/80 as
+items were seeded; no horizontal overflow at 320 on 3- or 4-column charts;
+no console errors. The choice-card "not sure" conversion is the same code
+path verified in Multiply and Fractions (grep-confirmed, not re-driven — the
+driver can't tap within 1.5 s of an item appearing reliably).
+
+Deferred to pass 2 (with X and C): discs are plain colour circles, not
+stamped with their unit value (illegible at four columns × nine discs at
+320px); B1's tap-to-count micro-interaction; V2's caption is always shown
+rather than on tap; the §5 skill focus selector (neither Fractions nor this
+screen ever calls `setFocusSkill` — the state exists, the UI doesn't); the
+Parent Zone `lockedGroup` setting is not read by any module (pre-existing).
+`pv-zero-hero` counts credited zero-place answers from mastery data, so a
+profile seeded past 20 unlocks it on its first answer of any kind — fine for
+real profiles, worth knowing when testing.
+
