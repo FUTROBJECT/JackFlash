@@ -596,3 +596,47 @@ Parent Zone `lockedGroup` setting is not read by any module (pre-existing).
 profile seeded past 20 unlocks it on its first answer of any kind — fine for
 real profiles, worth knowing when testing.
 
+## As built — pass 2 (2026-09-18, Groups X + C, play-tested at 375×667 and 320×568)
+
+Shipped: X1–X3 and C1–C3 pools (142 items; module total 282, all keys
+unique), `tapTwo` and `orderThree` in the practice screen, `PlaceValueStrips`
+interactive toggle + `blankIndex`/`blankToken`, achievements
+`pv-number-stretcher`, `pv-line-up-champ`, `pv-master`. `freeContent` stays
+`["build", "digits"]`; X and C sit behind the $3.99 unlock.
+
+Fixed in the main loop after the builder's static pass:
+- **Crash:** the X2 reveal threw `BRUTAL_SHADOW is not defined` (the strips'
+  assembled card used a token `barComponents.jsx` never imported) — a blank
+  page on the first X2 miss. Imported.
+- **Pre-reveal leak:** X3's card showed the strips (8,000 · 700 · 10 · 2)
+  under the question — the correct choice card spelled out. The card and the
+  re-ask picture now show the chart only (counts are the numeral's digits,
+  already given); the strips appear once the token resolves.
+- **Purchase gate:** `isModuleFullyUnlocked` string-built
+  `module.${moduleId}.full` ("module.placeValue.full") while the catalog id
+  is lowercase ("module.placevalue.full"), so a Place Value purchase would
+  never have unlocked X and C. It now looks the product up by `moduleId`.
+- **Streak milestones fired on a miss** (all three modules): since the
+  confidence pass a first miss leaves the streak unchanged, so the "at ===
+  newStreak" check matched again on the miss right after a milestone.
+  Guarded on `isCorrect`.
+- C3's two mini charts were side by side and clipped their labels to
+  "Thou"/"Hund" at 375px; they now stack vertically around the step chip.
+
+Verified in the preview: X1 (blank strip, reveal "The tens column has 0
+discs, each worth 10 → ▢"); X2 (split strips + blank assembled card + blank
+counts; three-tier reveal fits one screen); X3 (chart only pre-answer;
+reveal chart → strips on a correct re-answer, green); C1 (aligned charts, no
+winner marked; reveal "Same hundreds (1). Tens: 2 against 3 → ▢", both cards
+live; second miss fills the winner and resets the streak; 320 fits); C2
+(three compact charts in tile order; wrong order → one-tap "Tap the
+smallest."; second miss → smallest yellow with a "1" badge); C3 (stacked
+charts, changed column blank, "Each step adds 1 ten disc → ▢"); the
+working-group pill moved to "EXPANDED FORM" once B and V were mastered;
+the X/C unlock via a seeded purchase. R1 by storage on every path.
+
+Still deferred: unit-stamped discs; B1 tap-to-count; skill focus selector;
+`lockedGroup` (chip filed). Zero Hero / Disc Boss fire on the first answer
+of a profile whose seeded mastery already qualifies — real profiles earn
+them normally.
+

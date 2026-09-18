@@ -570,7 +570,10 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
         { at: 25, name: "LEGENDARY!", icon: "👑", description: "25 in a row!" },
       ];
       const milestone = streakMilestones.find(m => m.at === newStreak);
-      if (milestone) {
+      // Only an unassisted correct answer reaches a milestone: since the
+      // confidence pass a first miss leaves the streak unchanged, so without
+      // this guard the milestone would fire a second time on that miss.
+      if (isCorrect && milestone) {
         setAchievementQueue(prev => [...prev, milestone]);
       }
     }

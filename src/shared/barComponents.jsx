@@ -17,7 +17,7 @@
  */
 
 import React, { useState } from "react";
-import { COLORS, BRUTAL_BORDER_SM, BRUTAL_BORDER, BRUTAL_SHADOW_SM, DEFAULT_MASTERY_THRESHOLD } from "../constants.js";
+import { COLORS, BRUTAL_BORDER_SM, BRUTAL_BORDER, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, DEFAULT_MASTERY_THRESHOLD } from "../constants.js";
 import DerivationToken from "./DerivationToken.jsx";
 
 // ---------------------------------------------------------------------------
@@ -1026,21 +1026,45 @@ export function BuildNumberInput({ columns, counts, onChange, onSubmit, disabled
 
 // ---------------------------------------------------------------------------
 // PlaceValueStrips — Singapore arrow-card decomposition (docs/place-value-
-// spec.md §8.3). Pass 1 implements only what B2's reveal needs: the split
-// (nested-cards-pulled-apart) view and `assembledToken`. The interactive
-// tap-to-toggle stacked/split view is X-group's job (pass 2).
-//   values       — place values already multiplied (e.g. [4000, 0, 10, 2]),
-//                  left-to-right, sliced to the item's column count.
+// spec.md §8.3). `values` — place values already multiplied (e.g.
+// [4000, 0, 10, 2]), left-to-right, sliced to the item's column count.
 //   split        — true (default): render each value as its own card in a
-//                  row. false: one card holding the assembled total.
-//   assembledToken — "numeral"|"blank"|"correct", only meaningful when
-//                  split=false: renders the total through DerivationToken
+//                  row. false: one card holding the assembled total. Also
+//                  the INITIAL state when `interactive` (a fresh mount per
+//                  item — key the component on itemKey, the same
+//                  `retryResetKey` pattern local-tap-state components use
+//                  elsewhere — always starts from this prop).
+//   assembledToken — "numeral"|"blank"|"correct", only meaningful in the
+//                  assembled view: renders the total through DerivationToken
 //                  instead of the plain number.
+//   interactive  — pass 2 (Group X): tap toggles stacked (assembled) ↔ split
+//                  (pulled-apart) — "tapping is the composition/decomposition
+//                  made visible" (§3). Default off; the B2 reveal's non-
+//                  interactive split-only call is unaffected.
+//   blankIndex/blankToken — pass 2 (X1): when set, the split card at this
+//                  index renders through DerivationToken (state=blankToken)
+//                  instead of its plain number — X1's one hidden term among
+//                  three visible ones. Default off (null): every split card
+//                  is the plain number, byte-identical to before.
 // ---------------------------------------------------------------------------
-export function PlaceValueStrips({ values, split = true, assembledToken = null, opacity = 1 }) {
-  if (split) {
+export function PlaceValueStrips({
+  values, split = true, assembledToken = null, opacity = 1, interactive = false,
+  blankIndex = null, blankToken = "blank",
+}) {
+  const [localSplit, setLocalSplit] = useState(split);
+  const isSplit = interactive ? localSplit : split;
+  const handleTap = interactive ? () => setLocalSplit((s) => !s) : undefined;
+
+  if (isSplit) {
     return (
-      <div style={{ opacity, transition: "opacity 0.6s ease", display: "flex", gap: 6, justifyContent: "center", width: "100%", flexWrap: "wrap" }}>
+      <div
+        onClick={handleTap}
+        style={{
+          opacity, transition: "opacity 0.6s ease", display: "flex", gap: 6,
+          justifyContent: "center", width: "100%", flexWrap: "wrap",
+          cursor: interactive ? "pointer" : "default",
+        }}
+      >
         {values.map((v, i) => (
           <div key={i} style={{
             minWidth: 52, padding: "8px 10px", borderRadius: 10, border: BRUTAL_BORDER_SM,
@@ -1048,7 +1072,7 @@ export function PlaceValueStrips({ values, split = true, assembledToken = null, 
             fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 14,
             textAlign: "center", color: COLORS.black,
           }}>
-            {Number(v).toLocaleString("en-US")}
+            {i === blankIndex ? <DerivationToken value={Number(v).toLocaleString("en-US")} state={blankToken} /> : Number(v).toLocaleString("en-US")}
           </div>
         ))}
       </div>
@@ -1056,7 +1080,13 @@ export function PlaceValueStrips({ values, split = true, assembledToken = null, 
   }
   const total = values.reduce((a, b) => a + b, 0);
   return (
-    <div style={{ opacity, transition: "opacity 0.6s ease", display: "flex", justifyContent: "center", width: "100%" }}>
+    <div
+      onClick={handleTap}
+      style={{
+        opacity, transition: "opacity 0.6s ease", display: "flex",
+        justifyContent: "center", width: "100%", cursor: interactive ? "pointer" : "default",
+      }}
+    >
       <div style={{
         minWidth: 90, padding: "10px 16px", borderRadius: 10, border: BRUTAL_BORDER,
         backgroundColor: "white", boxShadow: BRUTAL_SHADOW,

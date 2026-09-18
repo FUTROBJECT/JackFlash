@@ -1642,7 +1642,10 @@ export default function FractionsPractice({
         { at: 25, name: "LEGENDARY!", icon: "👑", description: "25 in a row!" },
       ];
       const milestone = streakMilestones.find(m => m.at === newStreak);
-      if (milestone) setAchievementQueue(prev => [...prev, milestone]);
+      // Only an unassisted correct answer reaches a milestone: a first miss
+      // leaves the streak unchanged (confidence pass), so without this guard
+      // the milestone would fire a second time on that miss.
+      if (isCorrect && milestone) setAchievementQueue(prev => [...prev, milestone]);
     }
 
     const newTotal = sessionStats.total + 1;

@@ -31,8 +31,9 @@ import {
 // speed gate, no responseMs passed to updateMastery, so FLUENCY_MS_* is not
 // imported (same ruling/comment as fractions-practice.jsx).
 import placeValueModule, {
-  PLACE_VALUE_POOL, shouldAllowSkill, numberToWords, formatNumber,
+  PLACE_VALUE_POOL, shouldAllowSkill, numberToWords, formatNumber, digitsOf,
   PLACE_CODES, PLACE_LABELS, PLACE_VALUES, ORDINAL_FROM_RIGHT,
+  isTenThousand, alwaysFourCounts,
 } from "./modules/placeValue.jsx";
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
 import {
@@ -70,11 +71,13 @@ const HEADER_TAILS = [
 
 const PICTURE_MAX_BY_TYPE = {
   choice4: "min(220px, 34dvh)",
+  tapTwo: "min(220px, 34dvh)",
+  orderThree: "min(220px, 34dvh)",
   singleNumber: "min(150px, 24dvh)",
   buildNumber: "min(140px, 22dvh)",
 };
-// Only singleNumber opens a keyboard — choice4 is tap, buildNumber is
-// steppers + Check (mirrors fractions' TYPED_ANSWER_TYPES exactly).
+// Only singleNumber opens a keyboard — choice4/tapTwo/orderThree are tap,
+// buildNumber is steppers + Check (mirrors fractions' TYPED_ANSWER_TYPES).
 const TYPED_ANSWER_TYPES = new Set(["singleNumber"]);
 
 // ---------------------------------------------------------------------------
@@ -219,8 +222,10 @@ function useShuffledChoices(item) {
   return prev.current.choices;
 }
 
+// X3's expansion string ("3,000 + 400 + 50 + 2") is a full sentence, not a
+// short number — it needs the wrapping "word" variant too.
 function choiceVariant(skill) {
-  return (skill === "B3" || skill === "V3") ? "word" : "number";
+  return (skill === "B3" || skill === "V3" || skill === "X3") ? "word" : "number";
 }
 
 // ---------------------------------------------------------------------------
@@ -231,6 +236,236 @@ function choiceVariant(skill) {
 function fullCounts(item) {
   const { k, h, t, o } = item.digits;
   return item.columns === 3 ? [h, t, o] : [k, h, t, o];
+}
+
+// ---------------------------------------------------------------------------
+// C1/C2/C3 tap surfaces — number-card analogues of fractions-practice.jsx's
+// TapTwoCards / OrderThreeTiles (copied structure, numerals instead of
+// fractions, no "equal" branch — no C1 pair in the curated pool ties).
+// `reveal` (opt-in, same contract as fractions): { fill, fillColor,
+// singleTap } for the wrong-answer reveal's re-ask/second-miss.
+// ---------------------------------------------------------------------------
+function PVCompareCards({ leftValue, rightValue, onPick, picked, correct, reveal = null }) {
+  const cards = [{ id: "left", value: leftValue }, { id: "right", value: rightValue }];
+  return (
+    <div style={{ display: "flex", gap: 10, marginTop: 16, width: "100%", maxWidth: 340, marginLeft: "auto", marginRight: "auto" }}>
+      {cards.map(({ id, value }) => {
+        const isCorrect = correct === id;
+        const isPicked = picked === id;
+        let bg, disabled, opacity = 1, animation = "none";
+        if (reveal) {
+          const isFill = reveal.fill != null && id === reveal.fill;
+          if (reveal.fill != null) {
+            bg = isFill ? (reveal.fillColor || COLORS.yellow) : "white";
+            opacity = isFill ? 1 : 0.45;
+            disabled = true;
+            animation = isFill && reveal.fillColor === COLORS.green ? "correctPulse 0.4s ease" : "none";
+          } else {
+            bg = "white"; disabled = false;
+          }
+        } else {
+          bg = isPicked ? (isCorrect ? COLORS.green : COLORS.red) : "white";
+          disabled = !!picked;
+          animation = isPicked ? (isCorrect ? "correctPulse 0.4s ease" : "shake 0.4s ease") : "none";
+        }
+        return (
+          <button key={id} onClick={() => !disabled && onPick(id)}
+            style={{
+              flex: 1, padding: reveal ? "14px 8px" : "20px 8px", borderRadius: 12, border: BRUTAL_BORDER,
+              backgroundColor: bg, cursor: disabled ? "default" : "pointer",
+              boxShadow: BRUTAL_SHADOW, minHeight: reveal ? 68 : 84,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              animation, opacity, transition: "background-color 0.2s ease",
+            }}>
+            <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: reveal ? 26 : 32, color: COLORS.black }}>
+              {formatNumber(value)}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function PVOrderTiles({ values, onSubmitOrder, submitted, correctOrder, reveal = null }) {
+  const [tapOrder, setTapOrder] = useState([]);
+
+  const handleTap = (idx) => {
+    if (reveal) {
+      if (submitted || reveal.fill != null) return;
+      if (reveal.singleTap) { onSubmitOrder(idx); return; }
+      return;
+    }
+    if (submitted) return;
+    if (tapOrder.includes(idx)) return;
+    const newOrder = [...tapOrder, idx];
+    setTapOrder(newOrder);
+    if (newOrder.length === values.length) onSubmitOrder(newOrder);
+  };
+
+  const getLabel = (idx) => {
+    const pos = tapOrder.indexOf(idx);
+    return pos >= 0 ? pos + 1 : null;
+  };
+
+  const isCorrect = submitted && JSON.stringify(tapOrder) === JSON.stringify(correctOrder);
+
+  return (
+    <div style={{ marginTop: 16, width: "100%", maxWidth: 340, marginLeft: "auto", marginRight: "auto" }}>
+      {!reveal && (
+        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, textAlign: "center", marginBottom: 10, opacity: 0.6 }}>
+          Tap smallest → greatest
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+        {values.map((v, idx) => {
+          let bg, label = null, disabled = false, opacity = 1, animation = "none";
+          if (reveal) {
+            const isFill = reveal.fill != null && idx === reveal.fill;
+            if (reveal.fill != null) {
+              bg = isFill ? (reveal.fillColor || COLORS.yellow) : "white";
+              opacity = isFill ? 1 : 0.45;
+              disabled = true;
+              label = isFill ? 1 : null;
+              animation = isFill && reveal.fillColor === COLORS.green ? "correctPulse 0.4s ease" : "none";
+            } else {
+              bg = "white"; disabled = false;
+            }
+          } else {
+            label = getLabel(idx);
+            const isPicked = tapOrder.includes(idx);
+            bg = "white";
+            if (submitted) {
+              bg = isCorrect ? COLORS.green : (isPicked ? COLORS.red : "#EEE");
+            } else if (isPicked) {
+              bg = COLORS.yellow;
+            }
+            disabled = submitted || isPicked;
+          }
+          return (
+            <button key={idx} onClick={() => handleTap(idx)}
+              style={{
+                flex: 1, padding: "12px 4px", borderRadius: 12, border: BRUTAL_BORDER,
+                backgroundColor: bg, cursor: disabled ? "default" : "pointer",
+                boxShadow: BRUTAL_SHADOW_SM, minHeight: 72, minWidth: 72,
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                gap: 4, transition: "background-color 0.2s ease",
+                position: "relative", animation, opacity,
+              }}>
+              {label !== null && (
+                <div style={{
+                  position: "absolute", top: 4, right: 6,
+                  fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
+                  color: COLORS.black, opacity: 0.7,
+                }}>
+                  {label}
+                </div>
+              )}
+              <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: 20, color: COLORS.black }}>
+                {formatNumber(v)}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// A single compact mini-chart for one number, used by C1/C2/C3's pictures —
+// always 4 columns via alwaysFourCounts (§3 "columns aligned, same column
+// width" — a 3-digit number's thousands column just draws empty). 10,000
+// (§2.6, one curated C1 pair + one curated C3 endpoint) is never decomposed
+// onto the disc chart — it renders as a plain numeral chip, `countToken`-
+// aware so the reveal's tokenState still governs it when it IS the answer.
+function pvTenThousandChip(countToken = "numeral") {
+  return (
+    <div style={{
+      minWidth: 58, padding: "8px 10px", borderRadius: 8, border: BRUTAL_BORDER_SM,
+      backgroundColor: "white", boxShadow: BRUTAL_SHADOW_SM,
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <DerivationToken value="10,000" state={countToken} />
+    </div>
+  );
+}
+
+function pvMiniChart(value, countToken = "numeral") {
+  if (isTenThousand(value)) return pvTenThousandChip(countToken);
+  const counts = alwaysFourCounts(value);
+  return (
+    <PlaceValueChart mode="discs" columns={4} counts={counts}
+      countTokens={counts.map(() => countToken)} compact emptyMarker />
+  );
+}
+
+// C1/C2's picture: N mini charts stacked vertically, each numeral labelled
+// above it (the numeral is a given — the whole point of C1/C2 is comparing
+// numbers already on screen; only the WINNER/ORDER is the unknown, and
+// nothing here highlights it — §3 "no winner highlighted pre-answer or
+// during the re-ask").
+function pvStackedCharts(values) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", alignItems: "center" }}>
+      {values.map((v, i) => (
+        <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, width: "100%" }}>
+          <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: 16, color: COLORS.black }}>{formatNumber(v)}</span>
+          {pvMiniChart(v)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// C3's step chip between the two mini charts ("+1 ten", "−1 hundred").
+function pvStepChip(step) {
+  const mag = Math.abs(step);
+  const place = mag === 10 ? "ten" : mag === 100 ? "hundred" : mag === 1000 ? "thousand" : null;
+  const sign = step >= 0 ? "+" : "−";
+  const text = place ? `${sign}1 ${place}` : `${sign}1`;
+  return (
+    <div style={{
+      fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12, color: COLORS.black,
+      backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM, borderRadius: 20,
+      padding: "4px 8px", whiteSpace: "nowrap", flexShrink: 0,
+    }}>
+      {text}
+    </div>
+  );
+}
+
+// C3's picture: the term just before the blank (a given) and the blank term
+// (its ONE changed column is the token; every other column is unchanged —
+// also a given — so it renders "numeral") with the step chip between.
+function pvPatternPicture(item, tokenState = "numeral") {
+  const beforeVal = item.terms[item.blankIdx - 1];
+  const blankVal = item.terms[item.blankIdx];
+  const changedPlace = { 1: "o", 10: "t", 100: "h", 1000: "k" }[Math.abs(item.step)];
+  const changedIdx = PLACE_CODES.indexOf(changedPlace);
+
+  const beforeChart = pvMiniChart(beforeVal);
+  const blankChart = isTenThousand(blankVal)
+    ? pvTenThousandChip(tokenState)
+    : (() => {
+        const counts = alwaysFourCounts(blankVal);
+        return (
+          <PlaceValueChart mode="discs" columns={4} counts={counts}
+            countTokens={counts.map((_, i) => (i === changedIdx ? tokenState : "numeral"))}
+            compact emptyMarker />
+        );
+      })();
+
+  // Stacked, not side by side: two four-column charts across 375px left
+  // each column ~35px and clipped the labels to "Thou"/"Hund". Vertically
+  // each chart gets the full width (as C1's pair does) with the step chip
+  // between them — the "before → step → after" reading is the same.
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, width: "100%" }}>
+      <div style={{ width: "100%" }}>{beforeChart}</div>
+      {pvStepChip(item.step)}
+      <div style={{ width: "100%" }}>{blankChart}</div>
+    </div>
+  );
 }
 
 // B4's phrase segmentation (§3/§6): the thousands word (if any) spans the
@@ -346,6 +581,79 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
     );
   }
 
+  if (item.skill === "X1") {
+    // The chart's counts are ALL givens (the digits are visible on the
+    // numeral already stated in the question) — only the STRIP at the
+    // blank place hides its computed term (§3/§6: "The tens column has 5
+    // discs, each worth 10 → [50]" — the 5 is given, the 50 is the answer).
+    const counts = fullCounts(item);
+    const terms = PLACE_CODES.map((p) => item.digits[p] * PLACE_VALUES[p]);
+    const blankIdx = PLACE_CODES.indexOf(item.place);
+    return (
+      <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
+        <PlaceValueChart mode="discs" columns={4} counts={counts}
+          countTokens={counts.map(() => "numeral")} emptyMarker opacity={opacity} animate={animate} />
+        <PlaceValueStrips values={terms} split interactive blankIndex={blankIdx} blankToken="blank" opacity={opacity} />
+      </div>
+    );
+  }
+
+  if (item.skill === "X2") {
+    // Strips given split (the addends ARE the question); the chart's disc
+    // counts are the composed total's digits — that IS the answer, so they
+    // stay blank until answered (mirrors B2's reveal picture exactly).
+    const counts = fullCounts(item);
+    return (
+      <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
+        <PlaceValueStrips values={item.addends} split interactive assembledToken="blank" opacity={opacity} />
+        <PlaceValueChart mode="discs" columns={4} counts={counts}
+          countTokens={counts.map(() => "blank")} emptyMarker compact opacity={opacity} animate={animate} />
+      </div>
+    );
+  }
+
+  if (item.skill === "X3") {
+    // Chart only. The strips (8,000 · 700 · 10 · 2) ARE the expanded form —
+    // showing them pre-answer spelled out the correct choice card (caught in
+    // play-testing). The chart's counts are the numeral's digits, already
+    // given; turning each count into its place value is the work.
+    const counts = fullCounts(item);
+    return (
+      <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
+        <PlaceValueChart mode="discs" columns={4} counts={counts}
+          countTokens={counts.map(() => "numeral")} emptyMarker opacity={opacity} animate={animate} />
+      </div>
+    );
+  }
+
+  if (item.skill === "C1") {
+    // Stacked in the same left/right order as the tap cards below — the
+    // numerals are givens (they're on the tappable cards too); no winner
+    // highlighted (§3).
+    return (
+      <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
+        {pvStackedCharts([item.leftValue, item.rightValue])}
+      </div>
+    );
+  }
+
+  if (item.skill === "C2") {
+    // Three compact charts in tile order (matches the on-screen tiles).
+    return (
+      <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
+        {pvStackedCharts(item.values)}
+      </div>
+    );
+  }
+
+  if (item.skill === "C3") {
+    return (
+      <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
+        {pvPatternPicture(item, "blank")}
+      </div>
+    );
+  }
+
   return null;
 }
 
@@ -425,6 +733,94 @@ function QuestionDisplay({ item }) {
       </div>
     );
   }
+
+  if (item.skill === "X1") {
+    const { k, h, t, o } = item.digits;
+    const parts = [["k", k * 1000], ["h", h * 100], ["t", t * 10], ["o", o]];
+    return (
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#666", marginBottom: 8 }}>
+          {formatNumber(item.value)} =
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", alignItems: "center" }}>
+          {parts.map(([p, term], i) => (
+            <span key={p} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: 24, color: COLORS.black }}>
+                {p === item.place ? "?" : formatNumber(term)}
+              </span>
+              {i < parts.length - 1 && <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 18 }}>+</span>}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (item.skill === "X2") {
+    return (
+      <div style={{ textAlign: "center" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", alignItems: "center", marginBottom: 8 }}>
+          {item.addends.map((a, i) => (
+            <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: 28, color: COLORS.black }}>{formatNumber(a)}</span>
+              {i < item.addends.length - 1 && <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 20 }}>+</span>}
+            </span>
+          ))}
+        </div>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#666" }}>
+          = ?
+        </div>
+      </div>
+    );
+  }
+
+  if (item.skill === "X3") {
+    return (
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#666", marginBottom: 8 }}>
+          Which is the expanded form?
+        </div>
+        <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: 44 }}>{formatNumber(item.value)}</span>
+      </div>
+    );
+  }
+
+  if (item.skill === "C1") {
+    return (
+      <div style={{ textAlign: "center", fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#666" }}>
+        {item.direction === "gt" ? "Which is greater?" : "Which is smaller?"}
+      </div>
+    );
+  }
+
+  if (item.skill === "C2") {
+    return (
+      <div style={{ textAlign: "center", fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#666" }}>
+        Order from smallest to greatest
+      </div>
+    );
+  }
+
+  if (item.skill === "C3") {
+    return (
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#666", marginBottom: 8 }}>
+          What number goes in the blank?
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", alignItems: "baseline" }}>
+          {item.terms.map((t, i) => (
+            <span key={i} style={{ display: "flex", alignItems: "baseline" }}>
+              <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: i === item.blankIdx ? 30 : 22, color: COLORS.black }}>
+                {i === item.blankIdx ? "?" : formatNumber(t)}
+              </span>
+              {i < item.terms.length - 1 && <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 18, margin: "0 2px" }}>,</span>}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return null;
 }
 
@@ -446,7 +842,79 @@ function buildProblem(item) {
   if (item.skill === "V2" || item.skill === "V3") {
     return <HighlightedNumeral digits={item.digits} place={item.place} color={COLORS.blue} fontSize={30} />;
   }
+  // X2's item.value IS the composed answer — restate the addends question
+  // instead (C1: never show the answer in the reveal header).
+  if (item.skill === "X2") {
+    return <span style={{ fontSize: "0.6em" }}>{item.addends.map((a) => formatNumber(a)).join(" + ")} = ?</span>;
+  }
+  if (item.skill === "C1") {
+    return <span>{item.direction === "gt" ? "Which is greater?" : "Which is smaller?"}</span>;
+  }
+  if (item.skill === "C2") {
+    return <span>Order them</span>;
+  }
+  if (item.skill === "C3") {
+    return (
+      <span style={{ fontSize: "0.6em" }}>
+        {item.terms.map((t, i) => (i === item.blankIdx ? "?" : formatNumber(t))).join(", ")}
+      </span>
+    );
+  }
   return <span>{formatNumber(item.value)}</span>;
+}
+
+// C1's line ("Same thousands (3). Hundreds: 4 against 5 → [3,520]" / the
+// unequal-digit-count phrasing) — a pure helper so C1 stays a one-liner in
+// buildPVLine below. Never calls digitsOf on 10,000 (§2.6): the one C1 pair
+// involving it always differs in digit COUNT (4 vs 5), which is caught by
+// the length check before any digitsOf call.
+function digitCountOf(n) { return String(n).length; }
+
+function buildCompareLine(a, b, tokenState, correctValue) {
+  const lenA = digitCountOf(a), lenB = digitCountOf(b);
+  if (lenA !== lenB) {
+    const [small, large] = a < b ? [a, b] : [b, a];
+    return [
+      { t: "text", v: `${formatNumber(small)} has ${digitCountOf(small)} digits, ${formatNumber(large)} has ${digitCountOf(large)} → ` },
+      { t: "token", state: tokenState, value: formatNumber(correctValue) },
+    ];
+  }
+  const cols = lenA === 3 ? ["h", "t", "o"] : PLACE_CODES;
+  const da = digitsOf(a), db = digitsOf(b);
+  let diffIdx = cols.findIndex((p) => da[p] !== db[p]);
+  if (diffIdx < 0) diffIdx = cols.length - 1;
+  const diffPlace = cols[diffIdx];
+  const prevPlace = diffIdx > 0 ? cols[diffIdx - 1] : null;
+  const samePrefix = prevPlace ? `Same ${PLACE_LABELS[prevPlace].toLowerCase()} (${da[prevPlace]}). ` : "";
+  return [
+    { t: "text", v: `${samePrefix}${PLACE_LABELS[diffPlace]}: ${da[diffPlace]} against ${db[diffPlace]} → ` },
+    { t: "token", state: tokenState, value: formatNumber(correctValue) },
+  ];
+}
+
+// C2's line ("Thousands first: 2, 3, 3 → smallest is [2,345]", digits in
+// TILE order, matching the picture below it) — same unequal-digit-count vs
+// same-length branching as buildCompareLine, extended to three numbers.
+function buildOrderLine(item, tokenState) {
+  const { values, order } = item;
+  const smallestValue = values[order[0]];
+  const lens = values.map(digitCountOf);
+  if (new Set(lens).size > 1) {
+    const desc = values.map((v) => `${formatNumber(v)} has ${digitCountOf(v)}`).join(", ");
+    return [
+      { t: "text", v: `${desc} digits → smallest is ` },
+      { t: "token", state: tokenState, value: formatNumber(smallestValue) },
+    ];
+  }
+  const cols = lens[0] === 3 ? ["h", "t", "o"] : PLACE_CODES;
+  const digitsArr = values.map((v) => digitsOf(v));
+  let diffPlace = cols.find((p) => new Set(digitsArr.map((d) => d[p])).size > 1);
+  if (!diffPlace) diffPlace = cols[cols.length - 1];
+  const digitsAtPlace = digitsArr.map((d) => d[diffPlace]).join(", ");
+  return [
+    { t: "text", v: `${PLACE_LABELS[diffPlace]} first: ${digitsAtPlace} → smallest is ` },
+    { t: "token", state: tokenState, value: formatNumber(smallestValue) },
+  ];
 }
 
 function buildPVLine(item, tokenState) {
@@ -516,6 +984,50 @@ function buildPVLine(item, tokenState) {
     return [
       { t: "text", v: `${digit} discs sit in the ${ORDINAL_FROM_RIGHT[item.place]} column from the right → ` },
       { t: "token", state: tokenState, children: <span>{item.correctAnswer}</span> },
+    ];
+  }
+
+  if (skill === "X1") {
+    const digit = item.digits[item.place];
+    const placeValue = PLACE_VALUES[item.place];
+    return [
+      { t: "text", v: `The ${PLACE_LABELS[item.place].toLowerCase()} column has ${digit} disc${digit !== 1 ? "s" : ""}, each worth ${placeValue} → ` },
+      { t: "token", state: tokenState, value: formatNumber(item.correctAnswer) },
+    ];
+  }
+
+  if (skill === "X2") {
+    const { k, h, t, o } = item.digits;
+    const seg = (n, word) => (n === 0 ? `no ${word}s` : `${n} ${word}${n !== 1 ? "s" : ""}`);
+    const parts = [seg(k, "thousand"), seg(h, "hundred"), seg(t, "ten"), seg(o, "one")];
+    return [
+      { t: "text", v: `${parts.join(", ")} → ` },
+      { t: "token", state: tokenState, value: formatNumber(item.correctAnswer) },
+    ];
+  }
+
+  if (skill === "X3") {
+    return [
+      { t: "text", v: "Every place gets its own value: thousands, hundreds, tens, ones → " },
+      { t: "token", state: tokenState, children: <span>{item.correctAnswer}</span> },
+    ];
+  }
+
+  if (skill === "C1") {
+    return buildCompareLine(item.a, item.b, tokenState, item.correctAnswer);
+  }
+
+  if (skill === "C2") {
+    return buildOrderLine(item, tokenState);
+  }
+
+  if (skill === "C3") {
+    const mag = Math.abs(item.step);
+    const place = mag === 1 ? "one" : mag === 10 ? "ten" : mag === 100 ? "hundred" : "thousand";
+    const verb = item.step >= 0 ? "adds" : "takes away";
+    return [
+      { t: "text", v: `Each step ${verb} 1 ${place} disc → ` },
+      { t: "token", state: tokenState, value: formatNumber(item.correctAnswer) },
     ];
   }
 
@@ -592,17 +1104,79 @@ function pictureFor(item, tokenState, animate) {
     );
   }
 
+  if (skill === "X1") {
+    const counts = fullCounts(item);
+    const terms = PLACE_CODES.map((p) => item.digits[p] * PLACE_VALUES[p]);
+    const blankIdx = PLACE_CODES.indexOf(item.place);
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", alignItems: "center" }}>
+        <PlaceValueChart mode="discs" columns={4} counts={counts}
+          countTokens={counts.map(() => "numeral")} emptyMarker compact animate={animate} />
+        <PlaceValueStrips values={terms} split blankIndex={blankIdx} blankToken={tokenState} />
+      </div>
+    );
+  }
+
+  if (skill === "X2") {
+    // Static, non-interactive: split addends, the assembled (token) card,
+    // and the chart — three tiers (§6), the chart's counts stay blank (they
+    // ARE the answer's digits, same rule as B2's shipped reveal picture).
+    const counts = fullCounts(item);
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%", alignItems: "center" }}>
+        <PlaceValueStrips values={item.addends} split animate={animate} />
+        <PlaceValueStrips values={item.addends} split={false} assembledToken={tokenState} />
+        <PlaceValueChart mode="discs" columns={4} counts={counts}
+          countTokens={counts.map(() => "blank")} emptyMarker compact />
+      </div>
+    );
+  }
+
+  if (skill === "X3") {
+    // During the re-ask the picture is the chart (counts given — the child
+    // derives each place value from them); the strips are the resolved
+    // expansion, i.e. the answer, so they only appear once the token does
+    // (correct re-answer or second-miss fill). C1: never on screen while asking.
+    if (tokenState === "blank") {
+      const counts = fullCounts(item);
+      return (
+        <PlaceValueChart mode="discs" columns={4} counts={counts}
+          countTokens={counts.map(() => "numeral")} emptyMarker animate={animate} />
+      );
+    }
+    const terms = PLACE_CODES.map((p) => item.digits[p] * PLACE_VALUES[p]);
+    return <PlaceValueStrips values={terms} split animate={animate} />;
+  }
+
+  if (skill === "C1") {
+    return pvStackedCharts([item.leftValue, item.rightValue]);
+  }
+
+  if (skill === "C2") {
+    return pvStackedCharts(item.values);
+  }
+
+  if (skill === "C3") {
+    return pvPatternPicture(item, tokenState);
+  }
+
   return null;
 }
 
-// "Now you — use the picture." everywhere — no tapTwo/orderThree types
-// exist in this module, so no specialised wording is needed (yet).
-function buildPromptText() { return "Now you — use the picture."; }
+// "Now you — use the picture." everywhere except the specialised
+// comparison/order wording (mirrors fractions' buildPromptText exactly).
+function buildPromptText(item) {
+  if (item.skill === "C1") return "Look at the charts. Tap your answer.";
+  if (item.skill === "C2") return "Tap the smallest.";
+  return "Now you — use the picture.";
+}
 
 // Second-miss fill value per answerType (canonical correctAnswer, never any
 // alt form — this module has none anyway).
 function fillValueFor(item) {
   if (item.answerType === "buildNumber") return item.correctAnswer;
+  if (item.answerType === "tapTwo") return item.correctSide; // "left" | "right"
+  if (item.answerType === "orderThree") return item.order[0]; // the correct FIRST tap
   return item.correctAnswer;
 }
 
@@ -642,6 +1216,11 @@ export default function PlaceValuePractice({
   const [pickedChoice, setPickedChoice] = useState(null);
   const [userAnswer, setUserAnswer] = useState(""); // singleNumber
   const [userCounts, setUserCounts] = useState([]); // buildNumber (first answer)
+  const [orderSubmitted, setOrderSubmitted] = useState(false); // orderThree (first answer)
+  // Bumped on a converted "not sure" (docs/confidence-pass-spec.md C2) to
+  // remount PVOrderTiles, whose tapOrder is LOCAL state this component
+  // doesn't control (mirrors fractions' retryResetKey exactly).
+  const [retryResetKey, setRetryResetKey] = useState(0);
   const [showScaffold, setShowScaffold] = useState(false);
   const [userHidScaffold, setUserHidScaffold] = useState(false);
   const [sessionStats, setSessionStats] = useState({ correct: 0, total: 0 });
@@ -782,11 +1361,12 @@ export default function PlaceValuePractice({
     }
 
     setCurrentItem(selected);
-    setUserAnswer(""); setPickedChoice(null);
-    // fullCounts() needs item.digits, which the one noChart item (B3's
-    // 10,000 — never on a disc chart, §2.6) doesn't have; buildNumber is
-    // B2-only anyway, so an empty array there is a harmless no-op.
-    setUserCounts(selected && !selected.noChart ? fullCounts(selected).map(() => 0) : []);
+    setUserAnswer(""); setPickedChoice(null); setOrderSubmitted(false);
+    // fullCounts() needs item.digits/columns, which B3's noChart (10,000)
+    // item and the C1/C2/C3 compare/order/pattern items don't carry;
+    // buildNumber is B2-only anyway, so an empty array elsewhere is a
+    // harmless no-op.
+    setUserCounts(selected && selected.digits ? fullCounts(selected).map(() => 0) : []);
     setFeedback(null);
     setShowScaffold(false); setUserHidScaffold(false);
     setRetry({ phase: "idle", value: null });
@@ -850,6 +1430,13 @@ export default function PlaceValuePractice({
       if (!Array.isArray(value) || value.length !== correct.length) return false;
       return value.every((v, i) => Number(v) === Number(correct[i]));
     }
+    if (type === "tapTwo") {
+      // eslint-disable-next-line eqeqeq
+      return value == item.correctAnswer;
+    }
+    if (type === "orderThree") {
+      return JSON.stringify(value) === JSON.stringify(item.order);
+    }
     return false;
   }, []);
 
@@ -864,8 +1451,11 @@ export default function PlaceValuePractice({
       setShowScaffold(true);
       setPictureRequested(true);
       setNudge("notSure");
-      setUserAnswer(""); setPickedChoice(null);
-      if (!currentItem.noChart) setUserCounts(fullCounts(currentItem).map(() => 0));
+      setUserAnswer(""); setPickedChoice(null); setOrderSubmitted(false);
+      if (currentItem.digits) setUserCounts(fullCounts(currentItem).map(() => 0));
+      // PVOrderTiles holds its own tapOrder as LOCAL state this component
+      // doesn't control — remount it (mirrors fractions' retryResetKey).
+      setRetryResetKey((k) => k + 1);
       return;
     }
     setNudge(null);
@@ -921,7 +1511,10 @@ export default function PlaceValuePractice({
         { at: 25, name: "LEGENDARY!", icon: "👑", description: "25 in a row!" },
       ];
       const milestone = streakMilestones.find((m) => m.at === newStreak);
-      if (milestone) setAchievementQueue((prev) => [...prev, milestone]);
+      // Only an unassisted correct answer reaches a milestone: a first miss
+      // leaves the streak unchanged (confidence pass), so without this guard
+      // the milestone would fire a second time on that miss.
+      if (isCorrect && milestone) setAchievementQueue((prev) => [...prev, milestone]);
     }
 
     const newTotal = sessionStats.total + 1;
@@ -959,8 +1552,21 @@ export default function PlaceValuePractice({
   const handleTapChoice = useCallback((value) => {
     if (feedback) return;
     setPickedChoice(value);
-    handleAnswer({ type: "choice", value });
-  }, [feedback, handleAnswer]);
+    // Map C1's "left"/"right" tap id back to the actual number it currently
+    // holds (a fixed per-item presentation flag, not random — §4) before
+    // evaluating.
+    let evalValue = value;
+    if (currentItem?.answerType === "tapTwo") {
+      evalValue = value === "left" ? currentItem.leftValue : currentItem.rightValue;
+    }
+    const payloadType = currentItem?.answerType === "tapTwo" ? "tapTwo" : "choice";
+    handleAnswer({ type: payloadType, value: evalValue });
+  }, [currentItem, feedback, handleAnswer]);
+
+  const handleOrderSubmit = useCallback((tapOrder) => {
+    setOrderSubmitted(true);
+    handleAnswer({ type: "orderThree", value: tapOrder });
+  }, [handleAnswer]);
 
   const handleKeyDown = (e) => { if (e.key === "Enter") handleSubmit(); };
 
@@ -1019,8 +1625,23 @@ export default function PlaceValuePractice({
 
   const handleRetryTap = useCallback((rawValue) => {
     if (!currentItem || retry.phase !== "ask") return;
-    if (currentItem.answerType !== "choice4") return;
-    finishRetry(evaluateAnswer(currentItem, { type: "choice", value: rawValue }), rawValue);
+    const { answerType } = currentItem;
+    if (answerType === "orderThree") {
+      // Single-tap re-ask (§6 table): order[0] is the correct FIRST tap for
+      // this item's (always ascending) direction. A one-tap payload can't
+      // conform to evaluateAnswer's 3-length-array orderThree shape without
+      // changing evaluateAnswer, so this compares directly instead.
+      finishRetry(rawValue === currentItem.order[0], rawValue);
+      return;
+    }
+    if (answerType === "choice4") {
+      finishRetry(evaluateAnswer(currentItem, { type: "choice", value: rawValue }), rawValue);
+      return;
+    }
+    if (answerType === "tapTwo") {
+      const evalValue = rawValue === "left" ? currentItem.leftValue : currentItem.rightValue;
+      finishRetry(evaluateAnswer(currentItem, { type: "tapTwo", value: evalValue }), rawValue);
+    }
   }, [currentItem, retry, evaluateAnswer, finishRetry]);
 
   const handleRetryKeyDown = (e) => {
@@ -1414,6 +2035,24 @@ export default function PlaceValuePractice({
                           correct={currentItem.correctAnswer}
                           variant={choiceVariant(currentItem.skill)}
                         />
+                      ) : currentItem.answerType === "tapTwo" ? (
+                        <PVCompareCards
+                          leftValue={currentItem.leftValue} rightValue={currentItem.rightValue}
+                          onPick={handleTapChoice}
+                          picked={pickedChoice}
+                          correct={currentItem.correctSide}
+                        />
+                      ) : currentItem.answerType === "orderThree" ? (
+                        // Keyed by retryResetKey too (docs/confidence-pass-spec.md
+                        // C2): tapOrder is LOCAL state — a converted "not sure"
+                        // remounts to clear the taps without a new item.
+                        <PVOrderTiles
+                          key={`${currentItem.itemKey}:${retryResetKey}`}
+                          values={currentItem.values}
+                          onSubmitOrder={handleOrderSubmit}
+                          submitted={orderSubmitted}
+                          correctOrder={currentItem.order}
+                        />
                       ) : currentItem.answerType === "singleNumber" ? (
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 20, gap: 12 }}>
                           <input
@@ -1558,7 +2197,7 @@ export default function PlaceValuePractice({
             problem={buildProblem(currentItem)}
             picture={pictureFor(currentItem, tokenState, mode === "abstract")}
             line={line}
-            prompt={retry.phase === "ask" && revealStage >= 2 ? buildPromptText() : null}
+            prompt={retry.phase === "ask" && revealStage >= 2 ? buildPromptText(currentItem) : null}
             input={(() => {
               const { answerType } = currentItem;
 
@@ -1573,6 +2212,38 @@ export default function PlaceValuePractice({
                     reveal={retry.phase === "done" ? null : {
                       wrong: retry.phase === "ask" ? pickedChoice : null,
                       fill: retry.phase === "missed" ? currentItem.correctAnswer : null,
+                    }}
+                  />
+                );
+              }
+
+              if (answerType === "tapTwo") {
+                return (
+                  <PVCompareCards
+                    leftValue={currentItem.leftValue} rightValue={currentItem.rightValue}
+                    onPick={(id) => handleRetryTap(id)}
+                    picked={null}
+                    correct={currentItem.correctSide}
+                    reveal={{
+                      fill: retry.phase === "ask" ? null : (retry.phase === "done" ? retry.value : currentItem.correctSide),
+                      fillColor: retry.phase === "done" ? COLORS.green : COLORS.yellow,
+                    }}
+                  />
+                );
+              }
+
+              if (answerType === "orderThree") {
+                return (
+                  <PVOrderTiles
+                    key={currentItem.itemKey}
+                    values={currentItem.values}
+                    onSubmitOrder={(idx) => handleRetryTap(idx)}
+                    submitted={retry.phase !== "ask"}
+                    correctOrder={currentItem.order}
+                    reveal={{
+                      fill: retry.phase === "ask" ? null : currentItem.order[0],
+                      fillColor: retry.phase === "done" ? COLORS.green : COLORS.yellow,
+                      singleTap: true,
                     }}
                   />
                 );

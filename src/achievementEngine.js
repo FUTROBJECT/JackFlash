@@ -115,10 +115,12 @@ const MODULE_ACHIEVEMENT_ICONS = {
   "add-bar-builder":       "📊",
   "add-master":            "🏆",
   "add-bond-pro":          "💯",
-  // Place Value module achievements (pass 1: Groups B + V — pv-master and
-  // the X/C group badges wait for pass 2, once those groups exist)
+  // Place Value module achievements
   "pv-disc-boss":          "🪙",
   "pv-digit-detective":    "🔍",
+  "pv-number-stretcher":   "📏",
+  "pv-line-up-champ":      "📶",
+  "pv-master":             "🏆",
   "pv-zero-hero":          "0️⃣",
 };
 

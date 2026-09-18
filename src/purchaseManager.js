@@ -108,7 +108,13 @@ function moduleUnlockProducts() {
 export function isModuleFullyUnlocked(moduleId) {
   if (isBundlePurchased()) return true;
   const { purchases } = getPurchases();
-  return purchases.includes(`module.${moduleId}.full`);
+  // Look the product up by moduleId rather than string-building the id:
+  // catalog ids are lowercase ("module.placevalue.full") while module ids
+  // are camelCase ("placeValue"), so `module.${moduleId}.full` would never
+  // match Place Value's purchase.
+  const product = Object.values(PRODUCTS).find((p) => p.type === "module_unlock" && p.moduleId === moduleId);
+  const productId = product ? product.id : `module.${moduleId}.full`;
+  return purchases.includes(productId);
 }
 
 export function isContentAccessible(moduleId, groupId) {
