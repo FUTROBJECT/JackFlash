@@ -635,8 +635,8 @@ charts, changed column blank, "Each step adds 1 ten disc → ▢"); the
 working-group pill moved to "EXPANDED FORM" once B and V were mastered;
 the X/C unlock via a seeded purchase. R1 by storage on every path.
 
-Still deferred: unit-stamped discs; B1 tap-to-count; skill focus selector;
-`lockedGroup` (chip filed). Zero Hero / Disc Boss fire on the first answer
+Still deferred: `lockedGroup` (chip filed). Unit-stamped discs, B1
+tap-to-count and the skill focus selector are built (sections below). Zero Hero / Disc Boss fire on the first answer
 of a profile whose seeded mastery already qualifies — real profiles earn
 them normally.
 
@@ -664,3 +664,15 @@ clears the column. The whole column is the tap target (≥44px tall), not the
 scored. The ticks reset with every new item (the chart is keyed by itemKey).
 Pictorial and Abstract are unchanged.
 
+
+## Skill focus selector (built 2026-09-18)
+
+Every skill row in the progress grid is now a tappable button ("practise
+this ›"). Tapping it opens practice with `focusSkill` set: the draw is
+limited to that skill's items, the readiness gate is bypassed while focused
+(the parent chose it), and the practice card shows a chip under the skill
+label — "Only this skill · ✕ practise everything" — that clears the focus and
+returns to the normal weighted draw. The focused row shows "practising ✓".
+Nothing about the focus is persisted or scored; it lasts for the screen
+visit. Built in Place Value and Fractions (same pattern in both practice
+screens); Multiply keeps its table-group toggles.

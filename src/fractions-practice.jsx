@@ -1366,7 +1366,9 @@ export default function FractionsPractice({
       if (activeGroups && !activeGroups.includes(item.group)) return false;
       if (focusSkill && item.skill !== focusSkill) return false;
       // Skill gate for A3/A4
-      if (!shouldAllowSkill(item.skill, masteryData)) return false;
+      // A deliberately focused skill skips the new-item trickle gate: the
+      // child (or parent) chose it, and the reveal still teaches every miss.
+      if (!focusSkill && !shouldAllowSkill(item.skill, masteryData)) return false;
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2147,12 +2149,24 @@ export default function FractionsPractice({
                           });
                           return bySkill.map(({ skill, items }) => (
                             <div key={skill} style={{ marginBottom: 14 }}>
-                              <div style={{
-                                fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
-                                color: "#888", marginBottom: 6,
-                              }}>
-                                {fractionsModule.skillLabels?.[skill] || skill}
-                              </div>
+                              {/* Skill focus selector (spec §5): tap a skill to practise
+                                  only that skill. The row is the target (≥44px). */}
+                              <button
+                                onClick={() => { setFocusSkill(skill); setView("practice"); }}
+                                aria-label={`Practise only ${fractionsModule.skillLabels?.[skill] || skill}`}
+                                style={{
+                                  width: "100%", minHeight: 44, display: "flex", alignItems: "center", justifyContent: "space-between",
+                                  gap: 8, padding: "6px 10px", marginBottom: 6, borderRadius: 8, cursor: "pointer",
+                                  border: BRUTAL_BORDER_SM, boxShadow: focusSkill === skill ? "none" : BRUTAL_SHADOW_SM,
+                                  transform: focusSkill === skill ? "translate(3px, 3px)" : "none",
+                                  backgroundColor: focusSkill === skill ? COLORS.yellow : "white",
+                                  fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: COLORS.black, textAlign: "left",
+                                }}>
+                                <span>{fractionsModule.skillLabels?.[skill] || skill}</span>
+                                <span style={{ fontSize: 10, opacity: 0.7, whiteSpace: "nowrap" }}>
+                                  {focusSkill === skill ? "practising ✓" : "practise this ›"}
+                                </span>
+                              </button>
                               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5 }}>
                                 {items.map(item => {
                                   const level = getMasteryLevel(item.itemKey);
@@ -2229,6 +2243,17 @@ export default function FractionsPractice({
                     }}>
                       {fractionsModule.skillLabels[currentItem.skill] || currentItem.skill}
                     </span>
+                    {focusSkill && (
+                      <div style={{ marginTop: 8 }}>
+                        <button onClick={() => setFocusSkill(null)} style={{
+                          minHeight: 44, padding: "8px 14px", borderRadius: 8, border: BRUTAL_BORDER_SM,
+                          backgroundColor: COLORS.cream, boxShadow: BRUTAL_SHADOW_SM, cursor: "pointer",
+                          fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: COLORS.black,
+                        }}>
+                          Only this skill · ✕ practise everything
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Question */}
