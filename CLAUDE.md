@@ -75,6 +75,20 @@ init. `storage.js` mirrors the blob to `@capacitor/preferences` in the native
 shell (iOS can purge WKWebView localStorage) — no-op on web; don't make
 dataManager async.
 
+**Parent locks (per-profile `settings`, edited in ParentZone).** `lockedMode`
+(concrete/pictorial/abstract), `lockedGroup` (a group id of the active
+module) and `lockedOperation` (multiply/divide, Multiply only). All three are
+**derived in the practice screen, never state**: read from the profile, and
+an unknown or inaccessible id (a stale setting from another module) means
+no lock. ParentZone offers only what the active module has — accessible
+groups, non-`mixed` operations — and shows a foreign stored value as
+"Any …". A group lock limits the pool, bypasses the readiness gate inside
+the group, frames the header pill against it, and disables other groups'
+skill rows in the progress grid; in Multiply it flows through
+`isTableAccessible`, and a saved child table selection wholly outside the
+lock falls back to the locked group rather than an empty draw. Locked UI
+always says "🔒 Locked … by a parent in Parent Zone".
+
 **Purchases (`purchaseManager.js`).** Product catalog (all modules $3.99,
 bundle $9.99) → synchronous entitlement cache → async provider (simulated on
 web via `window.confirm`; native provider is a stub until RevenueCat/StoreKit).
@@ -142,7 +156,8 @@ submission). Read it before any store-facing work. Key state:
 - `src/ProfilePicker.jsx` — home screen, profile cards, ModulePicker sheet,
   CreateProfile 3-step flow
 - `src/ParentZone.jsx` — children editor (module-agnostic ProgressReport —
-  works from `generateFacts()` OR `pool`), Modules store, settings
+  works from `generateFacts()` OR `pool`; Lock CPA Mode / Lock Group / Lock
+  Operation dropdowns), Modules store, settings
 - `src/Onboarding.jsx` — first-run parent flow (module choice respects locks)
 - `src/shared/` — cross-module bar components, illustrations, UI bits
 - `src/modules/` + `src/*-practice.jsx` — one pair per module
