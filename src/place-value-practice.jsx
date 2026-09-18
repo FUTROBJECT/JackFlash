@@ -1231,6 +1231,13 @@ export default function PlaceValuePractice({
   // doesn't implement this even though it defines defaultModeByGroup too).
   const hasExplicitModeRef = useRef(!!getPreferredMode(profileId, moduleId));
   const lockedMode = getProfile(profileId)?.settings?.lockedMode || null;
+  // Parent Zone "Lock Group" (settings.lockedGroup: a group id or null).
+  // Derived like lockedMode; an unknown id (stale setting from another
+  // module) or an inaccessible group means no lock.
+  const lockedGroupSetting = getProfile(profileId)?.settings?.lockedGroup || null;
+  const lockedGroupId = mod?.groups.some((g) => g.id === lockedGroupSetting) && isContentAccessible(moduleId, lockedGroupSetting)
+    ? lockedGroupSetting
+    : null;
   const mode = lockedMode || pickedMode;
   const [activeGroups, setActiveGroups] = useState(null);
   const [focusSkill, setFocusSkill] = useState(null);
@@ -1292,14 +1299,15 @@ export default function PlaceValuePractice({
       if (!group) return false;
       if (!isContentAccessible(moduleId, item.group)) return false;
       if (activeGroups && !activeGroups.includes(item.group)) return false;
+      if (lockedGroupId && item.group !== lockedGroupId) return false;
       if (focusSkill && item.skill !== focusSkill) return false;
       // A deliberately focused skill skips the new-item trickle gate: the
       // child (or parent) chose it, and the reveal still teaches every miss.
-      if (!focusSkill && !shouldAllowSkill(item.skill, masteryData)) return false;
+      if (!focusSkill && !lockedGroupId && !shouldAllowSkill(item.skill, masteryData)) return false;
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeGroups, focusSkill, moduleId]);
+  }, [activeGroups, focusSkill, lockedGroupId, moduleId]);
 
   const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
 
@@ -1759,6 +1767,7 @@ export default function PlaceValuePractice({
             // yet fully mastered; all done -> the last such group.
             const groupStats = mod.groups
               .filter((g) => isContentAccessible(moduleId, g.id))
+              .filter((g) => !lockedGroupId || g.id === lockedGroupId)
               .map((g) => {
                 const items = PLACE_VALUE_POOL.filter((i) => i.group === g.id);
                 const total = items.length;
@@ -1922,6 +1931,8 @@ export default function PlaceValuePractice({
               {mod.groups.map((group) => {
                 const prog = getGroupProgress(group.id);
                 const accessible = isContentAccessible(moduleId, group.id);
+                // A parent lock on another group: this group's skills can't be focused.
+                const groupLockedOut = !!lockedGroupId && group.id !== lockedGroupId;
                 const groupItems = PLACE_VALUE_POOL.filter((i) => i.group === group.id);
                 return (
                   <div key={group.id} style={{
@@ -1938,6 +1949,11 @@ export default function PlaceValuePractice({
                         {prog.mastered}/{prog.total}
                       </span>
                     </div>
+                    {lockedGroupId === group.id && (
+                      <p style={{ margin: "-4px 0 12px", fontSize: 11, color: "#888", fontFamily: "'Space Mono', monospace" }}>
+                        🔒 Locked to this group by a parent in Parent Zone
+                      </p>
+                    )}
                     {accessible ? (
                       <>
                         <div style={{
@@ -1962,19 +1978,21 @@ export default function PlaceValuePractice({
                               {/* Skill focus selector (spec §5): tap a skill to practise
                                   only that skill. The row is the target (≥44px). */}
                               <button
-                                onClick={() => { setFocusSkill(skill); setView("practice"); }}
+                                disabled={groupLockedOut}
+                                onClick={() => { if (groupLockedOut) return; setFocusSkill(skill); setView("practice"); }}
                                 aria-label={`Practise only ${placeValueModule.skillLabels?.[skill] || skill}`}
                                 style={{
                                   width: "100%", minHeight: 44, display: "flex", alignItems: "center", justifyContent: "space-between",
-                                  gap: 8, padding: "6px 10px", marginBottom: 6, borderRadius: 8, cursor: "pointer",
-                                  border: BRUTAL_BORDER_SM, boxShadow: focusSkill === skill ? "none" : BRUTAL_SHADOW_SM,
+                                  gap: 8, padding: "6px 10px", marginBottom: 6, borderRadius: 8, cursor: groupLockedOut ? "default" : "pointer",
+                                  opacity: groupLockedOut ? 0.5 : 1,
+                                  border: BRUTAL_BORDER_SM, boxShadow: focusSkill === skill || groupLockedOut ? "none" : BRUTAL_SHADOW_SM,
                                   transform: focusSkill === skill ? "translate(3px, 3px)" : "none",
                                   backgroundColor: focusSkill === skill ? COLORS.yellow : "white",
                                   fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: COLORS.black, textAlign: "left",
                                 }}>
                                 <span>{placeValueModule.skillLabels?.[skill] || skill}</span>
                                 <span style={{ fontSize: 10, opacity: 0.7, whiteSpace: "nowrap" }}>
-                                  {focusSkill === skill ? "practising ✓" : "practise this ›"}
+                                  {groupLockedOut ? "🔒 locked" : focusSkill === skill ? "practising ✓" : "practise this ›"}
                                 </span>
                               </button>
                               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5 }}>

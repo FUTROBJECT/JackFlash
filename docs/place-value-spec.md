@@ -635,8 +635,8 @@ charts, changed column blank, "Each step adds 1 ten disc → ▢"); the
 working-group pill moved to "EXPANDED FORM" once B and V were mastered;
 the X/C unlock via a seeded purchase. R1 by storage on every path.
 
-Still deferred: `lockedGroup` (chip filed). Unit-stamped discs, B1
-tap-to-count and the skill focus selector are built (sections below). Zero Hero / Disc Boss fire on the first answer
+Nothing deferred: unit-stamped discs, B1 tap-to-count, the skill focus
+selector and the Parent Zone group lock are all built (sections below). Zero Hero / Disc Boss fire on the first answer
 of a profile whose seeded mastery already qualifies — real profiles earn
 them normally.
 
@@ -676,3 +676,24 @@ returns to the normal weighted draw. The focused row shows "practising ✓".
 Nothing about the focus is persisted or scored; it lasts for the screen
 visit. Built in Place Value and Fractions (same pattern in both practice
 screens); Multiply keeps its table-group toggles.
+
+## Parent Zone group lock (built 2026-09-18)
+
+`settings.lockedGroup` (a default since v1, never wired) now has a Parent
+Zone control and is honoured by every shipped practice screen. **Parent
+Zone:** a "Lock Group" dropdown under Lock CPA Mode, listing the active
+module's *accessible* groups (locking to an unpurchased group would empty
+the draw); a stored id from another module shows as "Any Group", exactly
+like the operation lock. **Fractions / Place Value:** the pool is limited to
+the locked group, the readiness gate is bypassed inside it (the parent
+chose it), the header pill frames against the locked group, the locked
+group's progress card says "🔒 Locked to this group by a parent in Parent
+Zone", and other groups' skill rows read "🔒 locked" and don't respond.
+**Multiply:** the lock flows through `isTableAccessible`, so the Practice
+Sets toggles show the other groups' tables padlocked, the draw and the
+pill see only the locked tables, and a saved child selection that lies
+entirely outside the lock ("only 2s", then locked to 6s–9s) falls back to
+the whole locked group instead of an empty draw; toggling from that state
+starts over from the locked set. Multiply's Practice Sets card carries the
+same "🔒 Locked to … by a parent" line. Verified in the preview at 375 and
+320 across all three modules.

@@ -203,6 +203,13 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   const operation = lockedOperation && (mod?.operations || []).some((o) => o.id === lockedOperation)
     ? lockedOperation
     : (mod?.defaultOperation || "mixed");
+  // Parent Zone "Lock Group" (settings.lockedGroup: "easy" | "medium" |
+  // "hard" | null). Same shape: derived, unknown or inaccessible ids ignored.
+  // Applied through isTableAccessible, so the practice-set toggles, the
+  // draw and the header pill all see only the locked group's tables.
+  const lockedGroupSetting = getProfile(profileId)?.settings?.lockedGroup || null;
+  const lockedGroupDef = (mod?.groups || []).find((g) => g.id === lockedGroupSetting && isContentAccessible(moduleId, g.id)) || null;
+  const lockedTables = lockedGroupDef ? lockedGroupDef.tables : null;
   // Per-group operation tab in the progress grid ({ [groupId]: "multiply" | "divide" }).
   const [groupOp, setGroupOp] = useState({});
   const [currentFact, setCurrentFact] = useState(null);
@@ -304,17 +311,23 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   // Check if a specific table is accessible (must be defined before currentTables)
   const isTableAccessible = useCallback((table) => {
     if (!mod) return false;
+    if (lockedTables && !lockedTables.includes(table)) return false;
     return mod.groups.some(group =>
       group.tables.includes(table) && isContentAccessible(moduleId, group.id)
     );
-  }, [mod, moduleId]);
+  }, [mod, moduleId, lockedTables]);
 
   // Determine current tables — focusNumber overrides, then enabledTables, then all accessible
+  // A saved child selection that lies entirely outside a parent's group lock
+  // (e.g. "only 2s" saved, then locked to 6s–9s) falls back to the whole
+  // accessible set rather than an empty draw.
+  const allAccessibleTables = mod ? mod.focusTables.filter(t => isTableAccessible(t)) : [];
+  const enabledAccessible = enabledTables ? enabledTables.filter(t => isTableAccessible(t)) : [];
   const currentTables = mod ? (focusNumber
     ? (isTableAccessible(focusNumber) ? [focusNumber] : [])
-    : enabledTables
-      ? enabledTables.filter(t => isTableAccessible(t))
-      : mod.focusTables.filter(t => isTableAccessible(t))
+    : enabledTables && enabledAccessible.length > 0
+      ? enabledAccessible
+      : allAccessibleTables
   ) : [];
 
   // Generate facts using the module's generateFacts function (memoized to prevent infinite re-render loop)
@@ -435,8 +448,12 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   const toggleTable = useCallback((table) => {
     const allAccessible = mod ? mod.focusTables.filter(t => isTableAccessible(t)) : [];
     setEnabledTables(prev => {
-      // If null (all enabled), start from the full accessible list and remove this one
-      const current = prev || allAccessible;
+      // If null (all enabled), start from the full accessible list and remove
+      // this one. Drop tables outside the accessible set (a parent's group
+      // lock, or a paid group) so they don't linger in the saved list; an
+      // entirely stale selection starts over from the accessible set.
+      const kept = prev ? prev.filter(t => isTableAccessible(t)) : allAccessible;
+      const current = kept.length > 0 ? kept : allAccessible;
       let next;
       if (current.includes(table)) {
         next = current.filter(t => t !== table);
@@ -950,7 +967,10 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {mod.focusTables.map(t => {
                   const accessible = isTableAccessible(t);
-                  const active = enabledTables ? enabledTables.includes(t) : true;
+                  // Light up what is actually in play (currentTables), so a
+                  // saved selection outside a parent's group lock doesn't show
+                  // the locked group's tables as off while they're being drawn.
+                  const active = currentTables.includes(t);
                   const groupDef = mod.groups.find(g => g.tables.includes(t));
                   const color = groupDef?.color || COLORS.blue;
                   return (
@@ -981,6 +1001,11 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               }}>
                 Tap to toggle sets on/off — your choices are saved
               </p>
+              {lockedGroupDef && (
+                <p style={{ margin: "6px 0 0", fontSize: "11px", color: "#888", fontFamily: "'Space Mono', monospace" }}>
+                  🔒 Locked to {lockedGroupDef.label} by a parent in Parent Zone
+                </p>
+              )}
             </div>
 
             {/* CPA Mode selector — drives how much scaffold shows during practice */}

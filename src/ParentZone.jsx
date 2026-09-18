@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, MODULE_COLORS, DEFAULT_CHILD_SETTINGS, DEFAULT_MASTERY_THRESHOLD, AVATARS } from "./constants.js";
 import { getModuleList, getModule } from "./modules/moduleRegistry.js";
-import { PRODUCTS, purchaseProduct, restorePurchases, getProductsWithStatus } from "./purchaseManager.js";
+import { PRODUCTS, purchaseProduct, restorePurchases, getProductsWithStatus, isContentAccessible } from "./purchaseManager.js";
 import { getAllAchievementsForProfile } from "./achievementEngine.js";
 import { Dropdown } from "./shared/ui.jsx";
 import LogoLockup from "./LogoLockup.jsx";
@@ -750,6 +750,40 @@ export function ParentZone({
                             ]}
                           />
                         </div>
+
+                        {/* Lock Group dropdown — groups from the active module.
+                            Only accessible groups are offered: locking to a
+                            group the child can't open would empty the draw. */}
+                        {(() => {
+                          const profileMod = getModule(profile.activeModule);
+                          const groups = (profileMod?.groups || []).filter((g) => isContentAccessible(profile.activeModule, g.id));
+                          if (groups.length < 2) return null;
+                          // A stored id from another module matches no option:
+                          // show it as Any Group (the practice screens ignore it too).
+                          const stored = profile.settings.lockedGroup;
+                          const groupValue = groups.some((g) => g.id === stored) ? stored : "";
+                          return (
+                            <div>
+                              <label style={{
+                                display: "block",
+                                fontSize: "12px",
+                                fontWeight: 700,
+                                marginBottom: "6px",
+                                color: COLORS.black,
+                              }}>
+                                Lock Group
+                              </label>
+                              <Dropdown
+                                value={groupValue}
+                                onChange={(val) => handleChangeDropdown(profile.id, "lockedGroup", val || null)}
+                                options={[
+                                  { value: "", label: "Any Group" },
+                                  ...groups.map((g) => ({ value: g.id, label: g.label })),
+                                ]}
+                              />
+                            </div>
+                          );
+                        })()}
 
                         {/* Lock Operation dropdown — operations from active module */}
                         {(() => {
