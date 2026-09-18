@@ -653,3 +653,14 @@ the count chips and steppers line up. Compact charts (C1/C2/C3's stacked and
 mini charts, X2's pre-answer chart) keep plain 5-per-row discs — at 12px the
 stamp would be noise; the column heading carries the place there.
 
+## B1 tap-to-count (built 2026-09-18)
+
+In Concrete mode the read-the-discs card lets Jack count the discs off:
+each tap on a column ticks its next disc (a small yellow check badge on the
+disc) and a running "✓ n" appears under the discs; a tap past the last disc
+clears the column. The whole column is the tap target (≥44px tall), not the
+~19px disc. The digit chip under each column stays blank until he answers
+— the ticks and the running count are his own work and are never logged or
+scored. The ticks reset with every new item (the chart is keyed by itemKey).
+Pictorial and Abstract are unchanged.
+

@@ -730,6 +730,7 @@ export function PlaceValueChart({
   animate = false,
   highlightCol = null,  // column index to highlight (shows trade) — mode="digits" only
   mode = "digits",
+  ticks, onTapColumn,   // tap-to-count (discs mode only)
   counts = null,
   countTokens = null,
   columns = null,
@@ -750,6 +751,7 @@ export function PlaceValueChart({
         phrases={phrases} compact={compact}
         interactive={interactive} onChange={onChange}
         emptyMarker={emptyMarker} opacity={opacity} animate={animate}
+        ticks={ticks} onTapColumn={onTapColumn}
       />
     );
   }
@@ -826,6 +828,8 @@ function PlaceValueColumnBox({
   phraseOnly = false, phraseText = null,
   columnDelay = 0, // ms offset so multi-column auto-fills animate left column first
   stamp = null,    // unit value printed on each disc ("1000" … "1"); null = plain disc
+  ticked = 0,      // tap-to-count (B1 Concrete): discs 1..ticked are counted off
+  onTapFrame = null, // tapping the disc frame counts off the next disc (whole column = the target)
 }) {
   // Stamped discs need room for the numeral: 3 per row, up to 24px across
   // (a 4-column chart at 375px gives ~20px discs, "1000" ≈ 7px on retina).
@@ -869,13 +873,18 @@ function PlaceValueColumnBox({
           )}
         </div>
       ) : (
-        <div style={{
-          display: "flex", flexDirection: "column", gap: compact ? 2 : 3,
-          alignItems: "center", justifyContent: "center", minHeight: frameMinH,
-          // Stretch to the column so the 5-cell disc rows have a real width
-          // to divide (a centred flex child otherwise shrinks to nothing).
-          alignSelf: "stretch", width: "100%",
-        }}>
+        <div
+          onClick={onTapFrame || undefined}
+          role={onTapFrame ? "button" : undefined}
+          aria-label={onTapFrame ? `Count the ${label} discs` : undefined}
+          style={{
+            display: "flex", flexDirection: "column", gap: compact ? 2 : 3,
+            alignItems: "center", justifyContent: "center", minHeight: onTapFrame ? Math.max(frameMinH, 44) : frameMinH,
+            // Stretch to the column so the 5-cell disc rows have a real width
+            // to divide (a centred flex child otherwise shrinks to nothing).
+            alignSelf: "stretch", width: "100%",
+            cursor: onTapFrame ? "pointer" : "default",
+          }}>
           {count === 0 ? (
             emptyMarker ? (
               <span style={{
@@ -903,12 +912,19 @@ function PlaceValueColumnBox({
                         display: "block", width: "100%", maxWidth: r * 2, aspectRatio: "1 / 1",
                         animation: animate ? `dotPop 0.25s ease ${columnDelay + (startIdx + i) * 40}ms both` : "none",
                       }}>
-                        <circle cx="12" cy="12" r="11" fill={color} stroke={COLORS.black} strokeWidth="1.6" />
+                        <circle cx="12" cy="12" r="11" fill={color} stroke={COLORS.black} strokeWidth={startIdx + i < ticked ? 3 : 1.6} />
                         <text x="12" y="12" textAnchor="middle" dominantBaseline="central"
                           fontFamily="'Space Mono', monospace" fontWeight="700"
                           fontSize={stamp.length >= 4 ? 8 : stamp.length === 3 ? 10 : 12} fill={COLORS.black}>
                           {stamp}
                         </text>
+                        {startIdx + i < ticked && (
+                          // Counted-off badge: a small ink tick in the top-right.
+                          <g transform="translate(15 1)">
+                            <circle cx="4" cy="4" r="4.5" fill={COLORS.yellow} stroke={COLORS.black} strokeWidth="1" />
+                            <path d="M1.8 4.2 L3.4 5.8 L6.4 2.4" fill="none" stroke={COLORS.black} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                          </g>
+                        )}
                       </svg>
                     ) : (
                       <span key={i} style={{
@@ -925,6 +941,16 @@ function PlaceValueColumnBox({
         </div>
       )}
 
+      {onTapFrame && (
+        // Running count of what HE has counted off — his own work, not the
+        // answer (the digit chip below stays blank until he answers).
+        <div style={{
+          marginTop: 2, minHeight: 16, fontFamily: "'Space Mono', monospace", fontWeight: 700,
+          fontSize: 11, color: ticked > 0 ? COLORS.black : "#AAA",
+        }}>
+          {ticked > 0 ? `✓ ${ticked}` : "tap to count"}
+        </div>
+      )}
       {token !== undefined && token !== null && (
         <div style={{ marginTop: 4 }}>
           <DerivationToken value={count} state={token} />
@@ -953,6 +979,7 @@ function PlaceValueColumnBox({
 function PlaceValueDiscChart({
   counts, countTokens, columns, highlightPlace, valueCaption, phrases,
   compact, interactive, onChange, emptyMarker, opacity, animate,
+  ticks = null, onTapColumn = null, // tap-to-count (B1 Concrete)
 }) {
   const places = pvColumnPlaces(columns);
   const safeCounts = counts || places.map(() => 0);
@@ -997,6 +1024,8 @@ function PlaceValueDiscChart({
               emptyMarker={emptyMarker}
               compact={compact}
               stamp={compact ? null : PV_UNIT_STAMP[place]}
+              ticked={ticks ? ticks[idx] || 0 : 0}
+              onTapFrame={onTapColumn ? () => onTapColumn(idx) : null}
               animate={animate}
               columnDelay={idx * 150}
               interactive={interactive}

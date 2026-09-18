@@ -504,6 +504,24 @@ function pvValueCaption(item, tokenState) {
 // allowed to. B2 has no entry here — it's excluded from scaffoldRendered
 // entirely, since its interactive chart IS the input, always.)
 // ---------------------------------------------------------------------------
+// B1 Concrete tap-to-count (spec §3): each tap on a column counts off its
+// next disc (a tick badge + a running "✓ n" under the discs); a tap past the
+// last disc clears the column. Keyed by itemKey at the call site, so the
+// ticks reset with every new item. Nothing here is logged or scored.
+function B1TapCountChart({ item, counts, opacity, animate }) {
+  const [ticks, setTicks] = useState(() => counts.map(() => 0));
+  const onTapColumn = (idx) => {
+    setTicks((prev) => prev.map((t, i) => (i === idx ? (t >= counts[idx] ? 0 : t + 1) : t)));
+  };
+  return (
+    <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
+      <PlaceValueChart mode="discs" columns={item.columns} counts={counts}
+        countTokens={counts.map(() => "blank")} emptyMarker opacity={opacity} animate={animate}
+        ticks={ticks} onTapColumn={onTapColumn} />
+    </div>
+  );
+}
+
 function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }) {
   if (item.noChart) return null;
   if (mode === "abstract" && !showScaffold) return null;
@@ -513,8 +531,13 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
 
   if (item.skill === "B1") {
     // The count chips ARE part of the answer (they're literally its
-    // digits) — blank until answered, per §3.
+    // digits) — blank until answered, per §3. In Concrete the child counts
+    // the discs off by tapping the column (spec §3 B1): the ticks and the
+    // running "✓ n" are his own work; the digit chip stays blank.
     const counts = fullCounts(item);
+    if (mode === "concrete") {
+      return <B1TapCountChart key={item.itemKey} item={item} counts={counts} opacity={opacity} animate={animate} />;
+    }
     return (
       <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
         <PlaceValueChart mode="discs" columns={item.columns} counts={counts}
