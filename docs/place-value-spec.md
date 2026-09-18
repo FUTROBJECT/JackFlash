@@ -640,3 +640,16 @@ Still deferred: unit-stamped discs; B1 tap-to-count; skill focus selector;
 of a profile whose seeded mastery already qualifies — real profiles earn
 them normally.
 
+## Discs stamped with their unit value (built 2026-09-18)
+
+Every disc on a standard (non-compact) chart now carries its unit value —
+1000 / 100 / 10 / 1 — as think!'s number discs do. Stamped discs are inline
+SVG (viewBox units, so the numeral scales with the disc) and sit **three per
+row, up to 24px across**, instead of the 5+4 frame: a four-column chart at
+375px gives ~19px discs ("1000" ≈ 7px on retina, legible; Jack's 393pt phone
+is wider still), 320px gives ~15px (thousands small but present). Stamped
+columns reserve three rows so every column in a chart is the same height and
+the count chips and steppers line up. Compact charts (C1/C2/C3's stacked and
+mini charts, X2's pre-answer chart) keep plain 5-per-row discs — at 12px the
+stamp would be noise; the column heading carries the place there.
+

@@ -712,6 +712,10 @@ export function TenFrame({
 //
 // Responsive: viewBox + width:100% in both modes — never a fixed px width.
 // ---------------------------------------------------------------------------
+// The unit value stamped on every disc (docs/place-value-spec.md §3: "each
+// column holding round discs stamped with their unit value" — think!'s number
+// discs). Stamped discs render as SVG so the numeral scales with the disc.
+const PV_UNIT_STAMP = { k: "1000", h: "100", t: "10", o: "1" };
 const PV_PLACE_LABELS = { k: "Thousands", h: "Hundreds", t: "Tens", o: "Ones" };
 const PV_PLACE_COLOR = { k: COLORS.purple, h: COLORS.green, t: COLORS.blue, o: COLORS.pink };
 
@@ -821,12 +825,18 @@ function PlaceValueColumnBox({
   interactive = false, onDec, onInc,
   phraseOnly = false, phraseText = null,
   columnDelay = 0, // ms offset so multi-column auto-fills animate left column first
+  stamp = null,    // unit value printed on each disc ("1000" … "1"); null = plain disc
 }) {
-  const r = compact ? 6 : 9;
+  // Stamped discs need room for the numeral: 3 per row, up to 24px across
+  // (a 4-column chart at 375px gives ~20px discs, "1000" ≈ 7px on retina).
+  // Plain/compact discs keep the 5+4 frame.
+  const r = stamp ? 12 : (compact ? 6 : 9);
   const gap = compact ? 2 : 3;
-  const rowCap = 5;
+  const rowCap = stamp ? 3 : 5;
   const rows = count > 0 ? Math.ceil(count / rowCap) : 0;
-  const frameMinH = compact ? 40 : 56;
+  // Stamped frames reserve three rows (9 discs at 3 per row) so every column
+  // in a chart is the same height and the count chips / steppers line up.
+  const frameMinH = stamp ? r * 2 * 3 + gap * 2 : (compact ? 40 : 56);
 
   return (
     <div style={{
@@ -886,11 +896,27 @@ function PlaceValueColumnBox({
                   width: "100%", maxWidth: rowCap * r * 2 + (rowCap - 1) * gap, justifyItems: "center",
                 }}>
                   {Array.from({ length: inRow }).map((_, i) => (
-                    <span key={i} style={{
-                      display: "block", width: "100%", maxWidth: r * 2, aspectRatio: "1 / 1", borderRadius: "50%",
-                      backgroundColor: color, border: "2px solid " + COLORS.black, boxSizing: "border-box",
-                      animation: animate ? `dotPop 0.25s ease ${columnDelay + (startIdx + i) * 40}ms both` : "none",
-                    }} />
+                    stamp ? (
+                      // SVG so the stamp scales with the disc: viewBox units,
+                      // no pixel font sizes. Font shrinks with the digit count.
+                      <svg key={i} viewBox="0 0 24 24" style={{
+                        display: "block", width: "100%", maxWidth: r * 2, aspectRatio: "1 / 1",
+                        animation: animate ? `dotPop 0.25s ease ${columnDelay + (startIdx + i) * 40}ms both` : "none",
+                      }}>
+                        <circle cx="12" cy="12" r="11" fill={color} stroke={COLORS.black} strokeWidth="1.6" />
+                        <text x="12" y="12" textAnchor="middle" dominantBaseline="central"
+                          fontFamily="'Space Mono', monospace" fontWeight="700"
+                          fontSize={stamp.length >= 4 ? 8 : stamp.length === 3 ? 10 : 12} fill={COLORS.black}>
+                          {stamp}
+                        </text>
+                      </svg>
+                    ) : (
+                      <span key={i} style={{
+                        display: "block", width: "100%", maxWidth: r * 2, aspectRatio: "1 / 1", borderRadius: "50%",
+                        backgroundColor: color, border: "2px solid " + COLORS.black, boxSizing: "border-box",
+                        animation: animate ? `dotPop 0.25s ease ${columnDelay + (startIdx + i) * 40}ms both` : "none",
+                      }} />
+                    )
                   ))}
                 </div>
               );
@@ -970,6 +996,7 @@ function PlaceValueDiscChart({
               highlighted={highlightPlace === place}
               emptyMarker={emptyMarker}
               compact={compact}
+              stamp={compact ? null : PV_UNIT_STAMP[place]}
               animate={animate}
               columnDelay={idx * 150}
               interactive={interactive}
