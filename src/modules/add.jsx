@@ -454,6 +454,41 @@ export function tradeSub(st, i) {
   return { ...st, counts, carried };
 }
 
+// Is a subtraction regroup at column i actually needed? (decided 2026-10-06)
+// Regrouping is the answer to "can I take this?" — so it's allowed only when
+// some column to the right is SHORT (its top can't cover its take) and column
+// i is the nearest column with something to lend (every column in between is
+// empty, e.g. across zeros). Otherwise the child gets a reason instead of a
+// silent no, which keeps the "is the top digit enough?" decision with him.
+//   have[j] — what column j has now (chart: uncrossed discs; marks: current value)
+//   done[j] — column j's take is finished (chart only; marks pass all false)
+// Returns { ok: true } or { ok: false, notice }.
+export function subRegroupCheck(item, have, done, i) {
+  const cols = item.columns;
+  const codes = placeCodes(cols);
+  const B = digitArr(item.b, cols);
+  const short = (j) => !done[j] && have[j] < B[j];
+  for (let j = i + 1; j < cols; j++) {
+    if (short(j)) return { ok: true };
+    if (have[j] > 0) break; // a closer column has something: it lends, not i
+  }
+  const r = i + 1;
+  if (r >= cols) return { ok: false, notice: `No need to ${REGROUP.verb} here.` };
+  const place = codes[r];
+  const amount = `${have[r]} ${have[r] === 1 ? PL_SING[place] : PL_PLUR[place]}`;
+  if (done[r]) return { ok: false, notice: `The ${PL_PLUR[place]} are done — no need to ${REGROUP.verb}.` };
+  if (have[r] > 0 && B[r] > 0) return { ok: false, notice: `${amount} — enough to take ${B[r]}. No need to ${REGROUP.verb}.` };
+  if (have[r] > 0) return { ok: false, notice: `Nothing to take from the ${PL_PLUR[place]}. No need to ${REGROUP.verb}.` };
+  return { ok: false, notice: `No need to ${REGROUP.verb} here.` };
+}
+
+// Chart view for subRegroupCheck.
+export function chartRegroupCheck(item, st, i) {
+  const have = st.counts.map((c, j) => c - st.taken[j]);
+  const done = st.taken.map((t) => t > 0);
+  return subRegroupCheck(item, have, done, i);
+}
+
 // Take `n` away from column i. Returns { state, notice }: either the crossed
 // state, or (not enough uncrossed discs) the SAME state plus a cream refusal.
 // A column can only be taken once; Start over resets.
@@ -875,6 +910,28 @@ function runAddSelfCheck() {
     const remaining = state.counts.map((c, g) => c - state.taken[g]);
     if (remaining.join("") !== digitArr(i.correctAnswer, i.columns).join("")) fail(`${i.itemKey}: afterTradesState ${remaining} != answer`);
     if (i.op === "-" && trades.join(",") !== subStandard(i.a, i.b, i.columns).trades.join(",")) fail(`${i.itemKey}: chart trades != written trades`);
+
+    // Needed-regroup rule (subRegroupCheck): a child solving right to left —
+    // regrouping from the nearest column with discs only when a column is
+    // short — must never be refused, and must end on the answer.
+    if (i.op === "-") {
+      const B = digitArr(i.b, i.columns);
+      let cs = initDiscState(i);
+      for (let p = i.columns - 1; p >= 0; p--) {
+        for (let round = 0; round < 4 && uncrossed(cs, p) < B[p]; round++) {
+          let L = -1;
+          for (let k = p - 1; k >= 0; k--) { if (uncrossed(cs, k) >= 1) { L = k; break; } }
+          if (L < 0) { fail(`${i.itemKey}: no lender for column ${p}`); break; }
+          for (let m = L; m < p; m++) {
+            if (!chartRegroupCheck(i, cs, m).ok) fail(`${i.itemKey}: needed regroup refused at column ${m}`);
+            cs = tradeSub(cs, m);
+          }
+        }
+        if (B[p] > 0) cs = takeSub(cs, p, B[p]).state;
+      }
+      const left = cs.counts.map((c, j) => c - cs.taken[j]);
+      if (Number(left.join("")) !== i.correctAnswer) fail(`${i.itemKey}: regroup-rule solve ends on ${left.join(",")}`);
+    }
 
     // Bug outputs (§7): logged once; must differ from the answer where applicable.
     const row = { key: i.itemKey, answer: i.correctAnswer };

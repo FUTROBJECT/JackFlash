@@ -169,7 +169,7 @@ The chart is Jack's Place Value chart: columns labelled Thousands · Hundreds ·
 - **Plain discs, 5 per row**, not the stamped 3-per-row discs. A column can hold up to 19 discs (9 + 9 + 1 carried), and a 5-per-row frame makes **ten = two full rows**, so "a full ten-frame trades for one disc" is visible at a glance. The column heading carries the value, as in Place Value's compact charts.
 - **Trading is now allowed.** Place Value deliberately stopped at "a column only holds 9". Here a trade is a tap:
   - **Addition:** a column with 10+ discs shows **"Regroup →"** (label: "10 ones → 1 ten", and so on). Tapping it animates 10 discs out. One disc arrives at the **top of the left column with a yellow ring** ("carried").
-  - **Subtraction:** every non-ones column with an uncrossed disc shows **"Regroup →"** (label: "1 ten → 10 ones"). Tapping it moves one disc right, where it becomes **10 yellow-ringed discs** that form a full two-row frame.
+  - **Subtraction:** every non-ones column with an uncrossed disc shows **"Regroup →"** (label: "1 ten → 10 ones"). *(Amended 2026-10-06: the button stays visible, but a regroup is accepted only when it is needed — see "Regroup only when needed" at the end.)* Tapping it moves one disc right, where it becomes **10 yellow-ringed discs** that form a full two-row frame.
   - **Take-away (subtraction):** under each column a chip-button **"Take 8"** (the subtrahend digit, a given). If enough uncrossed discs remain, tapping crosses out that many, **crossing yellow-ringed (traded-in) discs first**. That is "subtract from the ten", the same strategy as F2. If there are not enough, a cream chip appears instead and nothing changes: "Only 3 ones. Trade 1 ten for 10 ones first." For a zero column: "No tens to trade — trade 1 hundred first."
   - Count chips under the columns stay **blank** in every mode before the reveal. Counting the remaining discs is the work.
 
@@ -747,3 +747,16 @@ Built by `module-builder` from this spec, play-tested by the main loop at 393×8
 ## Vocabulary change: "regroup" (2026-10-06)
 
 Adam decided D1: every kid-facing string uses **regroup**, the Singapore Math term, instead of "trade". Changed: the chart button ("Regroup →"), the refusal chips ("Only 3 ones. Regroup 1 ten into 10 ones first." / "No tens yet — regroup 1 hundred first."), every reveal line in §9.1 (the `zeroStays10` line is now "Regroup 1 of the 10 tens — 9 tens are left"; the `noDecrement` line is "1 hundred was regrouped, so 1 fewer hundred", dropping the destination because a thousand regroups into hundreds, not ones), the mark hint ("Tap a top digit to regroup"), the "Nothing to regroup here" chip, the A3 label ("Lots of regrouping") and the colAdd achievement ("Regroup Captain"; its id `add-carry-captain` is kept because achievement ids are persisted). The constant is `REGROUP` in `src/modules/add.jsx`. Internal identifiers (`tradeAdd`, pattern tags such as "one trade into ones") are never displayed and were left alone. Every line was regenerated and checked at 320×568.
+
+## Regroup only when needed (2026-10-06)
+
+**Bug found by Adam on the phone:** 486 − 52 needs no regrouping, but the hundreds column showed "Regroup →" (per §4.1 every subtraction column with discs did). Tapping it moved 1 hundred into 10 tens and wrote an unnecessary rename on the sum (4 → 3, 8 → 18). The value was unchanged, so 434 still scored, but the counts no longer matched writable digits and the written method showed a step the book never would. Typing marks on the written sum had the same gap.
+
+**Rule (`subRegroupCheck` in `src/modules/add.jsx`):** a subtraction regroup at column *i* is accepted only when some column to its right is **short** (its top can't cover its take, and its take isn't done) **and** *i* is the nearest column with something to lend (every column between is empty — across zeros). The same rule guards the chart's Regroup buttons (`chartRegroupCheck`, using uncrossed discs) and taps on the written sum (using each column's current value).
+
+**The button stays visible.** Deciding whether to regroup ("Can I take 2 from 6?") is the lesson, so the app doesn't hide the button and decide for Jack. An unneeded tap is refused with a reason in a cream chip:
+- "8 tens — enough to take 5. No need to regroup."
+- "The ones are done — no need to regroup." (that column's take is already finished)
+- "13 ones — enough to take 8. No need to regroup." (on the written sum, after the needed renames)
+
+**Proof it never blocks a correct method:** the DEV self-check now solves every subtraction item the way a child would (right to left, regrouping from the nearest column with discs only when a column is short, across zeros included). It asserts that no needed regroup is refused and that the remaining discs equal the answer. All 56 pass. It also replays the canonical written renames through the same rule; all pass. Verified in the preview at 393×852 on 486 − 52 (chart and written sum, Concrete and Abstract) and on 503 − 178 (three needed renames accepted, a fourth refused with the reason).

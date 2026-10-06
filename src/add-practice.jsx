@@ -34,7 +34,7 @@ import {
 import addModule, {
   ADD_POOL, REGROUP, shouldAllowSkill, wasAttempted, digitArr,
   initDiscState, tradeAdd, tradeSub, takeSub, tradeableFor, takeLabelsFor,
-  afterTradesState, canonicalMarks, correctDigitCells, diagnosedPlace, buildAddLine,
+  afterTradesState, canonicalMarks, subRegroupCheck, chartRegroupCheck, correctDigitCells, diagnosedPlace, buildAddLine,
 } from "./modules/add.jsx";
 import { formatNumber } from "./modules/placeValue.jsx";
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
@@ -51,7 +51,7 @@ import WrongAnswerReveal from "./shared/WrongAnswerReveal.jsx";
 import DerivationLine from "./shared/DerivationLine.jsx";
 import { PlaceValueChart, PressButton } from "./shared/barComponents.jsx";
 import {
-  ColumnAnswerInput, emptyMarks, applyTopTap, mirrorChartTrade,
+  ColumnAnswerInput, emptyMarks, applyTopTap, mirrorChartTrade, subMarksView,
 } from "./shared/ColumnMethod.jsx";
 
 // Register the Add & Subtract module
@@ -633,6 +633,12 @@ export default function AddPractice({
   // never prints the resulting counts. Every trade mirrors into the grid's marks.
   const handleChartTrade = useCallback((idx) => {
     if (!currentItem) return;
+    // Subtraction: a regroup the column to the right doesn't need is refused
+    // with a reason ("8 tens — enough to take 5. No need to regroup.").
+    if (currentItem.op === "-") {
+      const check = chartRegroupCheck(currentItem, disc, idx);
+      if (!check.ok) { setNotice(check.notice); return; }
+    }
     const next = currentItem.op === "+" ? tradeAdd(disc, idx) : tradeSub(disc, idx);
     if (next === disc) return;
     setDisc(next);
@@ -652,12 +658,32 @@ export default function AddPractice({
   // unscored, but a tap that can't do anything must not be silent.
   const makeTopTap = (marks, setMarks) => (idx) => {
     if (!currentItem) return;
-    const next = applyTopTap(currentItem, marks, idx);
-    if (next !== marks) { setMarks(next); return; }
-    if (currentItem.op === "-") {
-      setMarkNotice("Nothing to regroup here");
+    const flash = (text, ms) => {
+      setMarkNotice(text);
       if (markNoticeTimerRef.current) clearTimeout(markNoticeTimerRef.current);
-      markNoticeTimerRef.current = setTimeout(() => setMarkNotice(null), 1800);
+      markNoticeTimerRef.current = setTimeout(() => setMarkNotice(null), ms);
+    };
+    const next = applyTopTap(currentItem, marks, idx);
+    if (next !== marks) {
+      // Same rule as the chart: rename a top digit only when it's needed.
+      if (currentItem.op === "-") {
+        const { cur } = subMarksView(currentItem, marks);
+        const check = subRegroupCheck(currentItem, cur, cur.map(() => false), idx);
+        if (!check.ok) { flash(check.notice, 3200); return; }
+      }
+      setMarks(next);
+      return;
+    }
+    if (currentItem.op === "-") {
+      // A digit that has something to give, but whose neighbour already has
+      // enough (e.g. the ones already show 13), gets the same reason as the
+      // chart. A zero, a blank or the ones column gets the short chip.
+      const { cur } = subMarksView(currentItem, marks);
+      if (idx < currentItem.columns - 1 && cur[idx] >= 1) {
+        flash(subRegroupCheck(currentItem, cur, cur.map(() => false), idx).notice, 3200);
+      } else {
+        flash("Nothing to regroup here", 1800);
+      }
     }
   };
 
