@@ -1287,7 +1287,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                         fontSize: numFont, fontFamily: "'Shrikhand', cursive",
                         fontWeight: 400, textAlign: "center",
                         border: "none", borderRadius: "0",
-                        backgroundColor: feedback === "correct" ? COLORS.green : feedback === "incorrect" ? "#FFF0F0" : "transparent",
+                        backgroundColor: feedback === "correct" ? COLORS.green : feedback === "incorrect" ? COLORS.cream : "transparent", // cream, not pink (R4)
                         color: COLORS.black, outline: "none",
                         padding: "4px 0", marginTop: "4px",
                         transition: "background-color 0.3s ease",
@@ -1548,7 +1548,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                   textAlign: "center",
                   border: "none",
                   borderBottom: `4px solid ${COLORS.black}`,
-                  backgroundColor: retry.phase === "missed" ? COLORS.yellow : retry.phase === "done" ? COLORS.green : "#FFF0F0",
+                  backgroundColor: retry.phase === "missed" ? COLORS.yellow : retry.phase === "done" ? COLORS.green : COLORS.cream, // cream, not pink: no red in the reveal (wrong-answer-reveal-spec R4)
                   color: COLORS.black,
                   outline: "none",
                   padding: "2px 0",
