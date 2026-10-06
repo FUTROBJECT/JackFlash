@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { COLORS, BRUTAL_SHADOW } from "./constants.js";
 
 /**
@@ -14,16 +14,24 @@ import { COLORS, BRUTAL_SHADOW } from "./constants.js";
  */
 export default function AchievementPopup({ achievement, onDismiss }) {
   const [isVisible, setIsVisible] = useState(true);
+  // Callers pass a fresh onDismiss arrow on every render. Keying the timer
+  // on it restarted the 3s countdown on each parent re-render, and once one
+  // popup closed the component stayed mounted with isVisible=false, so the
+  // NEXT queued achievement was never shown (it was silently dismissed).
+  // The timer now runs once per achievement, and each one starts visible.
+  const dismissRef = useRef(onDismiss);
+  dismissRef.current = onDismiss;
 
   useEffect(() => {
+    setIsVisible(true);
     // Auto-dismiss after 3 seconds
     const timer = setTimeout(() => {
       setIsVisible(false);
-      onDismiss();
+      dismissRef.current();
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [onDismiss]);
+  }, [achievement]);
 
   if (!isVisible) {
     return null;

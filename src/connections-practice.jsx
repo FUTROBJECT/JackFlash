@@ -899,14 +899,16 @@ export default function ConnectionsPractice({
       if (newAchievements.length > 0) {
         setAchievementQueue(prev => [...prev, ...newAchievements]);
       }
+      // Toned down (docs/voice-and-messaging.md): two calm, repeatable
+      // nods instead of four hype popups ("On Fire!", "LEGENDARY!"). The
+      // nod is skipped when the matching one-time achievement (`sameAs`)
+      // unlocks on the same answer, so a child never gets two popups at once.
       const streakMilestones = [
-        { at: 3, name: "Getting Warm!", icon: "🔥", description: "3 in a row!" },
-        { at: 5, name: "On Fire!", icon: "🔥", description: "5 in a row!" },
-        { at: 10, name: "Unstoppable!", icon: "⚡", description: "10 in a row!" },
-        { at: 25, name: "LEGENDARY!", icon: "👑", description: "25 in a row!" },
+        { at: 10, name: "Nice and steady", icon: "👍", description: "10 right in a row.", sameAs: "on-fire" },
+        { at: 25, name: "Great focus", icon: "🎯", description: "25 right in a row.", sameAs: "unstoppable" },
       ];
       const milestone = streakMilestones.find(m => m.at === newStreak);
-      if (milestone) setAchievementQueue(prev => [...prev, milestone]);
+      if (milestone && !newAchievements.some((a) => a.id === milestone.sameAs)) setAchievementQueue(prev => [...prev, milestone]);
     }
 
     const newTotal = sessionStats.total + 1;

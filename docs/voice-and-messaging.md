@@ -40,9 +40,9 @@ The time window is an implementation detail for telling memory from counting. Me
 
 ## Open questions (Adam to decide)
 
-- The in-a-row streak milestones ("Getting Warm!", "On Fire!", "Unstoppable!", "LEGENDARY!") and the achievements of the same names celebrate consecutive correct answers. They aren't about speed, but they are performance hype.
 - The tagline "Math fluency, the right way." Fluency in the education sense means accurate, flexible and efficient, but many parents hear "fast".
 
 ## Decided
 
 - **2026-10-06 — Century Club → Habit Builder.** "Century Club" (100 problems in one session) rewarded volume and pulled against "five minutes a day". It is replaced by **Habit Builder 🌱 — "Practiced on 10 different days"**: a total, not a streak, so a missed day never takes it away. Profiles track `dailyStreak.daysPracticed` (back-filled from streak and recent sessions for existing profiles). The same change wired the day-based achievements to actually fire: Week Warrior and Month Master had never been able to unlock because `checkAfterSession` was never called.
+- **2026-10-06 — Streak milestones toned down.** The repeatable in-practice popups went from four hype milestones ("Getting Warm!" at 3, "On Fire!" at 5, "Unstoppable!" at 10, "LEGENDARY!" at 25) to two calm nods: **"Nice and steady" 👍 at 10** and **"Great focus" 🎯 at 25** ("N right in a row."), with no fire, lightning or crown. A nod is skipped when the matching one-time achievement unlocks on the same answer. The one-time achievements keep their ids but are renamed: getting-warm → **Warming Up** 🌤️, on-fire → **Steady** 👍, unstoppable → **Deep Focus** 🎯 ("3/10/25 right in a row"). Testing this exposed a popup bug: a second achievement queued behind another was never shown (the 3s timer restarted on every re-render and the popup stayed hidden after the first closed). `AchievementPopup` now times each achievement once and shows each one.
