@@ -710,6 +710,32 @@ export function TenFrame({
 //                   thing, not an absence).
 //   animate       — disc pop-in stagger (discs mode only).
 //
+// docs/add-spec.md §4.1 / §11.2 — Add & Subtract's arithmetic chart. EVERY prop
+// below is opt-in and default-off; with none of them present the discs-mode
+// markup is byte-for-byte what Place Value rendered before (PlaceValueDiscChart
+// only branches to the arithmetic renderer when `arith` is true).
+//   columns: 2    — Tens · Ones only (facts).
+//   plain         — plain 5-per-row discs at non-compact size (no unit stamp).
+//   layers        — [counts, counts2]: two addend piles per column split by a
+//                   dashed line. A column whose counts2 entry is null/undefined
+//                   is MERGED (one pile of counts[i]). Column total =
+//                   counts[i] + (counts2[i] ?? 0).
+//   carried       — per-column count of yellow-ringed discs (traded in). They
+//                   are the FIRST `carried[i]` discs of the pile / layer 1.
+//   taken         — per-column count of crossed-out discs. Crossing runs over
+//                   the sequence [ringed…, plain…], so ringed discs cross first.
+//   takeLabels    — per-column "Take 8" chip text (null = no chip). With onTake
+//                   it is a button (one use: shows "✓ Took 8" once taken > 0);
+//                   without, a plain label chip (Pictorial).
+//   onTake(idx)   — tap handler for the take chips.
+//   tradeable     — per-column booleans: show the "Trade →" button.
+//   tradeLabels   — per-column long label ("10 ones → 1 ten") under "Trade →".
+//   tradeText     — button text (default "Trade →").
+//   onTrade(idx)  — tap handler for the trade buttons.
+//   notice        — cream refusal chip under the chart ("Only 3 ones. …").
+//   Count chips (countTokens) show REMAINING = column total − taken[i].
+//   Up to 19 discs per column (4 rows of 5).
+//
 // Responsive: viewBox + width:100% in both modes — never a fixed px width.
 // ---------------------------------------------------------------------------
 // The unit value stamped on every disc (docs/place-value-spec.md §3: "each
@@ -720,6 +746,9 @@ const PV_PLACE_LABELS = { k: "Thousands", h: "Hundreds", t: "Tens", o: "Ones" };
 const PV_PLACE_COLOR = { k: COLORS.purple, h: COLORS.green, t: COLORS.blue, o: COLORS.pink };
 
 function pvColumnPlaces(columns) {
+  // columns === 2 (Tens · Ones) is the Add & Subtract facts chart (docs/add-spec.md §4.5);
+  // 3 and 4 are exactly as before.
+  if (columns === 2) return ["t", "o"];
   return columns === 3 ? ["h", "t", "o"] : ["k", "h", "t", "o"];
 }
 
@@ -741,6 +770,18 @@ export function PlaceValueChart({
   interactive = false,
   onChange = null,
   emptyMarker = false,
+  // Add & Subtract arithmetic extension (all default off — see docstring above).
+  plain = false,
+  layers = null,
+  carried = null,
+  taken = null,
+  takeLabels = null,
+  onTake = null,
+  tradeable = null,
+  tradeLabels = null,
+  tradeText = "Trade →",
+  onTrade = null,
+  notice = null,
 }) {
   if (mode === "discs") {
     return (
@@ -752,6 +793,10 @@ export function PlaceValueChart({
         interactive={interactive} onChange={onChange}
         emptyMarker={emptyMarker} opacity={opacity} animate={animate}
         ticks={ticks} onTapColumn={onTapColumn}
+        plain={plain} layers={layers} carried={carried} taken={taken}
+        takeLabels={takeLabels} onTake={onTake}
+        tradeable={tradeable} tradeLabels={tradeLabels} tradeText={tradeText} onTrade={onTrade}
+        notice={notice}
       />
     );
   }
@@ -980,8 +1025,25 @@ function PlaceValueDiscChart({
   counts, countTokens, columns, highlightPlace, valueCaption, phrases,
   compact, interactive, onChange, emptyMarker, opacity, animate,
   ticks = null, onTapColumn = null, // tap-to-count (B1 Concrete)
+  plain = false, layers = null, carried = null, taken = null,
+  takeLabels = null, onTake = null, tradeable = null, tradeLabels = null,
+  tradeText = "Trade →", onTrade = null, notice = null,
 }) {
   const places = pvColumnPlaces(columns);
+  const arith = plain || !!layers || !!carried || !!taken || !!takeLabels || !!tradeable || !!notice;
+  if (arith) {
+    return (
+      <PlaceValueArithChart
+        places={places} counts={counts} countTokens={countTokens}
+        highlightPlace={highlightPlace} compact={compact} emptyMarker={emptyMarker}
+        opacity={opacity} animate={animate}
+        layers={layers} carried={carried} taken={taken}
+        takeLabels={takeLabels} onTake={onTake}
+        tradeable={tradeable} tradeLabels={tradeLabels} tradeText={tradeText} onTrade={onTrade}
+        notice={notice}
+      />
+    );
+  }
   const safeCounts = counts || places.map(() => 0);
 
   const handleDelta = (idx, delta) => {
@@ -1034,6 +1096,257 @@ function PlaceValueDiscChart({
             />
           ))}
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PressButton — brutal button whose press sinks into its own shadow
+// (translate(3px, 3px) + shadow off), driven by pointer events so it works for
+// touch and mouse without a stylesheet. Callers pass the resting style; the
+// pressed look is layered on top. Used by the arithmetic chart's trade/take
+// buttons and by ColumnMethod's pad.
+// ---------------------------------------------------------------------------
+export function PressButton({ onClick, disabled = false, style = {}, children, ...rest }) {
+  const [pressed, setPressed] = useState(false);
+  const down = () => { if (!disabled) setPressed(true); };
+  const up = () => setPressed(false);
+  return (
+    <button
+      type="button"
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      onPointerDown={down} onPointerUp={up} onPointerLeave={up} onPointerCancel={up}
+      style={{
+        // Fast taps on iOS must not double-tap-zoom or raise the selection callout.
+        touchAction: "manipulation", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none",
+        ...style,
+        transform: pressed ? "translate(3px, 3px)" : (style.transform ?? "none"),
+        boxShadow: pressed ? "none" : style.boxShadow,
+        transition: "transform 0.08s ease, box-shadow 0.08s ease",
+      }}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+}
+
+// A pile of plain discs, 5 per row. The first `ringed` discs carry a yellow
+// ring (traded in); the first `crossed` discs are crossed out (the caller
+// guarantees the ringed-first ordering by always passing ringed discs first).
+function PvDiscRows({ count, ringed = 0, crossed = 0, color, r, gap, animate = false, delayBase = 0 }) {
+  const rowCap = 5;
+  const rows = Math.ceil(count / rowCap);
+  // Cross lines ~2px at a 9px disc (the band is a % of the disc's diagonal).
+  const cross = `linear-gradient(45deg, transparent 42%, ${COLORS.black} 42%, ${COLORS.black} 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, ${COLORS.black} 42%, ${COLORS.black} 58%, transparent 58%)`;
+  return Array.from({ length: rows }).map((_, rowIdx) => {
+    const start = rowIdx * rowCap;
+    const inRow = Math.min(rowCap, count - start);
+    return (
+      <div key={rowIdx} style={{
+        display: "grid", gridTemplateColumns: `repeat(${rowCap}, 1fr)`, gap,
+        width: "100%", maxWidth: rowCap * r * 2 + (rowCap - 1) * gap, justifyItems: "center",
+      }}>
+        {Array.from({ length: inRow }).map((__, i) => {
+          const n = start + i;
+          const isRinged = n < ringed;
+          const isCrossed = n < crossed;
+          return (
+            <span key={i} style={{
+              display: "block", width: "100%", maxWidth: r * 2, aspectRatio: "1 / 1", borderRadius: "50%",
+              backgroundColor: color, border: "2px solid " + COLORS.black, boxSizing: "border-box",
+              // Traded-in: a yellow ring with a thin black outline so it reads on white.
+              boxShadow: isRinged ? `0 0 0 2px ${COLORS.yellow}, 0 0 0 3px ${COLORS.black}` : "none",
+              backgroundImage: isCrossed ? cross : undefined,
+              opacity: isCrossed ? 0.4 : 1,
+              animation: animate ? `dotPop 0.25s ease ${delayBase + n * 40}ms both` : "none",
+            }} />
+          );
+        })}
+      </div>
+    );
+  });
+}
+
+function PvEmptyMarker({ r }) {
+  return (
+    <span style={{
+      display: "inline-block", width: r * 2, height: r * 2, borderRadius: "50%",
+      border: `2px dashed ${COLORS.black}`, opacity: 0.4, flexShrink: 0,
+    }} />
+  );
+}
+
+const PV_PLACE_VALUE_TEXT = { k: "1,000", h: "100", t: "10", o: "1" };
+
+// One arithmetic column: heading (name + value), the disc frame (single pile or
+// two layers + dashed line), the count chip, an optional "Trade →" button and
+// an optional "Take n" chip. Chips/buttons bottom-align across columns because
+// the frame flexes to fill the row height.
+function PlaceValueArithColumn({
+  place, count, count2 = null, layered = false, ringed = 0, crossed = 0, token,
+  highlighted = false, emptyMarker = false, compact = false, animate = false, columnDelay = 0,
+  trade = null, take = null, dense = false, reserveTrade = false,
+}) {
+  const color = PV_PLACE_COLOR[place];
+  const r = compact ? 6 : 9;
+  // Four columns (320px): a tighter gap and side padding give the discs a little size back.
+  const gap = compact || dense ? 2 : 3;
+  const total = count + (layered ? (count2 || 0) : 0);
+  const remaining = Math.max(0, total - crossed);
+  const showMarker = (n) => n === 0 && emptyMarker;
+  return (
+    <div style={{
+      flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center",
+      padding: compact ? "4px 1px" : (dense ? "6px 1px" : "6px 2px"), borderRadius: 8,
+      border: highlighted ? `3px solid ${COLORS.orange}` : `2px solid ${COLORS.black}`,
+      backgroundColor: highlighted ? "#FFF4E5" : "transparent",
+      transition: "border-color 0.2s ease, background-color 0.2s ease",
+    }}>
+      <div style={{
+        fontFamily: "'Space Mono', monospace", fontWeight: 700, textAlign: "center",
+        fontSize: compact ? 9 : "clamp(9px, 2.8vw, 11px)", color: COLORS.black,
+        lineHeight: 1.2, whiteSpace: "nowrap", maxWidth: "100%", overflow: "hidden", marginBottom: 4,
+      }}>
+        {PV_PLACE_LABELS[place]}
+        <div style={{ fontSize: 10, color: "#666", fontWeight: 700 }}>= {PV_PLACE_VALUE_TEXT[place]}</div>
+      </div>
+
+      <div style={{
+        flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "center",
+        justifyContent: "flex-start", gap: layered ? 3 : gap, minHeight: compact ? 30 : 44,
+      }}>
+        {layered ? (
+          <>
+            {showMarker(count) ? <PvEmptyMarker r={r} /> : (
+              <PvDiscRows count={count} ringed={ringed} color={color} r={r} gap={gap} animate={animate} delayBase={columnDelay} />
+            )}
+            <div style={{ width: "100%", borderTop: `2px dashed ${COLORS.black}`, opacity: 0.5 }} />
+            {showMarker(count2 || 0) ? <PvEmptyMarker r={r} /> : (
+              <PvDiscRows count={count2 || 0} color={color} r={r} gap={gap} animate={animate} delayBase={columnDelay} />
+            )}
+          </>
+        ) : (
+          showMarker(count) ? <PvEmptyMarker r={r} /> : (
+            <PvDiscRows count={count} ringed={ringed} crossed={crossed} color={color} r={r} gap={gap} animate={animate} delayBase={columnDelay} />
+          )
+        )}
+      </div>
+
+      {token !== undefined && token !== null && (
+        <div style={{ marginTop: 4 }}>
+          <DerivationToken value={remaining} state={token} />
+        </div>
+      )}
+
+      {/* While the chart is interactive the trade row keeps its height even when
+          this column's button is gone, so the grid below doesn't jump under a finger. */}
+      <div style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "flex-start", minHeight: reserveTrade ? 56 : 0 }}>
+        {trade && (
+          <PressButton
+            onClick={trade.onClick}
+            aria-label={`${trade.text}: ${trade.label}`}
+            style={{
+              marginTop: 6, minHeight: 44, width: "calc(100% - 4px)", padding: "3px 1px", borderRadius: 8,
+              border: BRUTAL_BORDER_SM, backgroundColor: COLORS.yellow, boxShadow: BRUTAL_SHADOW_SM,
+              cursor: "pointer", color: COLORS.black, fontFamily: "'Space Mono', monospace", fontWeight: 700,
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1,
+            }}
+          >
+            <span style={{ fontSize: 11, lineHeight: 1.1 }}>{trade.text}</span>
+            {trade.label && (
+              <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 10, fontWeight: 700, lineHeight: 1.1, textAlign: "center" }}>
+                {trade.label}
+              </span>
+            )}
+          </PressButton>
+        )}
+      </div>
+
+      {take && (
+        take.onClick ? (
+          <PressButton
+            onClick={take.onClick}
+            disabled={take.done}
+            aria-label={take.done ? `${take.label} (done)` : take.label}
+            style={{
+              marginTop: 6, minHeight: 44, width: "calc(100% - 4px)", padding: "2px 1px", borderRadius: 8,
+              border: BRUTAL_BORDER_SM, backgroundColor: take.done ? "#EEE" : COLORS.cream,
+              boxShadow: take.done ? "none" : BRUTAL_SHADOW_SM, cursor: take.done ? "default" : "pointer",
+              color: COLORS.black, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 11, lineHeight: 1.1,
+            }}
+          >
+            {take.done ? `✓ ${take.doneLabel}` : take.label}
+          </PressButton>
+        ) : (
+          // Static label (Pictorial): dashed and flat, so it doesn't read as a button.
+          <div style={{
+            marginTop: 6, padding: "4px 2px", borderRadius: 8, width: "calc(100% - 4px)", textAlign: "center",
+            border: `2.5px dashed ${COLORS.black}`, backgroundColor: COLORS.cream, color: COLORS.black,
+            fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: compact ? 9 : 11, lineHeight: 1.1,
+          }}>
+            {take.label}
+          </div>
+        )
+      )}
+    </div>
+  );
+}
+
+function PlaceValueArithChart({
+  places, counts, countTokens, highlightPlace, compact, emptyMarker, opacity, animate,
+  layers, carried, taken, takeLabels, onTake, tradeable, tradeLabels, tradeText, onTrade, notice,
+}) {
+  const primary = layers ? layers[0] : counts;
+  const second = layers ? layers[1] : null;
+  return (
+    <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: compact ? 300 : 360 }}>
+      <div style={{ display: "flex", gap: compact ? 3 : 4, width: "100%" }}>
+        {places.map((place, idx) => {
+          const count = primary?.[idx] || 0;
+          const layered = !!second && second[idx] !== null && second[idx] !== undefined;
+          const crossed = taken?.[idx] || 0;
+          const takeText = takeLabels?.[idx] || null;
+          const label = takeText ? takeText : null;
+          const takeDigit = takeText ? takeText.replace(/\D/g, "") : "";
+          return (
+            <PlaceValueArithColumn
+              key={place}
+              place={place}
+              count={count}
+              count2={layered ? second[idx] : null}
+              layered={layered}
+              ringed={carried?.[idx] || 0}
+              crossed={crossed}
+              token={countTokens ? countTokens[idx] : undefined}
+              highlighted={highlightPlace === place}
+              emptyMarker={emptyMarker}
+              compact={compact}
+              animate={animate}
+              columnDelay={idx * 150}
+              dense={places.length === 4}
+              reserveTrade={!!tradeable && !!onTrade}
+              trade={tradeable?.[idx] && onTrade ? {
+                text: tradeText, label: tradeLabels?.[idx] || "", onClick: () => onTrade(idx),
+              } : null}
+              take={label ? {
+                label, done: crossed > 0, doneLabel: `Took ${takeDigit}`,
+                onClick: onTake ? () => onTake(idx) : null,
+              } : null}
+            />
+          );
+        })}
+      </div>
+      {notice && (
+        <div role="status" style={{
+          marginTop: 8, padding: "6px 12px", borderRadius: 8, textAlign: "center",
+          border: BRUTAL_BORDER_SM, backgroundColor: COLORS.cream, color: COLORS.black,
+          fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 13, lineHeight: 1.3,
+        }}>
+          {notice}
+        </div>
+      )}
     </div>
   );
 }

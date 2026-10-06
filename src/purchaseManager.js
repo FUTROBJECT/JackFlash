@@ -40,8 +40,8 @@ export const PRODUCTS = {
   "module.add.full": {
     id: "module.add.full",
     name: "Add & Subtract",
-    description: "Number bonds & facts to 20, plus adding & subtracting to 10,000 with bar models",
-    gradeRange: "Grades K–3",
+    description: "Column adding & subtracting to 10,000 with number discs — plus a facts warm-up",
+    gradeRange: "Grades 2–3",
     price: "$3.99",
     priceValue: 3.99,
     type: "module_unlock",
@@ -331,7 +331,8 @@ const REVENUECAT_KEYS = {
 const RC_ENTITLEMENT_TO_PRODUCT = {
   fractions: "module.fractions.full",
   all: "bundle.all",
-  // add: "module.add.full", connections: "module.connections.full"  // v1.1/v1.2
+  // add: "module.add.full" — wire when the `add` entitlement exists in RevenueCat and the
+  // module ships (module.add.full is still `available: false`). connections: v1.2.
 };
 
 // Lazy-loaded on first use; static specifier so the bundler includes the plugin.

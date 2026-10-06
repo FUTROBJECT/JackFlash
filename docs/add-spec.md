@@ -426,7 +426,7 @@ Each bug is a **pure, deterministic function of the operands**, kept in `src/mod
 **Column, subtraction** (top `a`, bottom `b`)
 1. `smallerFromLarger`: Σ|aᵢ − bᵢ|·10ⁱ. The classic. Example: 503 − 178 → **475**.
 2. `zeroStays10`: the standard algorithm, except that a zero which passes a trade along stays 10 instead of becoming 9. Examples: 503 − 178 → 335; 5,003 − 1,478 → 3,635.
-3. `noDecrement`: the trade adds 10 to the column but never takes 1 from the lender. Examples: 452 − 137 → 425; 5,003 − 1,478 → 4,635.
+3. `noDecrement`: the trade adds 10 to the column but never takes 1 from the lender. Examples: 503 − 178 → 435; 5,003 − 1,478 → 4,635. (For 452 − 137 it gives 325, which collides with `smallerFromLarger` — that bug wins by order.)
 
 **Mental**
 - M1 `dropTen`: the item crosses a ten and the entered value = correct − 10 (47 + 38 → 75).
@@ -691,7 +691,7 @@ Drive the preview at **375×667 and 320×568**, in **every CPA mode**. For each 
    - Concrete trades mirror into the marks; refusal chips for "not enough" and "no tens".
    - Second-miss fill draws the marks; the pad stays sticky in the card.
    - No iOS keyboard ever opens.
-5. **Bug lines.** 503 − 178 entered as 475, 335 and 425 each produce their own line; 367 + 256 entered as 513 produces the trade line; 47 + 38 entered as 75; a W2 trap answered by adding.
+5. **Bug lines.** 503 − 178 entered as 475, 335 and 435 each produce their own line; 367 + 256 entered as 513 produces the trade line; 47 + 38 entered as 75; a W2 trap answered by adding.
 6. **Gates.** A2 stays out until 60% of A1 is secure; a focused skill or group lock bypasses it. Facts never appear in the default draw; focus on F1 and Lock Group = Facts both work; the pill frames correctly.
 7. **Concrete on-ramp.** An item at correct = 2 starts hidden, and "Show me" restores the interactive chart.
 8. **Regression.** Multiply, Fractions and Place Value: one wrong answer each, reveal works. Place Value's B1/B2/C2 charts are unchanged.
@@ -724,3 +724,20 @@ Drive the preview at **375×667 and 320×568**, in **every CPA mode**. For each 
 **Problems shared with the shipped Place Value screen** (flagged, not fixed here):
 - Its readiness gate filters whole skills, including attempted items, not just new ones.
 - A child in Concrete can never cross to mastered.
+
+## As built — pass 1 (2026-10-06, groups colAdd + colSub + facts)
+
+Built by `module-builder` from this spec, play-tested by the main loop at 393×852 (Jack's iPhone 16), 375×667 and 320×568; `curriculum`-, `ui`- and `qa`-reviewed. 168 items (A1 16, A2 20, A3 20, S1 16, S2 20, S3 20, F1 20, F2 36); the DEV self-check logs `OK — 168 items`.
+
+**Verified in the preview:** Concrete trades in both directions mirror into the grid's carry/rename marks; the "No tens to trade — trade 1 hundred first" refusal chip; take-aways cross traded-in discs first; the three-tap rename of 5,003 (4 · 9 · 9 · 13); bug lines for 513 (367 + 256) and 475 (503 − 178); R1 by storage (first submit only); fast wrong → "Not sure? Count the picture." with nothing logged; second-miss fill with the canonical marks; the Concrete/Pictorial finish-line on-ramp crossing to mastered; facts reveal lines (make-ten, break-ten); Abstract "Show me"; skill focus on Break a ten; Lock Group = Facts with the pill framed against it; the end-of-session banner. Regression: Place Value B1 chart and reveal, multiply reveal — unchanged, no console errors.
+
+**Deltas from the spec text:**
+- The module/catalog description drops "mental math and bar-model word problems" until pass 2 ships them ("— plus a facts warm-up").
+- `noDecrement` names the nearest non-zero lender when the left neighbour is 0 ("1 hundred went to the ones…" for 503 − 178). §7's examples were corrected (503 − 178 → 435).
+- "Take n" chips are one-use ("✓ Took 8"); Start over resets them.
+- In subtraction the ones top cell is tappable only so an illegal tap can show the cream "Nothing to trade here" chip (§5.3 taps that do nothing were silent).
+- Layout: the sticky pad is measured (with safe-area insets). On item load the screen scrolls the minimum amount to show the answer row above the pad, clamped so the chart's headers stay below the sticky header. On Jack's phone everything fits at load; on 375×667 and 320×568 it stops at the clamp and scrolls on the first digit. The reveal's tight layout (below 640px tall) fits 320×568 (Check bottom 556 of 568).
+- Readability fixes from the design review: Trade sub-labels 10px, "= value" lines 10px `#666`, traded-in rings with a black hairline, crossed discs at 0.4 opacity with 2px crosses, bordered mark chips, the Trade row reserved so the grid never jumps, black text on header pills (Add screen only), and the re-ask input on cream rather than pink (Add screen only; Place Value still uses `#FFF0F0` — follow-up).
+- `PressButton` (barComponents) carries `touchAction: manipulation` and no text selection; the Add screen's buttons all render through it.
+
+**Not yet done:** `mental` and `words` (pass 2), `add-master`, RevenueCat entitlement for `module.add.full`, launch `freeContent` (`["colAdd", "facts"]`).

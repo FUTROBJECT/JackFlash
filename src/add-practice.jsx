@@ -1,785 +1,245 @@
 /**
- * AddPractice — practice screen for the Add & Subtract module.
+ * AddPractice – the practice screen for the Add & Subtract module
+ * (pass 1: groups colAdd A1–A3, colSub S1–S3 and the supporting facts F1–F2;
+ * docs/add-spec.md §15). Mental Math and Word Problems arrive in pass 2.
  *
- * Mirrors fractions-practice.jsx structure exactly:
- *  - Same state layout (all hooks first, no conditional hooks)
- *  - Same spaced-repetition / weighted-draw engine
- *  - Same mastery persistence via dataManager (moduleId="add")
- *  - Same header / stats / streak / achievement popup
+ * Rewritten from place-value-practice.jsx (the newest screen): the same state
+ * machine — retry/missCount/revealStage/comebackQueueRef/missedKeysRef/
+ * pictureRequested/nudge — the same WrongAnswerReveal composition (ONE
+ * tokenState drives every count chip AND the derivation line's token —
+ * docs/confidence-pass-spec.md C1), the same mastery persistence via
+ * dataManager, the same header/stats/streak/achievement popup, the same
+ * parent locks (lockedMode, derived lockedGroupId) and skill-focus selector.
  *
- * Add-specific differences:
- *  - Multiple answerType renderers: "number", "choice" (K2), "column" (R), "barChoice" (W)
- *  - Scaffold selected by item.group prefix
- *  - Two-tier mastery gate: shouldAllowTier2 (80% of T1 items)
- *  - Per-group 60% sub-gates (N2 after N1, M2 after M1, R2 after R1, etc.)
- *  - Tier 2 groups visible-but-locked (purchase gate + skill gate messaging)
+ * Add-specific differences (docs/add-spec.md):
+ *  - Two answerTypes only: `column` (right-to-left digit grid + in-app pad,
+ *    shared/ColumnMethod.jsx — no <input>, no auto-submit) and `singleNumber`
+ *    (facts). Every chart is the extended Place Value disc chart.
+ *  - NO speed gate anywhere (§8): updateMastery is never passed responseMs.
+ *  - Retrieval finish line extended to Concrete (§8): at correct === 2 the
+ *    chart starts hidden behind "Show me", in Concrete AND Pictorial.
+ *  - Readiness gates use "secure" (correct ≥ 2) and apply to UNSEEN items only
+ *    (§6.5) — evaluated at draw time from fresh mastery, not memoised.
+ *  - `supporting` groups (Facts Warm-Up) stay out of the default draw and the
+ *    C4 pill unless a skill focus or a parent group lock points at them (§2).
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
-  COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM,
-  DEFAULT_MASTERY_THRESHOLD, AVATARS,
+  COLORS, MODULE_COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM,
+  DEFAULT_MASTERY_THRESHOLD, AVATARS, GUESS_MS,
 } from "./constants.js";
+// Add & Subtract is a conceptual module (docs/add-spec.md §8) — no speed
+// gate, no responseMs passed to updateMastery, so FLUENCY_MS_* is not imported.
 import addModule, {
-  ADD_POOL, TIER1_KEYS, shouldAllowTier2, getSkillSubGateStatus,
+  ADD_POOL, TRADE, shouldAllowSkill, wasAttempted, digitArr,
+  initDiscState, tradeAdd, tradeSub, takeSub, tradeableFor, takeLabelsFor,
+  afterTradesState, canonicalMarks, correctDigitCells, diagnosedPlace, buildAddLine,
 } from "./modules/add.jsx";
+import { formatNumber } from "./modules/placeValue.jsx";
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
 import {
   initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch,
-  recordAnswerInSession, finalizeLiveSession, getProfile, getPreferredMode, setPreferredMode,
+  recordAnswerInSession, recordAssistedInSession, recordPeekInSession,
+  finalizeLiveSession, getProfile, getPreferredMode, setPreferredMode,
 } from "./dataManager.js";
 import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
-import { isContentAccessible, isModuleFullyUnlocked } from "./purchaseManager.js";
+import { isContentAccessible } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
+import WrongAnswerReveal from "./shared/WrongAnswerReveal.jsx";
+import DerivationLine from "./shared/DerivationLine.jsx";
+import { PlaceValueChart, PressButton } from "./shared/barComponents.jsx";
 import {
-  MasteryDots, AddNumberBond, TenFrame, PlaceValueChart,
-  PartWholeBar, ComparisonBar, JumpStrip, TwoStepBarModel, TwoStepChip,
-} from "./shared/barComponents.jsx";
-import { itemCellLabel } from "./shared/ui.jsx";
+  ColumnAnswerInput, emptyMarks, applyTopTap, mirrorChartTrade,
+} from "./shared/ColumnMethod.jsx";
 
-// Register the add module on first load
+// Register the Add & Subtract module
 registerModule(addModule);
 
-// ---------------------------------------------------------------------------
-// Small reusable UI components (local, matching multiply/fractions style)
-// ---------------------------------------------------------------------------
+const MINUS = "−";
 
+// ---------------------------------------------------------------------------
+// Wrong-answer reveal helpers — duplicated hashString/HEADER_TAILS, same as
+// fractions-practice.jsx / place-value-practice.jsx.
+// ---------------------------------------------------------------------------
+function hashString(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+const HEADER_TAILS = [
+  "Not yet. Here's the picture.",
+  "Not quite. Look at it.",
+  "Not yet — watch this.",
+];
+// At 320×568 the column re-ask (grid + pad) does not fit under the longer
+// headers; the tight layout uses this one-liner and drops the prompt text.
+const TIGHT_HEADER = "Not yet — use the picture.";
+
+// Only `singleNumber` (facts) opens a keyboard; `column` is the in-app pad.
+const TYPED_ANSWER_TYPES = new Set(["singleNumber"]);
+
+function revealPictureMax(answerType, tight) {
+  if (answerType === "column") return tight ? "min(84px, 15dvh)" : "min(110px, 18dvh)";
+  return "min(150px, 24dvh)";
+}
+
+// ---------------------------------------------------------------------------
+// Small reusable components (local copies matching place-value-practice.jsx)
+// ---------------------------------------------------------------------------
+function MasteryDots({ level, max = 3 }) {
+  return (
+    <div style={{ display: "flex", gap: 4 }}>
+      {Array.from({ length: max }).map((_, i) => (
+        <div key={i} style={{
+          width: 10, height: 10, borderRadius: "50%",
+          backgroundColor: i < level ? COLORS.green : "#E0E0E0",
+          border: `2px solid ${COLORS.black}`,
+          transition: "background-color 0.3s ease",
+        }} />
+      ))}
+    </div>
+  );
+}
+
+// Rendered through PressButton so it sinks into its shadow on press, like the pad.
 function BrutalButton({ onClick, children, bg = "white", color = COLORS.black, small = false, active = false, style = {} }) {
   return (
-    <button onClick={onClick} style={{
+    <PressButton onClick={onClick} style={{
       padding: small ? "7px 14px" : "12px 24px",
+      minHeight: small ? 44 : undefined,
       borderRadius: 8, border: BRUTAL_BORDER_SM,
       backgroundColor: bg, color,
       fontSize: small ? 13 : 15, fontWeight: 700,
       cursor: "pointer", fontFamily: "'Space Mono', monospace",
       boxShadow: active ? "none" : BRUTAL_SHADOW_SM,
       transform: active ? "translate(3px,3px)" : "none",
-      transition: "all 0.1s ease",
-      minHeight: 44,
       ...style,
     }}>
       {children}
-    </button>
+    </PressButton>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Shuffled choices — stable per item visit (prevents re-shuffle on re-render)
+// The chart for an item (§4.1–4.2). One builder for the card; `interactive`
+// switches between Concrete (touch the math: trade + take buttons) and
+// Pictorial/Abstract-with-Show-me (the untraded question, labels only).
+// Count chips are ALWAYS blank here — counting the discs is the work.
 // ---------------------------------------------------------------------------
-function useShuffledChoices(item) {
-  const prev = useRef(null);
-  if (!prev.current || prev.current.key !== item?.itemKey) {
-    if (item && item.answerType === "choice" && item.choices) {
-      // Fisher-Yates shuffle
-      const all = [...item.choices];
-      for (let i = all.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [all[i], all[j]] = [all[j], all[i]];
-      }
-      prev.current = { key: item.itemKey, choices: all };
-    } else {
-      prev.current = { key: item?.itemKey, choices: [] };
-    }
-  }
-  return prev.current.choices;
-}
-
-// ---------------------------------------------------------------------------
-// Column input — multi-field place-value input for R-group items.
-// Builds the answer as a single integer matching item.correctAnswer.
-// One input field per digit of the expected answer; rightmost = ones.
-// ---------------------------------------------------------------------------
-function ColumnInput({ item, value, onChange, onSubmit, disabled }) {
-  // Determine number of digits in the answer
-  const ansStr = String(Math.abs(item.correctAnswer));
-  const numDigits = ansStr.length; // 3 or 4
-
-  // value is a string array of length numDigits (index 0 = leftmost digit)
-  const digits = value.length === numDigits ? value : Array(numDigits).fill("");
-
-  const fieldRefs = useRef([]);
-
-  function handleDigitChange(i, raw) {
-    // Accept only the last typed digit
-    const ch = raw.replace(/[^0-9]/g, "").slice(-1);
-    const next = [...digits];
-    next[i] = ch;
-    onChange(next);
-    // Auto-advance
-    if (ch && i < numDigits - 1) {
-      fieldRefs.current[i + 1]?.focus({ preventScroll: true });
-    }
-    // Auto-submit if all filled
-    if (ch && next.every(d => d !== "")) {
-      // slight delay so state settles
-      setTimeout(() => onSubmit(next), 50);
-    }
-  }
-
-  function handleKeyDown(i, e) {
-    if (e.key === "Backspace" && !digits[i] && i > 0) {
-      fieldRefs.current[i - 1]?.focus({ preventScroll: true });
-    }
-    if (e.key === "Enter" && digits.every(d => d !== "")) {
-      onSubmit(digits);
-    }
-  }
-
-  const placeLabels = numDigits === 4
-    ? ["Th", "H", "T", "O"]
-    : ["H", "T", "O"];
-
+function QuestionChart({ item, disc, interactive, opacity, animate, notice, onTrade, onTake }) {
+  const isAdd = item.op === "+";
+  const { flags, labels } = interactive ? tradeableFor(item, disc) : { flags: null, labels: null };
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 16 }}>
-      {/* Problem display in column format */}
-      <div style={{
-        display: "inline-flex", flexDirection: "column", alignItems: "flex-end",
-        gap: 2, fontFamily: "'Shrikhand', cursive",
-      }}>
-        {/* Place labels */}
-        <div style={{ display: "flex", gap: 4, marginBottom: 2 }}>
-          {placeLabels.map((lbl, i) => (
-            <div key={i} style={{
-              width: 44, textAlign: "center",
-              fontFamily: "'Space Mono', monospace", fontSize: 10, fontWeight: 700,
-              color: "#888",
-            }}>{lbl}</div>
-          ))}
-        </div>
-        {/* Top number */}
-        <div style={{ display: "flex", gap: 4 }}>
-          {String(item.a).padStart(numDigits, " ").split("").map((d, i) => (
-            <div key={i} style={{
-              width: 44, height: 52, display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 28, color: COLORS.black,
-            }}>{d.trim() ? d : ""}</div>
-          ))}
-        </div>
-        {/* Operator + bottom number */}
-        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-          <span style={{ fontSize: 24, color: item.op === "+" ? COLORS.green : COLORS.orange, marginRight: 4 }}>
-            {item.op === "+" ? "+" : "−"}
-          </span>
-          {String(item.b).padStart(numDigits, " ").split("").map((d, i) => (
-            <div key={i} style={{
-              width: 44, height: 52, display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 28, color: COLORS.black,
-            }}>{d.trim() ? d : ""}</div>
-          ))}
-        </div>
-        {/* Divider */}
-        <div style={{ width: numDigits * 48, height: 4, backgroundColor: COLORS.black, borderRadius: 2, margin: "2px 0" }} />
-        {/* Answer fields */}
-        <div style={{ display: "flex", gap: 4 }}>
-          {digits.map((d, i) => (
-            <input
-              key={i}
-              ref={el => fieldRefs.current[i] = el}
-              type="number"
-              value={d}
-              disabled={disabled}
-              onChange={e => handleDigitChange(i, e.target.value)}
-              onKeyDown={e => handleKeyDown(i, e)}
-              placeholder="?"
-              style={{
-                width: 44, height: 52, fontSize: 28,
-                fontFamily: "'Shrikhand', cursive",
-                textAlign: "center", border: "none",
-                borderBottom: `3px solid ${d ? COLORS.green : COLORS.black}`,
-                backgroundColor: "transparent", color: COLORS.black,
-                outline: "none", padding: 0,
-                MozAppearance: "textfield", WebkitAppearance: "none",
-              }}
-            />
-          ))}
-        </div>
-      </div>
-      {!disabled && (
-        <BrutalButton
-          onClick={() => digits.every(d => d !== "") && onSubmit(digits)}
-          bg={COLORS.yellow}
-          style={{ opacity: digits.every(d => d !== "") ? 1 : 0.5 }}
-        >
-          Check!
-        </BrutalButton>
-      )}
-    </div>
+    <PlaceValueChart
+      mode="discs" columns={item.columns} plain emptyMarker
+      counts={disc.counts}
+      layers={isAdd ? [disc.counts, disc.counts2] : null}
+      carried={disc.carried} taken={disc.taken}
+      takeLabels={isAdd ? null : takeLabelsFor(item)}
+      onTake={interactive && !isAdd ? onTake : null}
+      tradeable={flags} tradeLabels={labels} tradeText={`${TRADE.noun} →`}
+      onTrade={interactive ? onTrade : null}
+      notice={interactive ? notice : null}
+      countTokens={disc.counts.map(() => "blank")}
+      opacity={opacity} animate={animate}
+    />
   );
 }
 
-// ---------------------------------------------------------------------------
-// Bar-type choice input for W-group items
-// ---------------------------------------------------------------------------
-function BarTypeChoiceInput({ item, barTypePicked, onPickBarType, userAnswer, onAnswerChange, onSubmit, disabled, feedback }) {
-  const barTypes = [
-    { id: "partWhole", label: "Part-Whole" },
-    { id: "comparison", label: "Comparison" },
-  ];
-
-  // For W3, we skip the bar-type choice (it's always twoStep)
-  const isW3 = item.skill === "W3";
-  const correctBarType = item.correctBarType;
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 16, width: "100%" }}>
-      {/* Bar-type selection (W1 and W2 only) */}
-      {!isW3 && !barTypePicked && !disabled && (
-        <div style={{ width: "100%" }}>
-          <div style={{
-            fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700,
-            textAlign: "center", marginBottom: 8, color: "#666",
-          }}>
-            Which type of bar model?
-          </div>
-          <div style={{ display: "flex", gap: 10, width: "100%", maxWidth: 320, margin: "0 auto" }}>
-            {barTypes.map(bt => (
-              <button key={bt.id} onClick={() => onPickBarType(bt.id)}
-                style={{
-                  flex: 1, padding: "16px 8px", borderRadius: 12, border: BRUTAL_BORDER,
-                  backgroundColor: "white", cursor: "pointer",
-                  boxShadow: BRUTAL_SHADOW,
-                  fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700,
-                  color: COLORS.black, minHeight: 60,
-                  transition: "background-color 0.15s ease",
-                }}>
-                {bt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Show wrong-bar feedback (child chose wrong model — let them still answer) */}
-      {!isW3 && barTypePicked && barTypePicked !== correctBarType && !feedback && (
-        <div style={{
-          fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700,
-          backgroundColor: COLORS.orange, border: BRUTAL_BORDER_SM, borderRadius: 8,
-          padding: "8px 14px", color: COLORS.black, textAlign: "center", maxWidth: 320,
-        }}>
-          Hmm — think about what the question is comparing. Try answering anyway!
-        </div>
-      )}
-
-      {/* Answer input (always shown after bar type is picked, or for W3) */}
-      {(isW3 || barTypePicked) && (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-          <input
-            type="number"
-            value={userAnswer}
-            disabled={disabled}
-            onChange={e => onAnswerChange(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && userAnswer !== "") onSubmit(); }}
-            placeholder="?"
-            style={{
-              width: 140, fontSize: 48, fontFamily: "'Shrikhand', cursive",
-              fontWeight: 400, textAlign: "center",
-              border: "none", borderBottom: `4px solid ${COLORS.black}`,
-              backgroundColor: "transparent", color: COLORS.black,
-              outline: "none", padding: "4px 0",
-              MozAppearance: "textfield", WebkitAppearance: "none",
-            }}
-          />
-          {!disabled && (
-            <BrutalButton onClick={onSubmit} bg={COLORS.yellow}>
-              Check!
-            </BrutalButton>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Scaffold for wrong-answer reveal and pictorial fade
-// ---------------------------------------------------------------------------
-function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, tenFrameMoved, feedback }) {
+function ScaffoldForItem({ item, disc, showScaffold, scaffoldOpacity, mode, interactive, notice, onTrade, onTake, onStartOver }) {
   if (mode === "abstract" && !showScaffold) return null;
   const opacity = showScaffold ? 1 : scaffoldOpacity;
   if (opacity <= 0) return null;
-
-  const group = item.group;
-
-  // N, K, X, F — number bond
-  if (group === "N" || group === "K" || group === "X" || group === "F") {
-    const whole = item.whole || (item.a + (item.b || 0)) || item.correctAnswer;
-    const partA = item.knownPart || item.partA || item.a || 0;
-    const partB = item.missingPart || item.partB || item.b || item.correctAnswer;
-    // Before the wrong-answer reveal, blank the unknown node (the one whose value
-    // is the answer) so the bond states the question instead of giving it away.
-    let hideNode = null;
-    if (!showScaffold) {
-      const ans = item.correctAnswer;
-      if (whole === ans) hideNode = "whole";
-      else if (partB === ans) hideNode = "partB";
-      else if (partA === ans) hideNode = "partA";
-    }
-    return (
-      <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-        <AddNumberBond whole={whole} partA={partA} partB={partB} show={true} opLabel="+" hideNode={hideNode} />
-      </div>
-    );
-  }
-
-  // M — ten-frame (in concrete the interactive frame is shown in the question; don't duplicate it)
-  if (group === "M") {
-    if (mode === "concrete" && !showScaffold) return null;
-    if (item.skill === "M1") {
-      return (
-        <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-          <TenFrame
-            frameA={item.a} frameB={item.b}
-            moved={showScaffold ? item.bridge : tenFrameMoved}
-            interactive={false}
-            opacity={1}
-            animate={showScaffold}
-          />
-        </div>
-      );
-    }
-    // M2 — show the completed tens/ones split
-    return (
-      <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-        <TenFrame
-          frameA={0} frameB={item.onesM}
-          moved={0}
-          interactive={false}
-          opacity={1}
-          animate={showScaffold}
-        />
-      </div>
-    );
-  }
-
-  // R — place-value chart (reveal ONLY; the chart shows the answer digits, so it
-  // must not appear before the child answers — they work the "?" column fields)
-  if (group === "R" && showScaffold) {
-    const ansStr = String(item.correctAnswer).padStart(item.digits, "0");
-    const digits = ansStr.split("").reverse().map(Number); // [ones, tens, hundreds, ...]
-    return (
-      <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-        <PlaceValueChart
-          digits={digits}
-          op={item.op}
-          opacity={1}
-          animate={showScaffold}
-        />
-      </div>
-    );
-  }
-
-  // S — jump strip (reveal ONLY; the strip lands on the answer. Mental-math is done
-  // in the head pre-answer; the strip is the teaching aid shown when wrong)
-  if (group === "S" && showScaffold) {
-    if (item.skill === "S1") {
-      return (
-        <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-          <JumpStrip
-            start={item.a}
-            jumps={[
-              { label: `${item.op}${item.tensB}`, landAt: item.step1 },
-              { label: `${item.op}${item.onesB}`, landAt: item.correctAnswer },
-            ]}
-            animate={showScaffold}
-          />
-        </div>
-      );
-    }
-    if (item.skill === "S2") {
-      return (
-        <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-          <JumpStrip
-            start={item.a}
-            jumps={[
-              { label: `${item.op}${item.toNext}`, landAt: item.nextTen },
-              { label: `${item.op}${item.leftover}`, landAt: item.correctAnswer },
-            ]}
-            animate={showScaffold}
-          />
-        </div>
-      );
-    }
-    if (item.skill === "S3") {
-      return (
-        <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-          <JumpStrip
-            start={item.a}
-            jumps={[
-              { label: `×2`, landAt: item.dbl },
-              { label: `+1`, landAt: item.correctAnswer },
-            ]}
-            animate={showScaffold}
-          />
-        </div>
-      );
-    }
-  }
-
-  // W — bar model (shown in wrong-answer scaffold only; never pre-shown per spec §5)
-  if (group === "W" && showScaffold) {
-    if (item.skill === "W1") {
-      const whole = item.findWhole ? item.correctAnswer : item.whole;
-      const partA = item.findWhole ? item.a : item.b;
-      const partB = item.findWhole ? item.b : item.correctAnswer;
-      return (
-        <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-          <PartWholeBar
-            whole={whole} partA={partA} partB={partB}
-            opacity={1} animate={true}
-          />
-        </div>
-      );
-    }
-    if (item.skill === "W2") {
-      const base = item.base || 0;
-      const bigger = item.bigger || (item.moreOrFewer === "more" ? item.base + item.diff : item.base);
-      const biggerFinal = item.findDiff ? item.bigger : (item.moreOrFewer === "more" ? item.base + item.diff : item.base);
-      const baseFinal = item.findDiff ? item.base : item.base;
-      return (
-        <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-          <ComparisonBar
-            baseValue={baseFinal} baseLabel="Smaller"
-            biggerValue={biggerFinal} biggerLabel="Bigger"
-            opacity={1} animate={true}
-          />
-        </div>
-      );
-    }
-    if (item.skill === "W3") {
-      return (
-        <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-          <TwoStepBarModel
-            step1={{ label: `${item.step1A} ${item.step1Op} ${item.step1B}`, value: item.step1Result }}
-            step2={{ label: `${item.step1Result} ${item.step2Op} ${item.step2B}`, value: item.correctAnswer }}
-            beat={2} opacity={1} animate={true}
-          />
-        </div>
-      );
-    }
-  }
-
-  return null;
-}
-
-// ---------------------------------------------------------------------------
-// Wrong-answer helpers ("because" + hint + bond)
-// ---------------------------------------------------------------------------
-function WrongAnswerHelpers({ item, userValue }) {
-  const group = item.group;
-
-  // Diagnose common misconceptions
-  let becauseText = item.becauseText || `The answer is ${item.correctAnswer}.`;
-
-  // R-group: detect subtract-small-from-large column error
-  if (group === "R" && item.op === "-" && typeof userValue === "number") {
-    // Classic error: subtracted each column without borrowing
-    const aStr = String(item.a);
-    const bStr = String(item.b).padStart(aStr.length, "0");
-    const wrongSFL = parseInt(
-      aStr.split("").map((d, i) => Math.abs(parseInt(d) - parseInt(bStr[i]))).join("")
-    );
-    if (userValue === wrongSFL) {
-      becauseText = `You can't take the bigger digit from the smaller one — rename first!`;
-    }
-  }
-
-  // W3 step-1 only error
-  if (group === "W" && item.skill === "W3" && userValue === item.step1Result) {
-    becauseText = `Good start — that's Step 1! Now do Step 2.`;
-  }
-
-  // Build hint
-  let hint = null;
-  if (group === "N" || group === "M" || group === "X" || group === "F") {
-    hint = (
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, justifyContent: "center", marginTop: 8 }}>
-        {Array.from({ length: item.whole || (item.a + item.b) || item.correctAnswer + (item.knownPart || 0) }, (_, i) => (
-          <div key={i} style={{
-            width: 18, height: 18, borderRadius: "50%",
-            backgroundColor: i < (item.knownPart || item.a || 0) ? COLORS.blue : COLORS.green,
-            border: `2px solid ${COLORS.black}`,
-          }} />
-        ))}
-      </div>
-    );
-  }
-  if (group === "R") {
-    hint = (
-      <div style={{
-        fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700,
-        color: COLORS.black, textAlign: "center",
-        backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM, borderRadius: 8,
-        padding: "8px 12px", marginTop: 8,
-      }}>
-        {item.op === "+" ? "10 ones = 1 ten   |   10 tens = 1 hundred" : "1 ten = 10 ones   |   1 hundred = 10 tens"}
-      </div>
-    );
-  }
-  if (group === "S") {
-    // Jump strip already shown in scaffold
-    hint = null;
-  }
-  if (group === "W" && item.skill === "W3") {
-    hint = <TwoStepChip step1Result={item.step1Result} animate={true} />;
-  }
-
-  // Number bond
-  let bond = null;
-  const hasSimpleBond = group === "N" || group === "K" || group === "X" || group === "F";
-  if (hasSimpleBond) {
-    const whole = item.whole || (item.a + item.b) || (item.correctAnswer + (item.knownPart || 0));
-    const partA = item.knownPart || item.partA || item.a || 0;
-    const partB = item.missingPart || item.partB || item.correctAnswer;
-    bond = <AddNumberBond whole={whole} partA={partA} partB={partB} show={true} opLabel="+" />;
-  }
-  if (group === "M") {
-    bond = (
-      <AddNumberBond
-        whole={item.skill === "M1" ? item.sum : item.a}
-        partA={item.skill === "M1" ? item.a : item.b}
-        partB={item.skill === "M1" ? item.b : item.correctAnswer}
-        show={true} opLabel={item.skill === "M1" ? "+" : "−"}
+  return (
+    <div style={{ marginTop: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <QuestionChart
+        item={item} disc={disc} interactive={interactive} opacity={opacity}
+        animate={false} notice={notice} onTrade={onTrade} onTake={onTake}
       />
-    );
-  }
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 20 }}>
-      {/* Because statement */}
-      <div style={{
-        fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700,
-        color: COLORS.black, textAlign: "center",
-        backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM, borderRadius: 8,
-        padding: "10px 14px",
-      }}>
-        {becauseText}
-      </div>
-
-      {hint && <div style={{ textAlign: "center" }}>{hint}</div>}
-      {bond && <div style={{ display: "flex", justifyContent: "center" }}>{bond}</div>}
+      {interactive && (
+        // Resets the chart AND the mirrored marks. ≥44px hit area.
+        <button onClick={onStartOver} style={{
+          // 44px hit area, but its bottom 12px overlaps the (empty) gap above the grid so
+          // it costs ~32px of height, not 48 — vertical room matters under the sticky pad.
+          minHeight: 44, minWidth: 44, marginTop: 0, marginBottom: -12, padding: "0 12px", background: "none", border: "none",
+          cursor: "pointer", fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12,
+          color: COLORS.black, textDecoration: "underline",
+        }}>
+          Start over
+        </button>
+      )}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Question display
+// Question display (the big prompt)
 // ---------------------------------------------------------------------------
-function QuestionDisplay({ item, mode }) {
-  const group = item.group;
+const PROMPT_STYLE = { fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#666" };
 
-  // N, F, X — equation with box
-  if (group === "N" || group === "F" || group === "X") {
-    return (
-      <div style={{
-        fontFamily: "'Shrikhand', cursive",
-        fontSize: "clamp(32px, 12vw, 64px)",
-        color: COLORS.black, textAlign: "center",
-        lineHeight: 1.1,
-      }}>
-        {item.display}
-      </div>
-    );
-  }
-
-  // M — make-ten prompt
-  if (group === "M") {
-    const opColor = item.skill === "M1" ? COLORS.green : COLORS.orange;
-    const opSymbol = item.skill === "M1" ? "+" : "−";
-    return (
-      <div style={{
-        fontFamily: "'Shrikhand', cursive",
-        fontSize: "clamp(36px, 12vw, 68px)",
-        color: COLORS.black, textAlign: "center",
-      }}>
-        {item.a}
-        <span style={{ color: opColor, margin: "0 4px" }}>{opSymbol}</span>
-        {item.b} = ?
-      </div>
-    );
-  }
-
-  // K1 — show three sentences, ask for fourth
-  if (item.skill === "K1") {
+function QuestionDisplay({ item }) {
+  if (item.answerType === "column") {
+    // Commas live HERE (the problem line), never inside the grid (§5.1).
     return (
       <div style={{ textAlign: "center" }}>
-        <div style={{
-          fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: 600,
-          color: "#666", marginBottom: 12,
-        }}>
-          Complete the fact family:
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 18, color: COLORS.black }}>
+          {formatNumber(item.a)} <span style={{ color: MODULE_COLORS.add }}>{item.op === "+" ? "+" : MINUS}</span> {formatNumber(item.b)}
         </div>
-        <div style={{
-          fontFamily: "'Space Mono', monospace", fontSize: 16, fontWeight: 700,
-          color: COLORS.black, lineHeight: 2,
-        }}>
-          {item.sentenceA}<br/>
-          {item.sentenceB}<br/>
-          {item.sentenceC}<br/>
-          <span style={{ color: "#EF476F" }}>{item.askedSentence}</span>
-        </div>
+        <div style={{ ...PROMPT_STYLE, fontSize: 14, marginTop: 2 }}>Start with the ones.</div>
       </div>
     );
   }
-
-  // K2 — which undoes it?
-  if (item.skill === "K2") {
-    return (
-      <div style={{ textAlign: "center" }}>
-        <div style={{
-          fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, fontWeight: 600,
-          color: "#666", marginBottom: 8,
-        }}>
-          Which subtraction undoes this?
-        </div>
-        <div style={{
-          fontFamily: "'Shrikhand', cursive",
-          fontSize: "clamp(24px, 8vw, 40px)",
-          color: COLORS.black,
-        }}>
-          {item.given}
-        </div>
-      </div>
-    );
-  }
-
-  // R — column problem header
-  if (group === "R") {
-    return (
-      <div style={{
-        fontFamily: "'Space Grotesk', sans-serif", fontSize: 15, fontWeight: 700,
-        color: "#666", textAlign: "center",
-      }}>
-        Work it out column by column:
-      </div>
-    );
-  }
-
-  // S — mental math prompt
-  if (group === "S") {
-    const opColor = item.op === "+" ? COLORS.green : COLORS.orange;
-    const opSym = item.op === "+" ? "+" : "−";
-    return (
-      <div style={{
-        fontFamily: "'Shrikhand', cursive",
-        fontSize: "clamp(36px, 12vw, 68px)",
-        color: COLORS.black, textAlign: "center",
-      }}>
-        {item.a}
-        <span style={{ color: opColor, margin: "0 4px" }}>{opSym}</span>
-        {item.b} = ?
-      </div>
-    );
-  }
-
-  // W — word problem text
-  if (group === "W") {
-    return (
-      <div style={{ textAlign: "left" }}>
-        <div style={{
-          fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(14px, 4vw, 17px)",
-          fontWeight: 600, color: COLORS.black, lineHeight: 1.5,
-          backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM, borderRadius: 8,
-          padding: "12px 14px",
-        }}>
-          {item.wordProblem}
-        </div>
-      </div>
-    );
-  }
-
-  return null;
-}
-
-// ---------------------------------------------------------------------------
-// Concrete interactive scaffold for M-group (ten-frame in motion)
-// ---------------------------------------------------------------------------
-function ConcreteTenFrameM({ item, moved, onMove }) {
-  if (item.skill === "M1") {
-    const maxMove = item.bridge; // how many to move to fill the ten
-    return (
-      <div style={{ marginTop: 16 }}>
-        <TenFrame
-          frameA={item.a} frameB={item.b}
-          moved={Math.min(moved, maxMove)}
-          onMove={moved < maxMove ? onMove : null}
-          interactive={true}
-          animate={false}
-        />
-        {moved >= maxMove && (
-          <div style={{
-            textAlign: "center", marginTop: 8,
-            fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700,
-            color: COLORS.green,
-          }}>
-            10 + {item.leftover} = {item.sum}!
-          </div>
-        )}
-      </div>
-    );
-  }
-  return null;
-}
-
-// ---------------------------------------------------------------------------
-// Tier-2 locked group card
-// ---------------------------------------------------------------------------
-function Tier2LockedCard({ group, tierAllowed, isPurchased, tier1Progress }) {
-  const purchaseLocked = !isPurchased;
-  const skillLocked = isPurchased && !tierAllowed;
-
+  // Facts: "8 + 5 = ?" — the question, never the answer.
   return (
-    <div style={{
-      backgroundColor: "white", borderRadius: 12, padding: 18,
-      marginBottom: 14, border: BRUTAL_BORDER,
-      boxShadow: "5px 5px 0px #CCC",
-      opacity: 0.8,
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, fontFamily: "'Shrikhand', cursive" }}>
-          🔒 {group.label}
-        </h3>
-        <span style={{
-          fontFamily: "'Space Mono', monospace", fontSize: 10, fontWeight: 700,
-          backgroundColor: "#EF476F", color: "white",
-          padding: "3px 8px", borderRadius: 12,
-        }}>
-          Tier 2
-        </span>
-      </div>
-      <div style={{ textAlign: "center", padding: "8px 0" }}>
-        {purchaseLocked ? (
-          <div style={{ fontSize: 13, color: "#888", fontFamily: "'Space Grotesk', sans-serif" }}>
-            Unlock Add &amp; Subtract Full Access in the Parent Zone to practice {group.label}!
-          </div>
-        ) : (
-          <>
-            <div style={{ fontSize: 13, color: "#888", fontFamily: "'Space Grotesk', sans-serif", marginBottom: 8 }}>
-              Master your facts to 20 to unlock big-number adding!
-            </div>
-            {/* Tier-1 progress bar */}
-            <div style={{ marginTop: 8 }}>
-              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, marginBottom: 4 }}>
-                Tier 1 progress: {Math.round(tier1Progress * 100)}% / 80% needed
-              </div>
-              <div style={{
-                height: 10, borderRadius: 5, backgroundColor: "#EEE",
-                border: BRUTAL_BORDER_SM, overflow: "hidden",
-              }}>
-                <div style={{
-                  height: "100%",
-                  width: `${Math.min(100, Math.round(tier1Progress * 100))}%`,
-                  backgroundColor: tier1Progress >= 0.8 ? COLORS.green : "#EF476F",
-                  transition: "width 0.5s ease",
-                }} />
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+    <div style={{ textAlign: "center" }}>
+      <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: 44, color: COLORS.black }}>
+        {item.a} <span style={{ color: MODULE_COLORS.add }}>{item.op === "+" ? "+" : MINUS}</span> {item.b}
+      </span>
+      <div style={{ ...PROMPT_STYLE, marginTop: 4 }}>= ?</div>
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Wrong-answer reveal — problem / picture builders (docs/add-spec.md §9).
+// ---------------------------------------------------------------------------
+function buildProblem(item) {
+  // Column items: the problem slot is null — the re-ask grid restates it (§9.1).
+  if (item.answerType === "column") return null;
+  return (
+    <span>
+      {item.a} <span style={{ color: MODULE_COLORS.add }}>{item.op === "+" ? "+" : MINUS}</span> {item.b}
+    </span>
+  );
+}
+
+// The picture is the chart in its AFTER-TRADES state, computed from the
+// operands (never the child's chart state): traded-in discs ringed, take-aways
+// crossed, the diagnosed column outlined. The count chips are the answer
+// digits, so they take the ONE tokenState (blank while asking).
+function revealPicture(item, tokenState, animate, entered) {
+  const { state } = afterTradesState(item);
+  const place = item.answerType === "column" ? diagnosedPlace(item, entered) : null;
+  return (
+    <PlaceValueChart
+      mode="discs" columns={item.columns} plain emptyMarker
+      counts={state.counts} carried={state.carried} taken={state.taken}
+      countTokens={state.counts.map(() => tokenState)}
+      highlightPlace={place} animate={animate}
+    />
+  );
+}
+
+function initialRetryValue(item) {
+  if (!item) return null;
+  if (item.answerType === "singleNumber") return "";
+  return null;
+}
+
+const columnValue = (digits) => Number(digits.join(""));
 
 // ---------------------------------------------------------------------------
 // Main practice component
@@ -796,52 +256,72 @@ export default function AddPractice({
 
   // ---- All state (no conditional hooks) ----
   const [localMastery, setLocalMastery] = useState({});
-  // Child's saved choice wins; otherwise concrete (the N-group default).
-  const [pickedMode, setPickedMode] = useState(() => getPreferredMode(profileId, moduleId) || "concrete");
+  const [pickedMode, setPickedMode] = useState(() => getPreferredMode(profileId, moduleId) || "pictorial");
   // Once the child has explicitly chosen a mode, per-group defaults stop
-  // overriding it. A ref (not state) so the item-selection callback always
-  // reads the current value without needing it in its dependency list.
+  // overriding it (the hasExplicitModeRef pattern).
   const hasExplicitModeRef = useRef(!!getPreferredMode(profileId, moduleId));
-  // A parent lock (Parent Zone → Lock CPA Mode) overrides the child's choice.
   const lockedMode = getProfile(profileId)?.settings?.lockedMode || null;
+  // Parent Zone "Lock Group" (settings.lockedGroup: a group id or null).
+  // DERIVED, never state: an unknown id (stale setting from another module) or
+  // an inaccessible group means no lock. Any of the module's groups can be
+  // locked, including the supporting Facts Warm-Up.
+  const lockedGroupSetting = getProfile(profileId)?.settings?.lockedGroup || null;
+  const lockedGroupId = mod?.groups.some((g) => g.id === lockedGroupSetting) && isContentAccessible(moduleId, lockedGroupSetting)
+    ? lockedGroupSetting
+    : null;
   const mode = lockedMode || pickedMode;
+  const [activeGroups] = useState(null);
+  const [focusSkill, setFocusSkill] = useState(null);
   const [currentItem, setCurrentItem] = useState(null);
-  const [feedback, setFeedback] = useState(null);
-  const [userAnswer, setUserAnswer] = useState(""); // for "number" and "barChoice"
-  const [columnDigits, setColumnDigits] = useState([]); // for "column"
-  const [pickedChoice, setPickedChoice] = useState(null); // for "choice"
-  const [barTypePicked, setBarTypePicked] = useState(null); // for "barChoice"
+  const [feedback, setFeedback] = useState(null); // null | "correct" | "incorrect"
+  const [userAnswer, setUserAnswer] = useState(""); // singleNumber (facts)
+  // Bumped on a converted "not sure" (docs/confidence-pass-spec.md C2) to
+  // remount the column input, whose cells/cursor are LOCAL state (marks and
+  // the Concrete chart state are held here and survive).
+  const [retryResetKey, setRetryResetKey] = useState(0);
   const [showScaffold, setShowScaffold] = useState(false);
   const [userHidScaffold, setUserHidScaffold] = useState(false);
-  const [tenFrameMoved, setTenFrameMoved] = useState(0);
   const [sessionStats, setSessionStats] = useState({ correct: 0, total: 0 });
   const [view, setView] = useState(initialView);
   const [streak, setStreak] = useState(0);
   const [dailyStreak, setDailyStreak] = useState(null);
   const [achievementQueue, setAchievementQueue] = useState([]);
   const [sessionStartTime] = useState(Date.now());
+  const [retry, setRetry] = useState({ phase: "idle", value: null });
+  const [missCount, setMissCount] = useState(0); // eslint-disable-line no-unused-vars
+  const [pictureRequested, setPictureRequested] = useState(false);
+  const [nudge, setNudge] = useState(null);
+  const [missRun, setMissRun] = useState(0);
+  const [revealStage, setRevealStage] = useState(0);
+  // Per-item working state — reset on every item change.
+  const [disc, setDisc] = useState({ counts: [], counts2: null, carried: [], taken: [] });
+  const [cardMarks, setCardMarks] = useState(emptyMarks());
+  const [reaskMarks, setReaskMarks] = useState(emptyMarks());
+  const [notice, setNotice] = useState(null);
+  const [firstSubmit, setFirstSubmit] = useState(null); // the first-submit value (drives the bug line)
+  const [markNotice, setMarkNotice] = useState(null); // "Nothing to trade here" chip on the grid
+  const markNoticeTimerRef = useRef(null);
   const inputRef = useRef(null);
+  const headerRef = useRef(null);   // the sticky header — measured by the grid's scroll-into-view
+  const chartWrapRef = useRef(null); // the chart wrapper (null when no chart is shown)
+  const questionRef = useRef(null);  // fallback clamp target when there is no chart (Abstract)
+  const getClampEl = useCallback(() => chartWrapRef.current || questionRef.current, []);
+  const factShownAtRef = useRef(0);
+  const comebackQueueRef = useRef([]);
+  const advanceTimeoutRef = useRef(null);
+  const missedKeysRef = useRef(new Set());
+  const comebacksRef = useRef(0);
 
-  const shuffledChoices = useShuffledChoices(currentItem);
-
+  useEffect(() => { comebackQueueRef.current = []; }, [focusSkill, activeGroups]);
+  useEffect(() => () => { if (markNoticeTimerRef.current) clearTimeout(markNoticeTimerRef.current); }, []);
   useEffect(() => { initData(); }, []);
-
   useEffect(() => {
-    if (profileId) {
-      const s = checkStreakOnLaunch(profileId);
-      setDailyStreak(s);
-    }
+    if (profileId) setDailyStreak(checkStreakOnLaunch(profileId));
   }, [profileId]);
-
-  // Sessions are now persisted per-answer in the data layer (see
-  // recordAnswerInSession below), so they survive the app being killed and
-  // don't merge separate sittings together. This unmount effect just closes
-  // out the current live session when the child navigates away.
   useEffect(() => {
     return () => { if (profileId) finalizeLiveSession(profileId); };
   }, [profileId]);
 
-  // Mastery helpers
   const getMasteryData = useCallback(() => {
     if (profileId) return getMastery(profileId, moduleId) || {};
     return localMastery;
@@ -851,124 +331,164 @@ export default function AddPractice({
     return getMasteryData()[itemKey]?.correct || 0;
   }, [getMasteryData]);
 
-  // Tier gate status
-  const tierAllowed = useMemo(() => shouldAllowTier2(profileId), [profileId, sessionStats]);
-  const isPurchased = useMemo(() => isModuleFullyUnlocked("add"), []);
-
-  // Tier-1 progress ratio (for locked-card display)
-  const tier1Progress = useMemo(() => {
-    const masteryData = getMasteryData();
-    const mastered = TIER1_KEYS.filter(k => (masteryData[k]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length;
-    return TIER1_KEYS.length > 0 ? mastered / TIER1_KEYS.length : 0;
-  }, [getMasteryData]);
-
-  // Active pool — filters by purchase access, tier gate, and sub-gates
-  const activePool = useMemo(() => {
-    const masteryData = getMasteryData();
-    const subGates = getSkillSubGateStatus(profileId);
-
-    return ADD_POOL.filter(item => {
-      // Purchase gate
+  // The accessible pool for the current lock/focus. Readiness gates are NOT
+  // applied here: they depend on live mastery and only restrict UNSEEN items,
+  // so pickNewItem applies them against fresh data at draw time (§6.5).
+  const activePools = useMemo(() => {
+    return ADD_POOL.filter((item) => {
+      const group = mod?.groups.find((g) => g.id === item.group);
+      if (!group) return false;
       if (!isContentAccessible(moduleId, item.group)) return false;
-      // Tier-2 gate
-      if (["R", "S", "W"].includes(item.group) && !tierAllowed) return false;
-      // Sub-gates (exclude from "new" by checking here — already-seen items stay)
-      const mastery = masteryData[item.itemKey];
-      const isNew = !mastery || (!mastery.lastSeen && (mastery.attempts || 0) === 0);
-      if (isNew) {
-        if (item.skill === "N2" && !subGates.allowN2) return false;
-        if (item.skill === "N3" && !subGates.allowN3) return false;
-        if (item.skill === "M2" && !subGates.allowM2) return false;
-        if (item.skill === "R2" && !subGates.allowR2) return false;
-        if (item.skill === "R3" && !subGates.allowR3) return false;
-        if (item.skill === "W2" && !subGates.allowW2) return false;
-        if (item.skill === "W3" && !subGates.allowW3) return false;
-      }
+      if (activeGroups && !activeGroups.includes(item.group)) return false;
+      if (lockedGroupId && item.group !== lockedGroupId) return false;
+      if (focusSkill && item.skill !== focusSkill) return false;
+      // §2 `supporting`: out of the default draw — only a parent group lock or
+      // a deliberately focused skill brings Facts Warm-Up in.
+      if (group.supporting && !lockedGroupId && !focusSkill) return false;
       return true;
     });
-  }, [moduleId, profileId, tierAllowed, sessionStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeGroups, focusSkill, lockedGroupId, moduleId]);
 
   const REVIEW_INTERVALS = [1, 3, 7, 14, 30];
 
-  // Weighted pick — mirrors fractions-practice.jsx pickNewItem exactly
   const pickNewItem = useCallback(() => {
-    if (activePool.length === 0) { setCurrentItem(null); return; }
+    if (advanceTimeoutRef.current) {
+      clearTimeout(advanceTimeoutRef.current);
+      advanceTimeoutRef.current = null;
+    }
+
+    if (activePools.length === 0) {
+      setCurrentItem(null);
+      setRetry({ phase: "idle", value: null });
+      return;
+    }
 
     const masteryData = getMasteryData();
     const masteryThreshold = DEFAULT_MASTERY_THRESHOLD;
     const now = Date.now();
     const MAX_NEW = 3;
 
-    const scored = activePool.map(item => {
-      const record = masteryData[item.itemKey];
-      const level = record?.correct || 0;
-      const attempts = record?.attempts || 0;
-      const lastSeen = record?.lastSeen ? new Date(record.lastSeen).getTime() : 0;
-      const daysSince = lastSeen ? (now - lastSeen) / (1000 * 60 * 60 * 24) : Infinity;
+    // Readiness gate (§6.5): a gated skill's UNSEEN items stay out until it
+    // opens; attempted items stay in rotation. A focused skill, a group lock
+    // and a served comeback bypass it.
+    const gateBypassed = !!focusSkill || !!lockedGroupId;
+    const gated = gateBypassed
+      ? activePools
+      : activePools.filter((i) => wasAttempted(i, masteryData) || shouldAllowSkill(i.skill, masteryData));
+    const eligible = gated.length > 0 ? gated : activePools;
 
-      if (level >= masteryThreshold) {
-        const reviewsAfterMastery = level - masteryThreshold;
-        const intervalDays = REVIEW_INTERVALS[Math.min(reviewsAfterMastery, REVIEW_INTERVALS.length - 1)];
-        return { item, weight: daysSince >= intervalDays ? 4 : 1, category: daysSince >= intervalDays ? "review" : "mastered" };
+    let selected = null;
+    if (comebackQueueRef.current.length > 0) {
+      const queue = comebackQueueRef.current.map((entry) => ({ ...entry, dueIn: entry.dueIn - 1 }));
+      const front = queue[0];
+      if (front.dueIn <= 0) {
+        const match = ADD_POOL.find((i) => i.itemKey === front.itemKey);
+        comebackQueueRef.current = queue.slice(1);
+        if (match) selected = match;
+      } else {
+        comebackQueueRef.current = queue;
       }
-      if (attempts === 0 && !record?.lastSeen) {
-        return { item, weight: 3, category: "new" };
-      }
-      if (level === 0) {
-        return { item, weight: 6, category: "struggling" };
-      }
-      return { item, weight: (masteryThreshold - level + 1) * 2, category: "learning" };
-    });
-
-    let newCount = 0;
-    let pool = scored.filter(s => {
-      if (s.category === "new") {
-        newCount++;
-        return newCount <= MAX_NEW;
-      }
-      return true;
-    });
-
-    const prevKey = currentItem?.itemKey;
-    if (prevKey && pool.length > 1) {
-      const without = pool.filter(s => s.item.itemKey !== prevKey);
-      if (without.length > 0) pool = without;
     }
 
-    const totalW = pool.reduce((sum, s) => sum + s.weight, 0);
-    let r = Math.random() * totalW;
-    let selected = pool[0]?.item || null;
-    for (const entry of pool) {
-      r -= entry.weight;
-      if (r <= 0) { selected = entry.item; break; }
+    if (!selected) {
+      const pendingComebackKeys = new Set(comebackQueueRef.current.map((entry) => entry.itemKey));
+      const candidatePool = pendingComebackKeys.size > 0
+        ? eligible.filter((i) => !pendingComebackKeys.has(i.itemKey))
+        : eligible;
+      const basePool = candidatePool.length > 0 ? candidatePool : eligible;
+
+      const scored = basePool.map((item) => {
+        const record = masteryData[item.itemKey];
+        const level = record?.correct || 0;
+        const attempts = record?.attempts || 0;
+        const lastSeen = record?.lastSeen ? new Date(record.lastSeen).getTime() : 0;
+        const daysSince = lastSeen ? (now - lastSeen) / (1000 * 60 * 60 * 24) : Infinity;
+
+        if (level >= masteryThreshold) {
+          const reviewsAfterMastery = level - masteryThreshold;
+          const intervalDays = REVIEW_INTERVALS[Math.min(reviewsAfterMastery, REVIEW_INTERVALS.length - 1)];
+          return { item, weight: daysSince >= intervalDays ? 4 : 1, category: daysSince >= intervalDays ? "review" : "mastered" };
+        }
+        if (attempts === 0 && !record?.lastSeen) {
+          return { item, weight: 3, category: "new" };
+        }
+        if (level === 0) {
+          return { item, weight: 6, category: "struggling" };
+        }
+        return { item, weight: (masteryThreshold - level + 1) * 2, category: "learning" };
+      });
+
+      // ≤3 unseen items in rotation, in pool (introduction) order.
+      let newCount = 0;
+      let pool = scored.filter((s) => {
+        if (s.category === "new") {
+          newCount++;
+          return newCount <= MAX_NEW;
+        }
+        return true;
+      });
+
+      const prevKey = currentItem?.itemKey;
+      if (prevKey && pool.length > 1) {
+        const without = pool.filter((s) => s.item.itemKey !== prevKey);
+        if (without.length > 0) pool = without;
+      }
+
+      const totalW = pool.reduce((sum, s) => sum + s.weight, 0);
+      let r = Math.random() * totalW;
+      selected = pool[0]?.item || null;
+      for (const entry of pool) {
+        r -= entry.weight;
+        if (r <= 0) { selected = entry.item; break; }
+      }
     }
 
     setCurrentItem(selected);
     setUserAnswer("");
-    setColumnDigits([]);
-    setPickedChoice(null);
-    setBarTypePicked(null);
     setFeedback(null);
-    setShowScaffold(false);
-    setUserHidScaffold(false);
-    setTenFrameMoved(0);
-    // Set default mode for the new item's group — but only until the child has
-    // made an explicit choice, which then sticks across groups. Automatic
-    // default, so it isn't persisted; a parent lock still wins regardless,
-    // since the effective mode is `lockedMode || pickedMode`.
+    setShowScaffold(false); setUserHidScaffold(false);
+    setRetry({ phase: "idle", value: null });
+    setPictureRequested(false);
+    setNudge(null);
+    setNotice(null);
+    setMarkNotice(null);
+    setFirstSubmit(null);
+    setCardMarks(emptyMarks());
+    setReaskMarks(emptyMarks());
+    setDisc(selected ? initDiscState(selected) : { counts: [], counts2: null, carried: [], taken: [] });
+
+    // Per-group default CPA mode — until the child has made an explicit
+    // choice, which then sticks across groups.
+    let effMode = mode;
     if (!hasExplicitModeRef.current && selected && mod?.defaultModeByGroup) {
       const defaultMode = mod.defaultModeByGroup[selected.group] || "pictorial";
       setPickedMode(defaultMode);
+      effMode = lockedMode || defaultMode;
     }
-    setTimeout(() => { inputRef.current?.focus({ preventScroll: true }); window.scrollTo(0, 0); }, 100); // preventScroll: keep the sticky header out from behind the Dynamic Island
-  }, [activePool, getMasteryData, currentItem, mod]);
+
+    // Finish-line on-ramp (§8 gate 2), extended to Concrete: at correct === 2,
+    // in Concrete or Pictorial, with no parent mode lock, the chart starts
+    // hidden behind "Show me". Answering with it hidden can cross to mastered.
+    const rec = getMasteryData()[selected?.itemKey];
+    if (selected && (effMode === "concrete" || effMode === "pictorial") && !lockedMode
+      && (rec?.correct || 0) === DEFAULT_MASTERY_THRESHOLD - 1) {
+      setUserHidScaffold(true);
+    }
+
+    setTimeout(() => {
+      // Facts in Concrete: chart first — don't pop the keyboard over it.
+      if (effMode !== "concrete") inputRef.current?.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+      factShownAtRef.current = Date.now();
+    }, 100);
+  }, [activePools, getMasteryData, currentItem, mode, lockedMode, lockedGroupId, focusSkill, mod]);
 
   useEffect(() => {
     pickNewItem();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePool.length]);
+  }, [activeGroups, focusSkill, activePools.length]);
 
-  // Scaffold opacity
   const scaffoldOpacity = useMemo(() => {
     if (mode === "concrete") return 1;
     if (mode === "pictorial" && currentItem) {
@@ -977,38 +497,56 @@ export default function AddPractice({
     return 0;
   }, [mode, currentItem, getMasteryLevel]);
 
-  // Evaluate answer
-  const evaluateAnswer = useCallback((item, payload) => {
-    const { type, value } = payload;
-
-    if (type === "number") {
-      const entered = parseInt(value);
-      return !isNaN(entered) && entered === item.correctAnswer;
-    }
-    if (type === "choice") {
-      return value === item.correctAnswer;
+  const evaluateAnswer = useCallback((item, answerPayload) => {
+    const { type, value } = answerPayload;
+    if (type === "singleNumber") {
+      const n = parseInt(String(value).replace(/\D/g, ""), 10);
+      return !isNaN(n) && n === Number(item.correctAnswer);
     }
     if (type === "column") {
-      // value is digit-array; assemble into number
-      const assembled = parseInt(value.join(""));
-      return !isNaN(assembled) && assembled === item.correctAnswer;
-    }
-    if (type === "barChoice") {
-      const entered = parseInt(value);
-      return !isNaN(entered) && entered === item.correctAnswer;
+      // Number over the filled run; correctAnswer is a Number, but coerce anyway.
+      const joined = (value || []).join("");
+      if (joined === "") return false;
+      return Number(joined) === Number(item.correctAnswer);
     }
     return false;
   }, []);
 
-  const handleAnswer = useCallback((payload) => {
+  const handleAnswer = useCallback((answerPayload) => {
     if (!currentItem) return;
-    const isCorrect = evaluateAnswer(currentItem, payload);
+    const isCorrect = evaluateAnswer(currentItem, answerPayload);
+    const responseMs = factShownAtRef.current ? Date.now() - factShownAtRef.current : undefined;
+    const enteredValue = answerPayload.type === "column"
+      ? columnValue(answerPayload.value)
+      : parseInt(String(answerPayload.value).replace(/\D/g, ""), 10);
+
+    // "Not sure" conversion (docs/confidence-pass-spec.md C2) — a fast wrong
+    // answer before the picture was requested logs nothing. The chart appears
+    // at full opacity in its question state (Concrete keeps its chart state),
+    // chips stay blank, the answer clears; column marks are kept.
+    if (!isCorrect && !pictureRequested && responseMs !== undefined && responseMs < GUESS_MS) {
+      setShowScaffold(true);
+      setPictureRequested(true);
+      setNudge("notSure");
+      setUserAnswer("");
+      setRetryResetKey((k) => k + 1);
+      return;
+    }
+    setNudge(null);
 
     if (profileId) {
-      updateMastery(profileId, moduleId, currentItem.itemKey, isCorrect);
+      const scaffolded = (mode !== "abstract" && !userHidScaffold) || showScaffold === true;
+      const masteryGatesExempt = lockedMode === "concrete" || lockedMode === "pictorial";
+      // §8: no speed gate — no responseMs/fluencyLimitMs passed. Logged to
+      // the DEV console only, for QA/fast-follow analysis.
+      if (import.meta.env.DEV) console.debug("[JF] responseMs", currentItem.itemKey, responseMs);
+      updateMastery(profileId, moduleId, currentItem.itemKey, isCorrect, { scaffolded, masteryGatesExempt });
       recordAnswerInSession(profileId, moduleId, isCorrect);
+      if (isCorrect && pictureRequested) {
+        recordPeekInSession(profileId, moduleId);
+      }
     } else {
-      setLocalMastery(prev => ({
+      setLocalMastery((prev) => ({
         ...prev,
         [currentItem.itemKey]: {
           correct: Math.max(0, (prev[currentItem.itemKey]?.correct || 0) + (isCorrect ? 1 : -1) + (isCorrect ? 0 : 1)),
@@ -1018,11 +556,18 @@ export default function AddPractice({
       }));
     }
 
-    setSessionStats(prev => ({ correct: prev.correct + (isCorrect ? 1 : 0), total: prev.total + 1 }));
+    setSessionStats((prev) => ({ correct: prev.correct + (isCorrect ? 1 : 0), total: prev.total + 1 }));
+
+    if (isCorrect && missedKeysRef.current.has(currentItem.itemKey)) {
+      missedKeysRef.current.delete(currentItem.itemKey);
+      comebacksRef.current += 1;
+    } else if (!isCorrect) {
+      missedKeysRef.current.add(currentItem.itemKey);
+    }
 
     if (profileId) {
       const profile = getProfile(profileId);
-      const newStreak = isCorrect ? streak + 1 : 0;
+      const newStreak = isCorrect ? streak + 1 : streak;
       const newAchievements = checkAfterAnswer({
         profileId, moduleId, module: mod,
         streak: newStreak,
@@ -1030,91 +575,188 @@ export default function AddPractice({
         sessionStartTime,
         mastery: profile?.mastery?.[moduleId] || {},
         masteryThreshold: DEFAULT_MASTERY_THRESHOLD,
+        comebacks: comebacksRef.current,
       });
-      if (newAchievements.length > 0) {
-        setAchievementQueue(prev => [...prev, ...newAchievements]);
-      }
+      if (newAchievements.length > 0) setAchievementQueue((prev) => [...prev, ...newAchievements]);
       const streakMilestones = [
         { at: 3, name: "Getting Warm!", icon: "🔥", description: "3 in a row!" },
         { at: 5, name: "On Fire!", icon: "🔥", description: "5 in a row!" },
         { at: 10, name: "Unstoppable!", icon: "⚡", description: "10 in a row!" },
         { at: 25, name: "LEGENDARY!", icon: "👑", description: "25 in a row!" },
       ];
-      const milestone = streakMilestones.find(m => m.at === newStreak);
-      if (milestone) setAchievementQueue(prev => [...prev, milestone]);
+      const milestone = streakMilestones.find((m) => m.at === newStreak);
+      // Only an unassisted correct answer reaches a milestone: a first miss
+      // leaves the streak unchanged (confidence pass), so without this guard
+      // the milestone would fire a second time on that miss.
+      if (isCorrect && milestone) setAchievementQueue((prev) => [...prev, milestone]);
     }
 
     const newTotal = sessionStats.total + 1;
     if (profileId && newTotal >= 10) {
-      const updatedStreak = updateStreak(profileId, newTotal);
-      setDailyStreak(updatedStreak);
+      setDailyStreak(updateStreak(profileId, newTotal));
     }
 
     if (isCorrect) {
-      setStreak(s => s + 1);
+      setStreak((s) => s + 1);
+      setMissRun(0);
       setFeedback("correct");
       setTimeout(() => pickNewItem(), 900);
     } else {
-      setStreak(0);
+      setFirstSubmit(Number.isNaN(enteredValue) ? null : enteredValue);
       setFeedback("incorrect");
       setShowScaffold(true);
+      setReaskMarks(emptyMarks()); // R1/§9.3: marks reset at the re-ask
+      setRetry({ phase: "ask", value: initialRetryValue(currentItem) });
+      setMissCount((n) => n + 1);
+      setMissRun((n) => n + 1);
     }
-  }, [currentItem, evaluateAnswer, profileId, moduleId, streak, sessionStats, sessionStartTime, mod, pickNewItem]);
+  }, [currentItem, evaluateAnswer, profileId, moduleId, streak, sessionStats, sessionStartTime, mod, pickNewItem, mode, lockedMode, userHidScaffold, showScaffold, pictureRequested]);
 
-  // Submit handlers
-  const handleSubmitNumber = useCallback(() => {
-    if (!currentItem || feedback || userAnswer === "") return;
-    handleAnswer({ type: "number", value: userAnswer });
+  const handleSubmit = useCallback(() => {
+    if (!currentItem || feedback) return;
+    if (currentItem.answerType === "singleNumber") {
+      if (userAnswer === "") return;
+      handleAnswer({ type: "singleNumber", value: userAnswer });
+    }
   }, [currentItem, feedback, userAnswer, handleAnswer]);
 
-  const handleSubmitColumn = useCallback((digits) => {
+  // The column pad's Check. No auto-submit anywhere: this only fires from the
+  // pad's Check key (enabled only for a contiguous run ending at the ones cell).
+  const handleColumnSubmit = useCallback((digits) => {
     if (!currentItem || feedback) return;
-    const assembled = parseInt(digits.join(""));
-    if (isNaN(assembled)) return;
     handleAnswer({ type: "column", value: digits });
   }, [currentItem, feedback, handleAnswer]);
 
-  const handleTapChoice = useCallback((value) => {
-    if (feedback) return;
-    setPickedChoice(value);
-    handleAnswer({ type: "choice", value });
-  }, [feedback, handleAnswer]);
+  const handleKeyDown = (e) => { if (e.key === "Enter") handleSubmit(); };
 
-  const handleSubmitBarChoice = useCallback(() => {
-    if (!currentItem || feedback || userAnswer === "") return;
-    handleAnswer({ type: "barChoice", value: userAnswer });
-  }, [currentItem, feedback, userAnswer, handleAnswer]);
+  // ---- Concrete chart actions (§4.1). The app moves discs ONLY on a tap and
+  // never prints the resulting counts. Every trade mirrors into the grid's marks.
+  const handleChartTrade = useCallback((idx) => {
+    if (!currentItem) return;
+    const next = currentItem.op === "+" ? tradeAdd(disc, idx) : tradeSub(disc, idx);
+    if (next === disc) return;
+    setDisc(next);
+    setNotice(null);
+    if (currentItem.answerType === "column") setCardMarks((m) => mirrorChartTrade(currentItem, m, idx));
+  }, [currentItem, disc]);
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      if (feedback === "incorrect") pickNewItem();
-      else if (currentItem?.answerType === "number") handleSubmitNumber();
-      else if (currentItem?.answerType === "barChoice") handleSubmitBarChoice();
+  const handleChartTake = useCallback((idx) => {
+    if (!currentItem || currentItem.op !== "-") return;
+    const n = digitArr(currentItem.b, currentItem.columns)[idx];
+    const { state, notice: refusal } = takeSub(disc, idx, n);
+    setDisc(state);
+    setNotice(refusal);
+  }, [currentItem, disc]);
+
+  // A tap on a top digit (Pictorial / Abstract / re-ask). Marks are optional and
+  // unscored, but a tap that can't do anything must not be silent.
+  const makeTopTap = (marks, setMarks) => (idx) => {
+    if (!currentItem) return;
+    const next = applyTopTap(currentItem, marks, idx);
+    if (next !== marks) { setMarks(next); return; }
+    if (currentItem.op === "-") {
+      setMarkNotice("Nothing to trade here");
+      if (markNoticeTimerRef.current) clearTimeout(markNoticeTimerRef.current);
+      markNoticeTimerRef.current = setTimeout(() => setMarkNotice(null), 1800);
     }
   };
 
-  // Group progress
+  const handleStartOver = useCallback(() => {
+    if (!currentItem) return;
+    setDisc(initDiscState(currentItem));
+    setCardMarks(emptyMarks());
+    setNotice(null);
+  }, [currentItem]);
+
+  useEffect(() => {
+    if (retry.phase !== "ask") return undefined;
+    setRevealStage(0);
+    const t1 = setTimeout(() => setRevealStage(1), 400);
+    const t2 = setTimeout(() => setRevealStage(2), 900);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [retry.phase, currentItem?.itemKey]);
+
+  // R1 (docs/wrong-answer-reveal-spec.md) — Record once, at first submit;
+  // the re-answer is never logged. The outcome of an item is recorded
+  // exactly once, at the first submission (handleAnswer, above): a wrong
+  // answer calls updateMastery(..., false) (−1, floor 0), increments
+  // sessionStats.total with no increment to correct, and enters the reveal.
+  // The re-answer inside the reveal is an assisted attempt (picture,
+  // derivation line on screen) — understanding, not fluency — and is NOT
+  // logged. It must not: call updateMastery, change correct/attempts/
+  // masteredAt/lastSeen/the review interval, change sessionStats, call
+  // checkAfterAnswer or any streak milestone, or count toward the daily
+  // streak threshold. C3 (docs/confidence-pass-spec.md): the streak is
+  // unchanged by the first miss; a SECOND miss (this same reveal, wrong
+  // again) resets it to 0 — see the "missed" branch below. Nothing in
+  // finishRetry/handleRetrySubmit/handleRetryColumnSubmit touches mastery,
+  // stats, or achievements — only evaluateAnswer (pure) and pickNewItem.
+  const finishRetry = useCallback((isCorrect, displayValue) => {
+    if (!currentItem) return;
+    if (advanceTimeoutRef.current) {
+      clearTimeout(advanceTimeoutRef.current);
+      advanceTimeoutRef.current = null;
+    }
+    if (isCorrect) {
+      setRetry({ phase: "done", value: displayValue });
+      recordAssistedInSession(profileId, moduleId);
+      advanceTimeoutRef.current = setTimeout(() => pickNewItem(), 900);
+    } else {
+      setStreak(0);
+      setRetry({ phase: "missed", value: currentItem.correctAnswer });
+      const offset = 3 + (hashString(currentItem.itemKey) % 3);
+      comebackQueueRef.current = [...comebackQueueRef.current, { itemKey: currentItem.itemKey, dueIn: offset }];
+      advanceTimeoutRef.current = setTimeout(() => pickNewItem(), 2500);
+    }
+  }, [currentItem, pickNewItem, profileId, moduleId]);
+
+  const handleRetrySubmit = useCallback(() => {
+    if (!currentItem || retry.phase !== "ask") return;
+    if (currentItem.answerType === "singleNumber") {
+      if (retry.value === "") return;
+      finishRetry(evaluateAnswer(currentItem, { type: "singleNumber", value: retry.value }), retry.value);
+    }
+  }, [currentItem, retry, evaluateAnswer, finishRetry]);
+
+  const handleRetryColumnSubmit = useCallback((digits) => {
+    if (!currentItem || retry.phase !== "ask") return;
+    finishRetry(evaluateAnswer(currentItem, { type: "column", value: digits }), digits);
+  }, [currentItem, retry, evaluateAnswer, finishRetry]);
+
+  const handleRetryKeyDown = (e) => {
+    if (e.key !== "Enter") return;
+    if (retry.phase === "ask") {
+      handleRetrySubmit();
+    } else if (retry.phase === "missed") {
+      if (advanceTimeoutRef.current) { clearTimeout(advanceTimeoutRef.current); advanceTimeoutRef.current = null; }
+      pickNewItem();
+    }
+  };
+
   const getGroupProgress = useCallback((groupId) => {
-    const groupItems = ADD_POOL.filter(i => i.group === groupId);
-    const mastered = groupItems.filter(i => getMasteryLevel(i.itemKey) >= DEFAULT_MASTERY_THRESHOLD).length;
+    const groupItems = ADD_POOL.filter((i) => i.group === groupId);
+    const mastered = groupItems.filter((i) => getMasteryLevel(i.itemKey) >= DEFAULT_MASTERY_THRESHOLD).length;
     return { total: groupItems.length, mastered };
   }, [getMasteryLevel]);
 
   if (!mod) return <div style={{ padding: 40, textAlign: "center" }}>Module not found</div>;
 
-  const moduleColor = "#EF476F";
+  // Short viewports (320×568): the column re-ask (grid + pad) is tight, so the
+  // reveal swaps to a one-line header, drops the prompt text and compacts the
+  // grid/pad. Read at render; a resize while the reveal is open is not tracked.
+  const tight = typeof window !== "undefined" && window.innerHeight < 640;
+  // Merely short (e.g. 375×667): keep the layout but drop the "Tap a top digit"
+  // hint row from the re-ask grid so Check stays on screen.
+  const snug = typeof window !== "undefined" && window.innerHeight < 720;
 
-  // User-entered number value for wrong-answer diagnosis
-  const userEnteredValue = currentItem?.answerType === "number" ? parseInt(userAnswer)
-    : currentItem?.answerType === "barChoice" ? parseInt(userAnswer)
-    : currentItem?.answerType === "column" ? parseInt(columnDigits.join(""))
-    : null;
+  // Concrete: the interactive chart. Pictorial / Abstract-with-Show-me: the
+  // untraded question, labels only.
+  const chartInteractive = mode === "concrete" && !feedback;
+  const isColumn = currentItem?.answerType === "column";
 
-  // Whether scaffold is rendered (W-group scaffold only shows on wrong answer)
-  // W, R, S are reveal-only: their scaffolds expose the answer, so they render
-  // only in the wrong-answer block below, never in the pre-answer container.
-  const scaffoldRendered = !!currentItem && !["W", "R", "S"].includes(currentItem.group);
-
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
   return (
     <div style={{
       minHeight: "100vh",
@@ -1128,14 +770,16 @@ export default function AddPractice({
         @keyframes fadeSlideUp { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes correctPulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
         @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
-        @keyframes splitGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+        @keyframes showMePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+        .showMePulse { display: inline-block; animation: showMePulse 1.4s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .showMePulse { animation: none; } }
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; }
       `}</style>
 
       {/* ========= HEADER ========= */}
-      <div style={{
+      <div ref={headerRef} style={{
         background: COLORS.yellow,
         padding: "calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 14px) clamp(12px,4vw,20px) 10px",
         borderBottom: `4px solid ${COLORS.black}`,
@@ -1144,12 +788,11 @@ export default function AddPractice({
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
             {onBack && (
-              <button onClick={onBack} style={{
-                padding: "6px 8px", borderRadius: 6, border: BRUTAL_BORDER_SM,
+              <button onClick={onBack} aria-label="Home" style={{
+                minWidth: 44, minHeight: 44, padding: "6px 8px", borderRadius: 6, border: BRUTAL_BORDER_SM,
                 backgroundColor: "white", color: COLORS.black, boxShadow: BRUTAL_SHADOW_SM,
                 cursor: "pointer", transition: "all 0.1s ease", flexShrink: 0,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                minHeight: 44, minWidth: 44,
               }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <path d="M3 9.5L12 3L21 9.5V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9.5Z"
@@ -1165,32 +808,55 @@ export default function AddPractice({
                 backgroundColor: "white", display: "flex", alignItems: "center",
                 justifyContent: "center", fontSize: 24, boxShadow: BRUTAL_SHADOW_SM, flexShrink: 0,
               }}>
-                {AVATARS.find(a => a.id === profileAvatar)?.emoji || profileAvatar}
+                {AVATARS.find((a) => a.id === profileAvatar)?.emoji || profileAvatar}
               </div>
             )}
           </div>
 
-          {/* Stats row */}
           {(() => {
             const masteryData = getMasteryData();
-            const accessibleItems = ADD_POOL.filter(i => isContentAccessible(moduleId, i.group));
-            const totalItems = accessibleItems.length;
-            const masteredItems = accessibleItems.filter(i =>
-              (masteryData[i.itemKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD
-            ).length;
+            // C4 "working group" rule (docs/confidence-pass-spec.md, "As
+            // built" 2026-09-14), extended for `supporting` groups (§2/§8):
+            // framed against the locked group, else the focused skill's group,
+            // else the first accessible NON-supporting group (module order)
+            // that is not fully mastered; all done -> the last such group.
+            const focusGroupId = focusSkill ? mod.groups.find((g) => g.skills.includes(focusSkill))?.id : null;
+            const groupStats = mod.groups
+              .filter((g) => isContentAccessible(moduleId, g.id))
+              .filter((g) => {
+                if (lockedGroupId) return g.id === lockedGroupId;
+                if (focusGroupId) return g.id === focusGroupId;
+                return !g.supporting;
+              })
+              .map((g) => {
+                const items = ADD_POOL.filter((i) => i.group === g.id);
+                const total = items.length;
+                const done = items.filter((i) => (masteryData[i.itemKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length;
+                return { group: g, total, done };
+              })
+              .filter((gs) => gs.total > 0);
+            const totalItems = groupStats.reduce((n, gs) => n + gs.total, 0);
+            const masteredItems = groupStats.reduce((n, gs) => n + gs.done, 0);
             const masteryPct = totalItems > 0 ? Math.round((masteredItems / totalItems) * 100) : 0;
+            const working = groupStats.find((gs) => gs.done < gs.total) || groupStats[groupStats.length - 1] || null;
+            let pillValue = `${masteredItems}/${totalItems}`;
+            let pillLabel = "Mastered";
+            if (working) {
+              pillValue = `${working.done}/${working.total}`;
+              pillLabel = working.group.label;
+            }
             return (
               <div style={{ display: "flex", gap: 6, alignItems: "stretch", marginBottom: 8, minHeight: 56 }}>
                 <div style={{
                   flex: 1.5, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                   fontFamily: "'Space Mono', monospace", fontWeight: 700,
                   backgroundColor: masteryPct === 100 ? COLORS.green : "white",
-                  color: masteryPct === 100 ? "white" : COLORS.black,
+                  color: COLORS.black,
                   border: BRUTAL_BORDER_SM, borderRadius: 8, padding: "8px 12px",
                   boxShadow: BRUTAL_SHADOW_SM, gap: 3,
                 }}>
-                  <span style={{ fontSize: "clamp(14px, 5vw, 20px)", lineHeight: 1, whiteSpace: "nowrap" }}>⭐ {masteredItems}/{totalItems}</span>
-                  <span style={{ fontSize: 10, opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Mastered</span>
+                  <span style={{ fontSize: "clamp(14px, 5vw, 20px)", lineHeight: 1, whiteSpace: "nowrap" }}>⭐ {pillValue}</span>
+                  <span style={{ fontSize: 9, opacity: 0.6, textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "center", lineHeight: 1.15 }}>{pillLabel}</span>
                 </div>
                 <div style={{
                   flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -1205,7 +871,7 @@ export default function AddPractice({
                   flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                   fontFamily: "'Space Mono', monospace", fontWeight: 700,
                   backgroundColor: streak >= 3 ? COLORS.orange : "white",
-                  color: streak >= 3 ? "white" : COLORS.black,
+                  color: COLORS.black,
                   border: BRUTAL_BORDER_SM, borderRadius: 8,
                   padding: "8px 4px", boxShadow: BRUTAL_SHADOW_SM, gap: 3,
                 }}>
@@ -1219,7 +885,7 @@ export default function AddPractice({
                     background: dailyStreak.current >= 7 ? COLORS.orange : COLORS.cream,
                     border: BRUTAL_BORDER_SM, borderRadius: 8,
                     fontFamily: "'Space Mono', monospace", fontWeight: 700,
-                    color: dailyStreak.current >= 7 ? "white" : COLORS.black,
+                    color: COLORS.black,
                     boxShadow: BRUTAL_SHADOW_SM, gap: 3,
                   }}>
                     <span style={{ fontSize: 20, lineHeight: 1 }}>
@@ -1241,15 +907,13 @@ export default function AddPractice({
           {/* ===== PROGRESS VIEW ===== */}
           {view === "progress" && (
             <div style={{ animation: "fadeSlideUp 0.3s ease both" }}>
-
-              {/* Achievements */}
               {profileId && (() => {
                 const allAch = getAllAchievementsForProfile(profileId, mod);
-                const earned = allAch.filter(a => a.unlocked);
+                const earned = allAch.filter((a) => a.unlocked);
                 return (
                   <div style={{
                     backgroundColor: "white", borderRadius: 12, padding: 18,
-                    marginBottom: 14, border: BRUTAL_BORDER, boxShadow: `5px 5px 0px ${moduleColor}`,
+                    marginBottom: 14, border: BRUTAL_BORDER, boxShadow: `5px 5px 0px ${COLORS.purple}`,
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                       <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, fontFamily: "'Shrikhand', cursive" }}>Achievements</h3>
@@ -1258,7 +922,7 @@ export default function AddPractice({
                       </span>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-                      {allAch.map(a => (
+                      {allAch.map((a) => (
                         <div key={a.id} style={{
                           display: "flex", flexDirection: "column", alignItems: "center",
                           padding: "10px 4px 8px", borderRadius: 8,
@@ -1276,7 +940,6 @@ export default function AddPractice({
                 );
               })()}
 
-              {/* CPA Mode selector */}
               <div style={{
                 backgroundColor: "white", borderRadius: 12, padding: 18,
                 marginBottom: 14, border: BRUTAL_BORDER, boxShadow: BRUTAL_SHADOW,
@@ -1287,19 +950,24 @@ export default function AddPractice({
                     { id: "concrete", label: "Concrete", sub: "Touch the math" },
                     { id: "pictorial", label: "Pictorial", sub: "See it fade" },
                     { id: "abstract", label: "Abstract", sub: "Symbols only" },
-                  ].map(m => (
+                  ].map((m) => (
                     <button key={m.id}
                       disabled={!!lockedMode}
-                      onClick={() => { if (lockedMode) return; hasExplicitModeRef.current = true; setPickedMode(m.id); setPreferredMode(profileId, moduleId, m.id); }}
+                      onClick={() => {
+                        if (lockedMode) return;
+                        hasExplicitModeRef.current = true;
+                        setPickedMode(m.id);
+                        setPreferredMode(profileId, moduleId, m.id);
+                      }}
                       style={{
                         flex: 1, padding: "10px 6px", borderRadius: 10, border: BRUTAL_BORDER_SM,
-                        backgroundColor: mode === m.id ? moduleColor : "white",
-                        color: mode === m.id ? "white" : COLORS.black,
+                        backgroundColor: mode === m.id ? MODULE_COLORS.add : "white",
+                        color: COLORS.black,
                         fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
                         cursor: lockedMode ? "default" : "pointer",
                         opacity: lockedMode && mode !== m.id ? 0.45 : 1,
                         boxShadow: mode === m.id ? "none" : BRUTAL_SHADOW_SM,
-                        transition: "all 0.15s ease", minHeight: 56,
+                        transition: "all 0.15s ease",
                       }}>
                       {m.label}
                       <div style={{ fontSize: 9, opacity: 0.7, marginTop: 3 }}>{m.sub}</div>
@@ -1313,36 +981,24 @@ export default function AddPractice({
                 )}
               </div>
 
-              {/* Start Practice */}
-              <button onClick={() => { setView("practice"); pickNewItem(); }}
+              <button onClick={() => { setFocusSkill(null); setView("practice"); }}
                 style={{
                   width: "100%", padding: 14, borderRadius: 12,
                   border: BRUTAL_BORDER, backgroundColor: COLORS.yellow, color: COLORS.black,
                   fontWeight: 700, cursor: "pointer", fontFamily: "'Shrikhand', cursive",
-                  fontSize: 16, boxShadow: BRUTAL_SHADOW, marginBottom: 14, minHeight: 52,
+                  fontSize: 16, boxShadow: BRUTAL_SHADOW, marginBottom: 14,
                 }}>
                 Practice Add &amp; Subtract!
               </button>
 
-              {/* Mastery grids by group */}
-              {mod.groups.map(group => {
+              {mod.groups.map((group) => {
                 const prog = getGroupProgress(group.id);
                 const accessible = isContentAccessible(moduleId, group.id);
-                const isTier2 = group.tier === 2;
-                const groupItems = ADD_POOL.filter(i => i.group === group.id);
-
-                if (isTier2) {
-                  return (
-                    <Tier2LockedCard
-                      key={group.id}
-                      group={group}
-                      tierAllowed={tierAllowed}
-                      isPurchased={isPurchased}
-                      tier1Progress={tier1Progress}
-                    />
-                  );
-                }
-
+                // A parent lock on another group: this group's skills can't be focused.
+                const groupLockedOut = !!lockedGroupId && group.id !== lockedGroupId;
+                const groupItems = ADD_POOL.filter((i) => i.group === group.id);
+                // Column pairs ("2,346+1,527") need wider cells than fact pairs ("9 + 2").
+                const cellCols = group.id === "facts" ? 5 : 3;
                 return (
                   <div key={group.id} style={{
                     backgroundColor: "white", borderRadius: 12, padding: 18,
@@ -1358,6 +1014,16 @@ export default function AddPractice({
                         {prog.mastered}/{prog.total}
                       </span>
                     </div>
+                    {group.supporting && (
+                      <p style={{ margin: "-4px 0 12px", fontSize: 11, color: "#888", fontFamily: "'Space Mono', monospace" }}>
+                        Optional warm-up — tap a skill to practise it
+                      </p>
+                    )}
+                    {lockedGroupId === group.id && (
+                      <p style={{ margin: "-4px 0 12px", fontSize: 11, color: "#888", fontFamily: "'Space Mono', monospace" }}>
+                        🔒 Locked to this group by a parent in Parent Zone
+                      </p>
+                    )}
                     {accessible ? (
                       <>
                         <div style={{
@@ -1371,58 +1037,60 @@ export default function AddPractice({
                           }} />
                         </div>
                         {(() => {
-                          // Section by skill with readable headers ("Bond a number", …),
-                          // cap each section and show an honest "+N more".
-                          const CELL_CAP = 50;
                           const bySkill = [];
-                          groupItems.forEach(item => {
-                            let bucket = bySkill.find(b => b.skill === item.skill);
+                          groupItems.forEach((item) => {
+                            let bucket = bySkill.find((b) => b.skill === item.skill);
                             if (!bucket) { bucket = { skill: item.skill, items: [] }; bySkill.push(bucket); }
                             bucket.items.push(item);
                           });
-                          return bySkill.map(({ skill, items }) => {
-                            const shown = items.slice(0, CELL_CAP);
-                            const extra = items.length - shown.length;
-                            return (
-                              <div key={skill} style={{ marginBottom: 14 }}>
-                                <div style={{
-                                  fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
-                                  color: "#888", marginBottom: 6,
+                          return bySkill.map(({ skill, items }) => (
+                            <div key={skill} style={{ marginBottom: 14 }}>
+                              {/* Skill focus selector: tap a skill to practise
+                                  only that skill. The row is the target (≥44px). */}
+                              <button
+                                disabled={groupLockedOut}
+                                onClick={() => { if (groupLockedOut) return; setFocusSkill(skill); setView("practice"); }}
+                                aria-label={`Practise only ${addModule.skillLabels?.[skill] || skill}`}
+                                style={{
+                                  width: "100%", minHeight: 44, display: "flex", alignItems: "center", justifyContent: "space-between",
+                                  gap: 8, padding: "6px 10px", marginBottom: 6, borderRadius: 8, cursor: groupLockedOut ? "default" : "pointer",
+                                  opacity: groupLockedOut ? 0.5 : 1,
+                                  border: BRUTAL_BORDER_SM, boxShadow: focusSkill === skill || groupLockedOut ? "none" : BRUTAL_SHADOW_SM,
+                                  transform: focusSkill === skill ? "translate(3px, 3px)" : "none",
+                                  backgroundColor: focusSkill === skill ? COLORS.yellow : "white",
+                                  fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: COLORS.black, textAlign: "left",
                                 }}>
-                                  {addModule.skillLabels?.[skill] || skill}
-                                </div>
-                                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5 }}>
-                                  {shown.map(item => {
-                                    const level = getMasteryLevel(item.itemKey);
-                                    const mastered = level >= DEFAULT_MASTERY_THRESHOLD;
-                                    return (
-                                      <div key={item.itemKey} style={{
-                                        padding: "5px 3px", borderRadius: 6,
-                                        backgroundColor: mastered ? group.color : "#F8F8F8",
-                                        border: mastered ? BRUTAL_BORDER_SM : "2px solid #E0E0E0",
-                                        textAlign: "center", fontSize: 9,
-                                        fontFamily: "'Space Mono', monospace",
-                                        fontWeight: mastered ? 700 : 400,
-                                        boxShadow: mastered ? `2px 2px 0px ${COLORS.black}` : "none",
-                                      }}>
-                                        <div style={{ lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                          {itemCellLabel(item.itemKey)}
-                                        </div>
-                                        <div style={{ marginTop: 2, display: "flex", justifyContent: "center" }}>
-                                          <MasteryDots level={Math.min(level, DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
-                                        </div>
+                                <span>{addModule.skillLabels?.[skill] || skill}</span>
+                                <span style={{ fontSize: 10, opacity: 0.7, whiteSpace: "nowrap" }}>
+                                  {groupLockedOut ? "🔒 locked" : focusSkill === skill ? "practising ✓" : "practise this ›"}
+                                </span>
+                              </button>
+                              <div style={{ display: "grid", gridTemplateColumns: `repeat(${cellCols}, 1fr)`, gap: 5 }}>
+                                {items.map((item) => {
+                                  const level = getMasteryLevel(item.itemKey);
+                                  const mastered = level >= DEFAULT_MASTERY_THRESHOLD;
+                                  return (
+                                    <div key={item.itemKey} style={{
+                                      padding: "5px 3px", borderRadius: 6,
+                                      backgroundColor: mastered ? group.color : "#F8F8F8",
+                                      border: mastered ? BRUTAL_BORDER_SM : "2px solid #E0E0E0",
+                                      textAlign: "center", fontSize: 10,
+                                      fontFamily: "'Space Mono', monospace",
+                                      fontWeight: mastered ? 700 : 400,
+                                      boxShadow: mastered ? `2px 2px 0px ${COLORS.black}` : "none",
+                                    }}>
+                                      <div style={{ lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        {item.display}
                                       </div>
-                                    );
-                                  })}
-                                </div>
-                                {extra > 0 && (
-                                  <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: "#AAA", marginTop: 5 }}>
-                                    +{extra} more
-                                  </div>
-                                )}
+                                      <div style={{ marginTop: 2, display: "flex", justifyContent: "center" }}>
+                                        <MasteryDots level={Math.min(level, DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            );
-                          });
+                            </div>
+                          ));
                         })()}
                       </>
                     ) : (
@@ -1459,48 +1127,122 @@ export default function AddPractice({
                       : "none",
                   transition: "box-shadow 0.3s ease",
                 }}>
-                  {/* Mastery dots */}
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-                    <MasteryDots level={Math.min(getMasteryLevel(currentItem.itemKey), DEFAULT_MASTERY_THRESHOLD)} />
+                    <MasteryDots level={Math.min(getMasteryLevel(currentItem.itemKey), DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
                   </div>
 
-                  {/* Skill label chip */}
                   <div style={{ marginBottom: 12 }}>
                     <span style={{
                       fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
-                      backgroundColor: mod.groups.find(g => g.id === currentItem.group)?.color || moduleColor,
+                      backgroundColor: addModule.groups.find((g) => g.id === currentItem.group)?.color || COLORS.purple,
                       color: COLORS.black, padding: "3px 10px", borderRadius: 20, border: BRUTAL_BORDER_SM,
                     }}>
-                      {mod.skillLabels[currentItem.skill] || currentItem.skill}
+                      {addModule.skillLabels[currentItem.skill] || currentItem.skill}
                     </span>
+                    {focusSkill && (
+                      <div style={{ marginTop: 8 }}>
+                        <button onClick={() => setFocusSkill(null)} style={{
+                          minHeight: 44, padding: "8px 14px", borderRadius: 8, border: BRUTAL_BORDER_SM,
+                          backgroundColor: COLORS.cream, boxShadow: BRUTAL_SHADOW_SM, cursor: "pointer",
+                          fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: COLORS.black,
+                        }}>
+                          Only this skill · ✕ practise everything
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Question */}
-                  <QuestionDisplay item={currentItem} mode={mode} />
+                  <div ref={questionRef}><QuestionDisplay item={currentItem} /></div>
 
-                  {/* Concrete M-group ten-frame (interactive, shown before answer) */}
-                  {mode === "concrete" && currentItem.group === "M" && !feedback && (
-                    <ConcreteTenFrameM
-                      item={currentItem}
-                      moved={tenFrameMoved}
-                      onMove={() => setTenFrameMoved(m => m + 1)}
-                    />
+                  {nudge === "notSure" && (
+                    <div style={{
+                      marginTop: 16, display: "inline-block",
+                      fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
+                      fontSize: "clamp(14px, 4vw, 16px)", color: COLORS.black,
+                      backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM,
+                      borderRadius: 8, padding: "6px 12px",
+                    }}>
+                      Not sure? Count the picture.
+                    </div>
                   )}
 
-                  {/* Answer input */}
-                  <div onKeyDown={handleKeyDown}>
-                    {currentItem.answerType === "number" && (
+                  {(showScaffold || (!userHidScaffold && scaffoldOpacity > 0)) && (
+                    <div
+                      ref={chartWrapRef}
+                      onClick={mode === "pictorial" && scaffoldOpacity > 0 && !showScaffold && !userHidScaffold
+                        ? () => setUserHidScaffold(true)
+                        : undefined}
+                      style={{ cursor: mode === "pictorial" && scaffoldOpacity > 0 && !showScaffold && !userHidScaffold ? "pointer" : "default" }}
+                    >
+                      <ScaffoldForItem
+                        item={currentItem}
+                        disc={disc}
+                        showScaffold={showScaffold}
+                        scaffoldOpacity={scaffoldOpacity}
+                        mode={mode}
+                        interactive={chartInteractive}
+                        notice={notice}
+                        onTrade={handleChartTrade}
+                        onTake={handleChartTake}
+                        onStartOver={handleStartOver}
+                      />
+                    </div>
+                  )}
+
+                  {mode === "pictorial" && scaffoldOpacity > 0 && !showScaffold && !userHidScaffold && (
+                    <div
+                      onClick={() => setUserHidScaffold(true)}
+                      style={{ marginTop: 6, fontSize: 11, fontFamily: "'Space Mono', monospace", opacity: 0.45, fontWeight: 700, cursor: "pointer" }}
+                    >
+                      Tap the picture to hide it
+                    </div>
+                  )}
+
+                  {/* "Show me": Abstract (always) and Pictorial (faded/hidden) as in
+                      Place Value; in Concrete ONLY for the finish-line on-ramp (§8),
+                      where it restores the INTERACTIVE chart. */}
+                  {!feedback && (
+                    (mode === "abstract" && !showScaffold) ||
+                    (mode === "pictorial" && !showScaffold && (userHidScaffold || scaffoldOpacity < 1)) ||
+                    (mode === "concrete" && !showScaffold && userHidScaffold)
+                  ) && (
+                    <div style={{ marginTop: 12, textAlign: "center" }}>
+                      <span className={mode === "abstract" && missRun >= 2 ? "showMePulse" : undefined}>
+                        <BrutalButton
+                          small
+                          onClick={() => { setShowScaffold(true); setPictureRequested(true); }}
+                          bg={COLORS.cream}
+                        >
+                          Show me
+                        </BrutalButton>
+                      </span>
+                    </div>
+                  )}
+
+                  {feedback === "correct" && (
+                    <div style={{
+                      marginTop: 16, fontSize: 16, fontWeight: 700,
+                      fontFamily: "'Space Mono', monospace",
+                      color: COLORS.green,
+                      animation: "fadeSlideUp 0.3s ease both",
+                    }}>
+                      {["NICE!", "GOT IT!", "YES!", "CORRECT!", "BOOM!"][sessionStats.total % 5]}
+                    </div>
+                  )}
+
+                  {/* singleNumber (facts) — typed answer + mandatory Check */}
+                  {currentItem.answerType === "singleNumber" && (
+                    <div onKeyDown={handleKeyDown}>
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 20, gap: 12 }}>
                         <input
                           ref={inputRef}
-                          type="number"
-                          value={userAnswer}
-                          placeholder="?"
+                          type="number" inputMode="numeric"
+                          value={userAnswer} placeholder="?"
                           disabled={!!feedback}
-                          onChange={e => setUserAnswer(e.target.value)}
+                          onChange={(e) => setUserAnswer(e.target.value.replace(/\D/g, ""))}
                           onKeyDown={handleKeyDown}
                           style={{
-                            width: 130, fontSize: 52, fontFamily: "'Shrikhand', cursive",
+                            width: 160, fontSize: 48, fontFamily: "'Shrikhand', cursive",
                             fontWeight: 400, textAlign: "center",
                             border: "none", borderBottom: `4px solid ${COLORS.black}`,
                             backgroundColor: "transparent", color: COLORS.black, outline: "none",
@@ -1508,158 +1250,34 @@ export default function AddPractice({
                           }}
                         />
                         {!feedback && (
-                          <BrutalButton onClick={handleSubmitNumber} bg={COLORS.yellow}>Check!</BrutalButton>
+                          <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
                         )}
                       </div>
-                    )}
-
-                    {currentItem.answerType === "choice" && (
-                      <div style={{
-                        display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10,
-                        marginTop: 16, width: "100%", maxWidth: 340,
-                        marginLeft: "auto", marginRight: "auto",
-                      }}>
-                        {shuffledChoices.map((c, i) => {
-                          const isCorrect = c === currentItem.correctAnswer;
-                          const isPicked = c === pickedChoice;
-                          const bg = isPicked
-                            ? (isCorrect ? COLORS.green : COLORS.red)
-                            : "white";
-                          return (
-                            <button key={i} onClick={() => !pickedChoice && handleTapChoice(c)}
-                              style={{
-                                padding: "12px 8px", borderRadius: 10, border: BRUTAL_BORDER_SM,
-                                backgroundColor: bg, cursor: pickedChoice ? "default" : "pointer",
-                                boxShadow: BRUTAL_SHADOW_SM,
-                                fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700,
-                                color: COLORS.black, minHeight: 56,
-                                animation: isPicked ? (isCorrect ? "correctPulse 0.4s ease" : "shake 0.4s ease") : "none",
-                                transition: "background-color 0.2s ease",
-                                textAlign: "center",
-                              }}>
-                              {c}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {currentItem.answerType === "column" && (
-                      <ColumnInput
-                        item={currentItem}
-                        value={columnDigits}
-                        onChange={setColumnDigits}
-                        onSubmit={handleSubmitColumn}
-                        disabled={!!feedback}
-                      />
-                    )}
-
-                    {currentItem.answerType === "barChoice" && (
-                      <BarTypeChoiceInput
-                        item={currentItem}
-                        barTypePicked={barTypePicked}
-                        onPickBarType={setBarTypePicked}
-                        userAnswer={userAnswer}
-                        onAnswerChange={setUserAnswer}
-                        onSubmit={handleSubmitBarChoice}
-                        disabled={!!feedback}
-                        feedback={feedback}
-                      />
-                    )}
-                  </div>
-
-                  {/* Scaffold (pictorial/concrete, not for W-group before answer) */}
-                  {scaffoldRendered && (
-                    <div
-                      onClick={mode === "pictorial" && scaffoldOpacity > 0 && !showScaffold && !userHidScaffold
-                        ? () => setUserHidScaffold(true) : undefined}
-                      style={{ cursor: mode === "pictorial" && scaffoldOpacity > 0 && !showScaffold && !userHidScaffold ? "pointer" : "default" }}
-                    >
-                      <ScaffoldForItem
-                        item={currentItem}
-                        showScaffold={showScaffold}
-                        scaffoldOpacity={userHidScaffold ? 0 : scaffoldOpacity}
-                        mode={mode}
-                        tenFrameMoved={tenFrameMoved}
-                        feedback={feedback}
-                      />
-                    </div>
-                  )}
-                  {scaffoldRendered && mode === "pictorial" && scaffoldOpacity > 0 && !showScaffold && !userHidScaffold && (
-                    <div onClick={() => setUserHidScaffold(true)} style={{
-                      marginTop: 6, fontSize: 11, fontFamily: "'Space Mono', monospace",
-                      opacity: 0.45, fontWeight: 700, cursor: "pointer",
-                    }}>
-                      Tap picture to hide it
-                    </div>
-                  )}
-                  {scaffoldRendered && mode === "abstract" && !showScaffold && !feedback && (
-                    <div style={{ marginTop: 12, textAlign: "center" }}>
-                      <BrutalButton small onClick={() => setShowScaffold(true)} bg={COLORS.cream}>
-                        Show me
-                      </BrutalButton>
                     </div>
                   )}
 
-                  {/* W / R / S scaffolds reveal on wrong answer only */}
-                  {["W", "R", "S"].includes(currentItem.group) && feedback === "incorrect" && (
-                    <ScaffoldForItem
+                  {/* column — the grid + the in-app pad. MUST stay the LAST child of
+                      the card: the pad is position: sticky to the viewport bottom
+                      inside this card (§5.2). No <input> exists for this answerType. */}
+                  {isColumn && (
+                    <ColumnAnswerInput
+                      key={`${currentItem.itemKey}:${retryResetKey}`}
                       item={currentItem}
-                      showScaffold={true}
-                      scaffoldOpacity={1}
-                      mode={mode}
-                      tenFrameMoved={0}
-                      feedback={feedback}
+                      marks={cardMarks}
+                      // Concrete: marks mirror the chart, so the top-row taps are off.
+                      marksInteractive={mode !== "concrete" && !feedback}
+                      onTopTap={makeTopTap(cardMarks, setCardMarks)}
+                      markNotice={markNotice}
+                      headerRef={headerRef}
+                      getClampEl={getClampEl}
+                      onUndoMarks={() => setCardMarks(emptyMarks())}
+                      onSubmit={handleColumnSubmit}
+                      live={!feedback}
+                      sticky
+                      state={feedback === "correct" ? "correct" : "input"}
+                      tradeVerb={TRADE.verb}
                     />
                   )}
-
-                  {/* Feedback */}
-                  {feedback && (
-                    <div style={{
-                      marginTop: 16, fontSize: 16, fontWeight: 700,
-                      fontFamily: "'Space Mono', monospace",
-                      color: feedback === "correct" ? COLORS.green : COLORS.red,
-                      animation: "fadeSlideUp 0.3s ease both",
-                    }}>
-                      {feedback === "correct" ? (
-                        streak >= 5 ? "OUTSTANDING! ⚡" : streak >= 3 ? "🔥 STREAK! KEEP GOING!" : ["NICE!", "GOT IT!", "YES!", "CORRECT!", "BOOM!"][Math.floor(Math.random() * 5)]
-                      ) : (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                          It's{" "}
-                          <span style={{
-                            backgroundColor: COLORS.yellow, padding: "6px 14px",
-                            border: BRUTAL_BORDER_SM, borderRadius: 6, fontSize: 22,
-                          }}>
-                            {item => item}
-                            {currentItem.correctAnswer}
-                          </span>
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Wrong answer helpers */}
-                  {feedback === "incorrect" && (
-                    <WrongAnswerHelpers item={currentItem} userValue={userEnteredValue} />
-                  )}
-                </div>
-
-                {/* Next button */}
-                <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "center", flexWrap: "wrap" }}>
-                  {feedback === "incorrect" ? (
-                    <BrutalButton onClick={pickNewItem} bg={COLORS.yellow}>Next →</BrutalButton>
-                  ) : null}
-                </div>
-
-                {/* Progress link */}
-                <div style={{ textAlign: "center", marginTop: 16 }}>
-                  <button onClick={() => setView("progress")} style={{
-                    background: "none", border: "none", cursor: "pointer",
-                    fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
-                    color: "#888", textDecoration: "underline",
-                  }}>
-                    View progress
-                  </button>
                 </div>
               </div>
             ) : (
@@ -1669,16 +1287,16 @@ export default function AddPractice({
                   fontFamily: "'Space Grotesk', sans-serif", fontSize: 20, fontWeight: 700,
                   color: COLORS.black, marginBottom: 8,
                 }}>
-                  No items available yet
+                  No items in this group
                 </div>
                 <div style={{
                   fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, color: "#666",
                   marginBottom: 20, maxWidth: 280, margin: "0 auto 20px",
                 }}>
-                  Ask a parent to unlock Add &amp; Subtract content in the Parent Zone!
+                  Ask a parent to unlock more Add &amp; Subtract content in the Parent Zone!
                 </div>
                 <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: "#999" }}>
-                  Group N (Number Bonds) is free to try!
+                  Add &amp; Subtract unlocks in Parent Zone → Modules
                 </div>
               </div>
             )
@@ -1686,10 +1304,111 @@ export default function AddPractice({
         </div>
       </div>
 
+      {/* Wrong-answer reveal — one tokenState drives every count chip AND the
+          derivation line's token (docs/confidence-pass-spec.md C1). */}
+      {currentItem && (() => {
+        const tokenState = retry.phase === "done" ? "correct" : retry.phase === "missed" ? "numeral" : "blank";
+        const line = retry.phase === "missed"
+          ? (
+            <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(16px, 4.6vw, 18px)", fontWeight: 700, lineHeight: 1.3 }}>
+              Still tricky. Here it is — we&apos;ll come back to it.
+            </span>
+          )
+          : revealStage >= 1
+            ? (
+              // Tight screens cap the derivation line at 3 lines.
+              <span style={tight ? { display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" } : undefined}>
+                <DerivationLine segments={buildAddLine(currentItem, tokenState, firstSubmit) || []} />
+              </span>
+            )
+            : null;
+        const columnReveal = currentItem.answerType === "column";
+        const header = columnReveal && tight
+          ? TIGHT_HEADER
+          : HEADER_TAILS[hashString(currentItem.itemKey) % HEADER_TAILS.length];
+
+        return (
+          <WrongAnswerReveal
+            open={feedback === "incorrect"}
+            focusDelayMs={1000}
+            pictureMax={revealPictureMax(currentItem.answerType, tight)}
+            fit="width"
+            autoFocus={TYPED_ANSWER_TYPES.has(currentItem.answerType)}
+            header={header}
+            problem={buildProblem(currentItem)}
+            picture={revealPicture(currentItem, tokenState, mode === "abstract", firstSubmit)}
+            line={line}
+            prompt={retry.phase === "ask" && revealStage >= 2 && !(columnReveal && tight) ? "Now you — use the picture." : null}
+            input={(() => {
+              const { answerType } = currentItem;
+
+              if (answerType === "column") {
+                // Re-ask (§9.3): answer row emptied, marks reset, cursor on the
+                // ones cell, pad live after ~900ms (revealStage 2). A second
+                // miss fills the answer on yellow AND draws the correct marks.
+                return (
+                  <div style={{ width: "100%" }}>
+                    <ColumnAnswerInput
+                      key={`${currentItem.itemKey}:reask`}
+                      item={currentItem}
+                      marks={reaskMarks}
+                      marksInteractive={retry.phase === "ask" && revealStage >= 2}
+                      onTopTap={makeTopTap(reaskMarks, setReaskMarks)}
+                      markNotice={markNotice}
+                      onUndoMarks={() => setReaskMarks(emptyMarks())}
+                      onSubmit={handleRetryColumnSubmit}
+                      live={retry.phase === "ask" && revealStage >= 2}
+                      state={retry.phase === "done" ? "correct" : retry.phase === "missed" ? "missed" : "input"}
+                      fill={retry.phase === "ask" || retry.phase === "idle" ? null : correctDigitCells(currentItem)}
+                      fillMarks={retry.phase === "missed" ? canonicalMarks(currentItem) : null}
+                      compact={tight}
+                      hintRow={!snug}
+                      reserveHintRow={!snug}
+                      tradeVerb={TRADE.verb}
+                    />
+                  </div>
+                );
+              }
+
+              if (answerType === "singleNumber") {
+                return (
+                  <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, width: "100%" }}>
+                    <input
+                      type="number" inputMode="numeric"
+                      value={retry.phase === "missed" ? String(currentItem.correctAnswer) : (retry.value ?? "")}
+                      placeholder="?"
+                      disabled={retry.phase !== "ask" || revealStage < 2}
+                      onChange={(e) => setRetry((r) => ({ ...r, value: e.target.value.replace(/\D/g, "") }))}
+                      onKeyDown={handleRetryKeyDown}
+                      style={{
+                        width: "clamp(110px, 36vw, 160px)", height: "64px", boxSizing: "border-box",
+                        fontSize: "clamp(32px, 9vw, 44px)", fontFamily: "'Shrikhand', cursive",
+                        fontWeight: 400, textAlign: "center", border: "none",
+                        borderBottom: `4px solid ${COLORS.black}`,
+                        backgroundColor: retry.phase === "missed" ? COLORS.yellow : retry.phase === "done" ? COLORS.green : COLORS.cream,
+                        color: COLORS.black, outline: "none", padding: "2px 0",
+                        WebkitAppearance: "none", MozAppearance: "textfield",
+                        animation: retry.phase === "done" ? "correctPulse 0.4s ease" : "none",
+                        transition: "background-color 0.3s ease",
+                      }}
+                    />
+                    {retry.phase === "ask" && revealStage >= 2 && (
+                      <BrutalButton onClick={handleRetrySubmit} bg={COLORS.yellow} style={{ minHeight: 48, fontSize: 18, flex: 1 }}>Check</BrutalButton>
+                    )}
+                  </div>
+                );
+              }
+
+              return null;
+            })()}
+          />
+        );
+      })()}
+
       {achievementQueue.length > 0 && (
         <AchievementPopup
           achievement={achievementQueue[0]}
-          onDismiss={() => setAchievementQueue(prev => prev.slice(1))}
+          onDismiss={() => setAchievementQueue((prev) => prev.slice(1))}
         />
       )}
     </div>

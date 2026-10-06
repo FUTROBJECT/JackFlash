@@ -152,11 +152,13 @@ function ModuleScreen({ selectedModule, onSelectModule, onNext, onBack }) {
 
   // Placeholder future modules (registered modules render above, including
   // locked ones — only list modules that don't exist yet)
+  // A placeholder drops out as soon as its module registers, so a shipped
+  // module never also appears as "Coming soon".
   const futureModules = [
     { id: "connections", name: "Connections", label: "Coming soon" },
     { id: "add", name: "Add + Subtract", label: "Coming soon" },
     { id: "placeValue", name: "Place Value", label: "Coming soon" },
-  ];
+  ].filter((f) => !modules.some((m) => m.id === f.id));
 
   return (
     <div style={{

@@ -104,17 +104,11 @@ const MODULE_ACHIEVEMENT_ICONS = {
   "conn-the-connector":    "🏆",
   "conn-summit":           "🏔️",
   // Add & Subtract module achievements
-  "add-bond-boss":         "🔗",
+  // (pass 1 — add-master and the mental / words achievements arrive with pass 2)
+  "add-carry-captain":     "⚓",
+  "add-take-away-pro":     "➖",
   "add-ten-maker":         "🔟",
-  "add-fact-flash":        "⚡",
-  "add-family-finder":     "🔄",
-  "add-mystery-number":    "❓",
-  "add-tier-two":          "🚪",
-  "add-regroup-ranger":    "🏗️",
-  "add-mental-whiz":       "🧠",
-  "add-bar-builder":       "📊",
-  "add-master":            "🏆",
-  "add-bond-pro":          "💯",
+  "add-zero-crosser":      "🌉",
   // Place Value module achievements
   "pv-disc-boss":          "🪙",
   "pv-digit-detective":    "🔍",

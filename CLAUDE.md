@@ -46,9 +46,9 @@ definition carries: `id, name, groups, freeContent, skillLabels, pool` (or
 |---|---|---|
 | Multiply & Divide | `multiply` | shipped — **the free module** (all groups free) |
 | Fractions | `fractions` | shipped — $3.99, **Foundations group free** (sample to drive conversion) |
-| Add & Subtract | `add` | built, **not wired** (imports commented in App.jsx) — v1.1 |
+| Add & Subtract | `add` | **pass 1 wired for test drive** (colAdd, colSub, facts; `available: false`, all built groups in `freeContent` until launch) — spec `docs/add-spec.md`; pass 2 = mental + words |
 | Connections (capstone word problems) | `connections` | built, **not wired** — v1.2 |
-| Place Value | `placeValue` | not built (spec pattern: docs/fractions-spec.md) |
+| Place Value | `placeValue` | built + wired for test drive (`available: false`, `freeContent` widened until launch) — spec `docs/place-value-spec.md` |
 
 To ship a staged module: uncomment its import + routing branch in `App.jsx`,
 flip its product's `available: true` and entitlement mapping in
@@ -137,12 +137,15 @@ submission). Read it before any store-facing work. Key state:
 - **Fractions groups**: `foundations` (F1–F4), `equivalent` (E1–E4),
   `compare` (C1–C2), `addSubtract` (A1–A4). Skill codes appear in itemKeys
   and the progress grid.
-- **Add groups**: tiered — N Number Bonds, M Make a Ten, F Facts,
-  K Fact Families, X Missing Numbers (tier 1); R Big-Number Adding,
-  S Mental Tricks (tier 2).
-- **answerType** (fractions/add): `choice4`, `tapTwo(/OrEqual)`, `orderThree`,
-  `fractionInput`, `singleNumber`, `buildBar` — the practice screen picks the
-  input component by this field.
+- **Add groups** (no tier gate): `colAdd` (A1–A3), `colSub` (S1–S3, S3 =
+  across zeros), `mental` (M1–M3, pass 2), `words` (W1–W3, pass 2), and
+  `facts` (F1–F2) — a `supporting: true` group that stays out of the default
+  draw (reached by skill focus or a parent group lock).
+- **answerType** (fractions/placeValue/add): `choice4`, `tapTwo(/OrEqual)`,
+  `orderThree`, `fractionInput`, `singleNumber`, `buildBar`, `buildNumber`,
+  `column` (Add's written column method: in-app right-to-left digit pad in
+  `src/shared/ColumnMethod.jsx`, no `<input>`, no auto-submit) — the practice
+  screen picks the input component by this field.
 
 ## File map
 
