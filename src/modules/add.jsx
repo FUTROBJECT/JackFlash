@@ -407,7 +407,11 @@ export function initDiscState(item) {
   if (item.op === "+") {
     return { counts: A, counts2: digitArr(item.b, cols), carried: [...zeros], taken: [...zeros] };
   }
-  return { counts: A, counts2: null, carried: [...zeros], taken: [...zeros] };
+  // asked[j]: the child tried column j's take and came up short. A
+  // subtraction Regroup button only appears for a column that lends to an
+  // asked column (see tradeableFor), so a problem that needs no regrouping
+  // never shows one.
+  return { counts: A, counts2: null, carried: [...zeros], taken: [...zeros], asked: zeros.map(() => false) };
 }
 
 export function addTotal(st, i) {
@@ -468,10 +472,15 @@ export function subRegroupCheck(item, have, done, i) {
   const codes = placeCodes(cols);
   const B = digitArr(item.b, cols);
   const short = (j) => !done[j] && have[j] < B[j];
+  // serves = every short column that i is the nearest lender for: scanning
+  // right, through empty columns (across zeros), stopping at the first
+  // column that has something (it lends to whatever lies beyond it).
+  const serves = [];
   for (let j = i + 1; j < cols; j++) {
-    if (short(j)) return { ok: true };
-    if (have[j] > 0) break; // a closer column has something: it lends, not i
+    if (short(j)) serves.push(j);
+    if (have[j] > 0) break;
   }
+  if (serves.length > 0) return { ok: true, serves };
   const r = i + 1;
   if (r >= cols) return { ok: false, notice: `No need to ${REGROUP.verb} here.` };
   const place = codes[r];
@@ -495,6 +504,9 @@ export function chartRegroupCheck(item, st, i) {
 export function takeSub(st, i, n) {
   if (st.taken[i] > 0) return { state: st, notice: null };
   const have = uncrossed(st, i);
+  // A refused take marks the column as asked, which reveals the Regroup
+  // button on the column that should lend to it.
+  const askedSt = { ...st, asked: (st.asked || st.counts.map(() => false)).map((v, k) => v || k === i) };
   if (have >= n) {
     const taken = [...st.taken];
     taken[i] = n;
@@ -504,14 +516,14 @@ export function takeSub(st, i, n) {
   const p = codes[i];
   if (i > 0 && uncrossed(st, i - 1) >= 1) {
     const first = have === 0 ? `No ${PL_PLUR[p]} left.` : `Only ${have} ${have === 1 ? PL_SING[p] : PL_PLUR[p]}.`;
-    return { state: st, notice: `${first} ${REGROUP.noun} 1 ${PL_SING[codes[i - 1]]} into 10 ${PL_PLUR[p]} first.` };
+    return { state: askedSt, notice: `${first} ${REGROUP.noun} 1 ${PL_SING[codes[i - 1]]} into 10 ${PL_PLUR[p]} first.` };
   }
   let lender = -1;
   for (let k = i - 1; k >= 0; k--) { if (uncrossed(st, k) >= 1) { lender = k; break; } }
   if (i > 0 && lender >= 0) {
-    return { state: st, notice: `No ${PL_PLUR[codes[i - 1]]} yet — ${REGROUP.verb} 1 ${PL_SING[codes[lender]]} first.` };
+    return { state: askedSt, notice: `No ${PL_PLUR[codes[i - 1]]} yet — ${REGROUP.verb} 1 ${PL_SING[codes[lender]]} first.` };
   }
-  return { state: st, notice: `Not enough ${PL_PLUR[p]} to take ${n}.` };
+  return { state: askedSt, notice: `Not enough ${PL_PLUR[p]} to take ${n}.` };
 }
 
 // Per-column "Trade →" visibility + long labels for the interactive chart.
@@ -525,7 +537,11 @@ export function tradeableFor(item, st) {
       flags.push(canTradeAdd(st, i));
       labels.push(i > 0 ? `10 ${PL_PLUR[codes[i]]} → 1 ${PL_SING[codes[i - 1]]}` : "");
     } else {
-      flags.push(canTradeSub(st, i));
+      // Only where it's needed AND the child has already found the column
+      // short by trying its take — he discovers the need; the app never
+      // advertises a regroup the problem doesn't have.
+      const check = canTradeSub(st, i) ? chartRegroupCheck(item, st, i) : { ok: false };
+      flags.push(check.ok && check.serves.some((j) => !!st.asked?.[j]));
       labels.push(i < cols - 1 ? `1 ${PL_SING[codes[i]]} → 10 ${PL_PLUR[codes[i + 1]]}` : "");
     }
   }
@@ -917,13 +933,16 @@ function runAddSelfCheck() {
     if (i.op === "-") {
       const B = digitArr(i.b, i.columns);
       let cs = initDiscState(i);
+      if (tradeableFor(i, cs).flags.some(Boolean)) fail(`${i.itemKey}: a Regroup button shows before any take was tried`);
       for (let p = i.columns - 1; p >= 0; p--) {
         for (let round = 0; round < 4 && uncrossed(cs, p) < B[p]; round++) {
+          cs = takeSub(cs, p, B[p]).state; // the child tries the take first and comes up short
           let L = -1;
           for (let k = p - 1; k >= 0; k--) { if (uncrossed(cs, k) >= 1) { L = k; break; } }
           if (L < 0) { fail(`${i.itemKey}: no lender for column ${p}`); break; }
           for (let m = L; m < p; m++) {
             if (!chartRegroupCheck(i, cs, m).ok) fail(`${i.itemKey}: needed regroup refused at column ${m}`);
+            if (!tradeableFor(i, cs).flags[m]) fail(`${i.itemKey}: no Regroup button on column ${m} after a short take`);
             cs = tradeSub(cs, m);
           }
         }
