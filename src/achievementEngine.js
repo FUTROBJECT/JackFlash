@@ -104,9 +104,11 @@ const MODULE_ACHIEVEMENT_ICONS = {
   "conn-the-connector":    "🏆",
   "conn-summit":           "🏔️",
   // Add & Subtract module achievements
-  // (pass 1 — add-master and the mental / words achievements arrive with pass 2)
   "add-carry-captain":     "⚓",
   "add-take-away-pro":     "➖",
+  "add-head-for-numbers":  "🧠",
+  "add-bar-builder":       "📊",
+  "add-master":            "🏆",
   "add-ten-maker":         "🔟",
   "add-zero-crosser":      "🌉",
   // Place Value module achievements

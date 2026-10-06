@@ -46,7 +46,7 @@ definition carries: `id, name, groups, freeContent, skillLabels, pool` (or
 |---|---|---|
 | Multiply & Divide | `multiply` | shipped — **the free module** (all groups free) |
 | Fractions | `fractions` | shipped — $3.99, **Foundations group free** (sample to drive conversion) |
-| Add & Subtract | `add` | **pass 1 wired for test drive** (colAdd, colSub, facts; `available: false`, all built groups in `freeContent` until launch) — spec `docs/add-spec.md`; pass 2 = mental + words |
+| Add & Subtract | `add` | **built + wired for test drive** (colAdd, colSub, mental, words, facts; `available: false`, all groups in `freeContent` until launch) — spec `docs/add-spec.md`, stories `docs/add-word-problems.md` |
 | Connections (capstone word problems) | `connections` | built, **not wired** — v1.2 |
 | Place Value | `placeValue` | built + wired for test drive (`available: false`, `freeContent` widened until launch) — spec `docs/place-value-spec.md` |
 
@@ -138,7 +138,8 @@ submission). Read it before any store-facing work. Key state:
   `compare` (C1–C2), `addSubtract` (A1–A4). Skill codes appear in itemKeys
   and the progress grid.
 - **Add groups** (no tier gate): `colAdd` (A1–A3), `colSub` (S1–S3, S3 =
-  across zeros), `mental` (M1–M3, pass 2), `words` (W1–W3, pass 2), and
+  across zeros), `mental` (M1–M3, open number line), `words` (W1–W3, bar
+  models; stories in `docs/add-word-problems.md`), and
   `facts` (F1–F2) — a `supporting: true` group that stays out of the default
   draw (reached by skill focus or a parent group lock).
 - **answerType** (fractions/placeValue/add): `choice4`, `tapTwo(/OrEqual)`,

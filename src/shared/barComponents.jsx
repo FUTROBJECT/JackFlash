@@ -10,6 +10,7 @@
  * src/multiplication-practice.jsx.
  *
  * Add & Subtract additions (fourth consumer):
+ *   OpenNumberLine    — open number line with jump arcs (mental math, M1–M3)
  *   TenFrame          — interactive two-row ten-frame for M-group CPA
  *   PlaceValueChart   — interactive column trade for R-group CPA
  *   PartWholeBar      — missing-cell part-whole bar model for W1
@@ -1469,41 +1470,101 @@ export function PlaceValueStrips({
 }
 
 // ---------------------------------------------------------------------------
+// SVG answer token — the SVG twin of DerivationToken (HTML spans can't live
+// inside the bars' <svg>, and <foreignObject> misplaces under the reveal's CSS
+// scale on iOS). `state`: "blank" (yellow chip, no text — the answer is not on
+// screen), "numeral" (the cell colour with the value — an intermediate or a
+// second-miss fill) or "correct" (green). Same three states as DerivationToken
+// so ONE tokenState can drive the whole reveal (docs/confidence-pass-spec.md C1).
+// ---------------------------------------------------------------------------
+function svgTokenFill(state, baseFill) {
+  if (state === "blank") return COLORS.yellow;
+  if (state === "correct") return COLORS.green;
+  return baseFill;
+}
+
+// Module-scope SVG pieces for PartWholeBar / SchematicComparison. They must NOT
+// be declared inside those components: a component defined in a render body is a
+// new type every render, so React remounts it and the dotPop animation replays on
+// every keystroke in the answer box. transformBox/transformOrigin make the pop
+// grow from the cell's own centre rather than the viewBox origin.
+const POP_STYLE = (animate, delay = "") => ({
+  animation: animate ? `dotPop 0.3s ease ${delay}both` : "none",
+  transformBox: "fill-box", transformOrigin: "center",
+});
+
+function PwCell({ x, y, w, h, label, missing, color, missingToken, missingValue, fontSize, animate }) {
+  const tokened = missing && missingToken;
+  const text = tokened
+    ? (missingToken === "blank" ? "" : (missingValue ?? ""))
+    : (missing ? "?" : label);
+  return (
+    <g>
+      <rect x={x} y={y} width={w} height={h}
+        fill={tokened ? svgTokenFill(missingToken, color) : (missing ? COLORS.cream : color)}
+        stroke={COLORS.black} strokeWidth={2.5} rx={4}
+        style={POP_STYLE(animate)}
+      />
+      <text x={x + w / 2} y={y + h / 2 + 1} textAnchor="middle" dominantBaseline="central"
+        fontFamily="'Shrikhand', cursive" fontSize={fontSize} fill={COLORS.black}>
+        {text}
+      </text>
+    </g>
+  );
+}
+
+function SvgCaption({ x, y, text, size, anchor = "middle" }) {
+  return text ? (
+    <text x={x} y={y} textAnchor={anchor} dominantBaseline="central"
+      fontFamily="'Space Mono', monospace" fontSize={size} fontWeight={700} fill={COLORS.black}>
+      {text}
+    </text>
+  ) : null;
+}
+
+// ---------------------------------------------------------------------------
 // PartWholeBar — Singapore part-whole bar model for W1 word problems.
 // Responsive: viewBox + width:100%.
+//
+// Opt-in props (all default off — with none of them set the markup is
+// byte-for-byte what it was before):
+//   missingToken / missingValue  render the unknown cell as a reveal token
+//                  ("blank" | "numeral" | "correct") instead of "?"
+//   labelWhole     overrides the whole's displayed text (like labelA/labelB;
+//                  used to mask a carried-in value as "?")
+//   names          { whole, partA, partB } small captions: the whole's above its
+//                  bar, the parts' under theirs
+//   compact        ~70% bar height, for W3's stacked pair
 // ---------------------------------------------------------------------------
 export function PartWholeBar({
   whole, partA, partB,
   missingIs = null,  // "whole" | "partA" | "partB"
-  labelA = null, labelB = null,
+  labelA = null, labelB = null, labelWhole = null,
+  missingToken = null, missingValue = null,
+  names = null, compact = false,
   opacity = 1, animate = false,
 }) {
-  const W = 280, H = 100;
-  const barTop = 8, barH = 32;
-  const partTop = 58, partH = 30;
+  const W = 280;
+  const named = !!names;
+  const cap = named ? 14 : 0;           // caption band
+  const barH = compact ? 24 : 32;
+  const gap = compact ? 12 : 18;        // connector length
+  const partH = compact ? 22 : 30;
+  const barTop = 8 + cap;
+  const partTop = barTop + barH + gap;
+  const H = partTop + partH + 12 + cap;
+  const fontSize = 13 + (compact ? 0 : 1); // 14 normal, 13 compact
 
-  function Cell({ x, y, w, h, label, missing, color }) {
-    return (
-      <g>
-        <rect x={x} y={y} width={w} height={h}
-          fill={missing ? COLORS.cream : color}
-          stroke={COLORS.black} strokeWidth={2.5} rx={4}
-          style={{ animation: animate ? "dotPop 0.3s ease both" : "none" }}
-        />
-        <text x={x + w / 2} y={y + h / 2 + 1} textAnchor="middle" dominantBaseline="central"
-          fontFamily="'Shrikhand', cursive" fontSize={14} fill={COLORS.black}>
-          {missing ? "?" : label}
-        </text>
-      </g>
-    );
-  }
-
+  const partAW = (W - 24) / 2;
+  const capSize = compact ? 12 : 11;
+  const cellProps = { missingToken, missingValue, fontSize, animate };
   return (
     <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: 320 }}>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
+        {named && <SvgCaption x={W / 2} y={barTop - 8} text={names.whole} size={capSize} />}
         {/* Whole bar */}
-        <Cell x={8} y={barTop} w={W - 16} h={barH}
-          label={whole} missing={missingIs === "whole"} color={COLORS.yellow}
+        <PwCell x={8} y={barTop} w={W - 16} h={barH} {...cellProps}
+          label={labelWhole || whole} missing={missingIs === "whole"} color={COLORS.yellow}
         />
         {/* Bracket lines */}
         <line x1={W / 2} y1={barTop + barH} x2={W / 2} y2={partTop}
@@ -1511,13 +1572,75 @@ export function PartWholeBar({
         <line x1={18} y1={partTop} x2={W - 18} y2={partTop}
           stroke={COLORS.black} strokeWidth={2} />
         {/* Part A */}
-        <Cell x={8} y={partTop} w={(W - 24) / 2} h={partH}
+        <PwCell x={8} y={partTop} w={partAW} h={partH} {...cellProps}
           label={labelA || partA} missing={missingIs === "partA"} color={COLORS.blue}
         />
         {/* Part B */}
-        <Cell x={W / 2 + 4} y={partTop} w={(W - 24) / 2} h={partH}
+        <PwCell x={W / 2 + 4} y={partTop} w={partAW} h={partH} {...cellProps}
           label={labelB || partB} missing={missingIs === "partB"} color={COLORS.green}
         />
+        {named && <SvgCaption x={8 + partAW / 2} y={partTop + partH + 10} text={names.partA} size={capSize} />}
+        {named && <SvgCaption x={W / 2 + 4 + partAW / 2} y={partTop + partH + 10} text={names.partB} size={capSize} />}
+      </svg>
+    </div>
+  );
+}
+
+// ComparisonBar's `schematic` layout (word problems): names sit as captions above
+// their bars (names run to ~13 characters — too long for the classic left
+// gutter) and the bars are NOT drawn to scale (fixed 62% / 100%), so a bar's
+// length never leaks the unknown's size. The difference chip sits under the gap.
+function SchematicComparison({
+  baseLabel, biggerLabel, missingIs, cellText, cellFill, baseValue, biggerValue,
+  diffLabel, compact, opacity, animate,
+}) {
+  const W = 280;
+  const barH = compact ? 20 : 28;
+  const rectH = compact ? 17 : 20;
+  const xL = 8;
+  const bigW = W - 16;
+  const baseW = Math.round(bigW * 0.62);
+  const baseTop = compact ? 14 : 16;
+  const baseBot = baseTop + barH;
+  const bigTop = baseBot + (compact ? 17 : 20);
+  const bigBot = bigTop + barH;
+  const rectY = bigBot + (compact ? 5 : 7);
+  const H = rectY + rectH + (compact ? 4 : 6);
+  const font = 13;
+  return (
+    <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: 320 }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
+        <SvgCaption x={xL + 2} y={baseTop - 7} text={baseLabel} size={compact ? 12 : 11} anchor="start" />
+        <rect x={xL} y={baseTop} width={baseW} height={barH}
+          fill={cellFill("base", COLORS.blue)} stroke={COLORS.black} strokeWidth={2.5} rx={4}
+          style={POP_STYLE(animate)} />
+        <text x={xL + baseW / 2} y={baseTop + barH / 2 + 1} textAnchor="middle" dominantBaseline="central"
+          fontFamily="'Shrikhand', cursive" fontSize={font} fill={COLORS.black}>
+          {cellText("base", baseValue)}
+        </text>
+        <SvgCaption x={xL + 2} y={baseBot + (compact ? 8 : 10)} text={biggerLabel} size={compact ? 12 : 11} anchor="start" />
+        <rect x={xL} y={bigTop} width={bigW} height={barH}
+          fill={cellFill("bigger", COLORS.orange)} stroke={COLORS.black} strokeWidth={2.5} rx={4}
+          style={POP_STYLE(animate, "0.1s ")} />
+        <text x={xL + bigW / 2} y={bigTop + barH / 2 + 1} textAnchor="middle" dominantBaseline="central"
+          fontFamily="'Shrikhand', cursive" fontSize={font} fill={COLORS.black}>
+          {cellText("bigger", biggerValue)}
+        </text>
+        <g style={{ animation: animate ? "fadeSlideUp 0.3s ease 0.15s both" : "none" }}>
+          <line x1={xL + baseW} y1={bigTop + 6} x2={xL + bigW} y2={bigTop + 6}
+            stroke={COLORS.black} strokeWidth={1.5} strokeDasharray="3 2" />
+          <line x1={xL + baseW} y1={bigTop} x2={xL + baseW} y2={rectY + rectH - 4}
+            stroke={COLORS.black} strokeWidth={1.5} />
+          <line x1={xL + bigW} y1={bigTop} x2={xL + bigW} y2={rectY + rectH - 4}
+            stroke={COLORS.black} strokeWidth={1.5} />
+          <rect x={xL + baseW + 2} y={rectY} width={bigW - baseW - 4} height={rectH}
+            fill={cellFill("diff", COLORS.yellow)} stroke={COLORS.black} strokeWidth={2} rx={3} />
+          <text x={xL + baseW + (bigW - baseW) / 2} y={rectY + rectH / 2 + 1}
+            textAnchor="middle" dominantBaseline="central"
+            fontFamily="'Shrikhand', cursive" fontSize={12} fill={COLORS.black}>
+            {cellText("diff", diffLabel)}
+          </text>
+        </g>
       </svg>
     </div>
   );
@@ -1526,74 +1649,120 @@ export function PartWholeBar({
 // ---------------------------------------------------------------------------
 // ComparisonBar — two-bar comparison model for W2 word problems.
 // Responsive: viewBox + width:100%.
+//
+// Opt-in props (all default off — unchanged markup when none are set):
+//   missingToken / missingValue  the unknown cell as a reveal token (see PartWholeBar)
+//   valueText      { base, bigger, diff } display strings that override the
+//                  numbers (formatted with commas, or "?" to mask a carried-in value)
+//   schematic      a separate layout: name captions above the bars, fixed bar
+//                  proportions (NOT drawn to scale, so lengths never leak the
+//                  unknown's size)
+//   compact        ~70% bar height, for W3's stacked pair
 // ---------------------------------------------------------------------------
 export function ComparisonBar({
   baseValue, baseLabel = "Base",
   biggerValue, biggerLabel = "Bigger",
   diffLabel = null,
   missingIs = null,  // "bigger" | "base" | "diff"
+  missingToken = null, missingValue = null,
+  valueText = null, schematic = false, compact = false,
   opacity = 1, animate = false,
 }) {
-  const W = 280, H = 110;
-  const barH = 28;
-  const maxVal = Math.max(baseValue || 1, biggerValue || 1, 1);
+  const W = 280;
+  const H = compact ? 76 : 110;
+  const barH = compact ? 20 : 28;
+  const y1 = compact ? 8 : 18;               // base bar top
+  const y2 = compact ? 36 : 58;              // bigger bar top
+  const rectY = y2 + (compact ? 20 : 22);    // difference chip
+  const rectH = compact ? 16 : 18;
+  const lineEnd = compact ? rectY + rectH - 6 : 94;
+  const fontMain = compact ? 12 : 13;
+  const fontDiff = compact ? 10.5 : 11;
   const availW = W - 76;
+  const maxVal = Math.max(baseValue || 1, biggerValue || 1, 1);
   const baseW = Math.max(28, Math.round(((baseValue || 0) / maxVal) * availW));
   const bigW = Math.max(28, Math.round(((biggerValue || 0) / maxVal) * availW));
+  const labelSize = 9;
+
+  // Text for a cell: the unknown goes through the token (or "?"), a masked
+  // value through valueText, everything else is the number.
+  const cellText = (which, value) => {
+    if (missingIs === which) {
+      if (missingToken) return missingToken === "blank" ? "" : (missingValue ?? "");
+      return "?";
+    }
+    if (valueText && valueText[which] != null) return valueText[which];
+    return value;
+  };
+  const cellFill = (which, color) => {
+    if (missingIs !== which) return color;
+    if (missingToken) return svgTokenFill(missingToken, color);
+    return COLORS.cream;
+  };
+
+  if (schematic) {
+    return (
+      <SchematicComparison
+        baseLabel={baseLabel} biggerLabel={biggerLabel} missingIs={missingIs}
+        cellText={cellText} cellFill={cellFill} baseValue={baseValue} biggerValue={biggerValue}
+        diffLabel={diffLabel} compact={compact} opacity={opacity} animate={animate}
+      />
+    );
+  }
 
   return (
     <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: 320 }}>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
         {/* Base label */}
-        <text x={50} y={22 + barH / 2} textAnchor="end" dominantBaseline="central"
-          fontFamily="'Space Mono', monospace" fontSize={9} fontWeight={700} fill={COLORS.black}>
+        <text x={50} y={y1 + 4 + barH / 2 - (compact ? 4 : 0)} textAnchor="end" dominantBaseline="central"
+          fontFamily="'Space Mono', monospace" fontSize={labelSize} fontWeight={700} fill={COLORS.black}>
           {baseLabel}
         </text>
         {/* Base bar */}
-        <rect x={55} y={18} width={baseW} height={barH}
-          fill={missingIs === "base" ? COLORS.cream : COLORS.blue}
+        <rect x={55} y={y1} width={baseW} height={barH}
+          fill={cellFill("base", COLORS.blue)}
           stroke={COLORS.black} strokeWidth={2.5} rx={4}
           style={{ animation: animate ? "dotPop 0.3s ease both" : "none" }}
         />
-        <text x={55 + baseW / 2} y={18 + barH / 2 + 1} textAnchor="middle" dominantBaseline="central"
-          fontFamily="'Shrikhand', cursive" fontSize={13} fill={COLORS.black}>
-          {missingIs === "base" ? "?" : baseValue}
+        <text x={55 + baseW / 2} y={y1 + barH / 2 + 1} textAnchor="middle" dominantBaseline="central"
+          fontFamily="'Shrikhand', cursive" fontSize={fontMain} fill={COLORS.black}>
+          {cellText("base", baseValue)}
         </text>
 
         {/* Bigger label */}
-        <text x={50} y={60 + barH / 2} textAnchor="end" dominantBaseline="central"
-          fontFamily="'Space Mono', monospace" fontSize={9} fontWeight={700} fill={COLORS.black}>
+        <text x={50} y={y2 + 2 + barH / 2} textAnchor="end" dominantBaseline="central"
+          fontFamily="'Space Mono', monospace" fontSize={labelSize} fontWeight={700} fill={COLORS.black}>
           {biggerLabel}
         </text>
         {/* Bigger bar */}
-        <rect x={55} y={58} width={bigW} height={barH}
-          fill={missingIs === "bigger" ? COLORS.cream : COLORS.orange}
+        <rect x={55} y={y2} width={bigW} height={barH}
+          fill={cellFill("bigger", COLORS.orange)}
           stroke={COLORS.black} strokeWidth={2.5} rx={4}
           style={{ animation: animate ? "dotPop 0.3s ease 0.1s both" : "none" }}
         />
-        <text x={55 + bigW / 2} y={58 + barH / 2 + 1} textAnchor="middle" dominantBaseline="central"
-          fontFamily="'Shrikhand', cursive" fontSize={13} fill={COLORS.black}>
-          {missingIs === "bigger" ? "?" : biggerValue}
+        <text x={55 + bigW / 2} y={y2 + barH / 2 + 1} textAnchor="middle" dominantBaseline="central"
+          fontFamily="'Shrikhand', cursive" fontSize={fontMain} fill={COLORS.black}>
+          {cellText("bigger", biggerValue)}
         </text>
 
         {/* Difference bracket (only when bigger > base) */}
         {bigW > baseW && (
           <g style={{ animation: animate ? "fadeSlideUp 0.3s ease 0.15s both" : "none" }}>
-            <line x1={55 + baseW} y1={64} x2={55 + bigW} y2={64}
+            <line x1={55 + baseW} y1={y2 + 6} x2={55 + bigW} y2={y2 + 6}
               stroke={COLORS.black} strokeWidth={1.5} strokeDasharray="3 2" />
-            <line x1={55 + baseW} y1={58} x2={55 + baseW} y2={94}
+            <line x1={55 + baseW} y1={y2} x2={55 + baseW} y2={lineEnd}
               stroke={COLORS.black} strokeWidth={1.5} />
-            <line x1={55 + bigW} y1={58} x2={55 + bigW} y2={94}
+            <line x1={55 + bigW} y1={y2} x2={55 + bigW} y2={lineEnd}
               stroke={COLORS.black} strokeWidth={1.5} />
-            <rect x={55 + baseW + 2} y={80}
-              width={Math.max(4, bigW - baseW - 4)} height={18}
-              fill={missingIs === "diff" ? COLORS.cream : COLORS.yellow}
+            <rect x={55 + baseW + 2} y={rectY}
+              width={Math.max(4, bigW - baseW - 4)} height={rectH}
+              fill={cellFill("diff", COLORS.yellow)}
               stroke={COLORS.black} strokeWidth={2} rx={3}
             />
-            <text x={55 + baseW + (bigW - baseW) / 2} y={89 + 1}
+            <text x={55 + baseW + (bigW - baseW) / 2} y={rectY + rectH / 2 + 1}
               textAnchor="middle" dominantBaseline="central"
-              fontFamily="'Shrikhand', cursive" fontSize={11} fill={COLORS.black}>
-              {missingIs === "diff" ? "?" : (diffLabel || (biggerValue - baseValue))}
+              fontFamily="'Shrikhand', cursive" fontSize={fontDiff} fill={COLORS.black}>
+              {cellText("diff", diffLabel || (biggerValue - baseValue))}
             </text>
           </g>
         )}
@@ -1684,6 +1853,159 @@ export function JumpStrip({ start, jumps = [], animate = false }) {
           </span>
         </React.Fragment>
       ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// OpenNumberLine — the mental-math model (docs/add-spec.md §4.3, §11.3): a
+// horizontal line with the start number ticked and labelled, an arc per jump
+// labelled with the jump ("+30", "+8", "−1"), and a landing tick + value chip
+// per jump. Responsive: viewBox + width:100%.
+//
+// Props
+//   start           the given start number (always printed)
+//   jumps           [{ label, delta }] — the split is fixed per item
+//   landingTokens   per-landing chip state: "blank" (yellow chip, no number — the
+//                   child computes it; the default), "numeral" (an intermediate
+//                   printed in the reveal) or "correct". Same states as
+//                   DerivationToken, so one tokenState can drive the answer chip.
+//   drawn           how many jumps are drawn so far (default: all)
+//   interactive     Concrete: render jump buttons (≥44px) under the line, tapped
+//                   in order; each draws its arc and lights its landing tick
+//   onJump(i)       called with the jump's index
+//   disabled        keep the jump buttons on screen but inert (the card must not
+//                   shrink when the answer is submitted)
+//   animate         pop the arcs in
+//   opacity         the Pictorial fade
+// Landing chips stay BLANK before the reveal (§4.0): the line never prints an
+// answer digit — only the given start, the jump sizes and (in the reveal) the
+// intermediate landing.
+// ---------------------------------------------------------------------------
+export function OpenNumberLine({
+  start, jumps = [], landingTokens = null, drawn = null,
+  interactive = false, onJump = null, disabled = false, animate = false, opacity = 1,
+}) {
+  const W = 300, baseY = 66, H = 112;
+  const nDrawn = drawn == null ? jumps.length : Math.max(0, Math.min(jumps.length, drawn));
+
+  // Arc widths: 58..124 by size. 58 = chip width (46) + stroke + a 10px gap, so two
+  // neighbouring landing chips never touch (M3's "+30, −1").
+  const maxAbs = Math.max(1, ...jumps.map((j) => Math.abs(j.delta)));
+  const widths = jumps.map((j) => 58 + 66 * (Math.abs(j.delta) / maxAbs));
+  const raw = [0];
+  jumps.forEach((j, i) => raw.push(raw[i] + (j.delta >= 0 ? 1 : -1) * widths[i]));
+  const minX = Math.min(...raw);
+  const maxX = Math.max(...raw);
+  const off = (W - (maxX - minX)) / 2 - minX;
+  const xs = raw.map((x) => x + off);
+  const values = [start];
+  jumps.forEach((j, i) => values.push(values[i] + j.delta));
+
+  const lineL = Math.max(6, Math.min(...xs) - 20);
+  const lineR = Math.min(W - 6, Math.max(...xs) + 20);
+
+  // A jump that reverses direction gets a taller arc so its label clears the
+  // previous arc (M3's "+30, then −1").
+  const heights = jumps.map((j, i) => {
+    const reversal = i > 0 && Math.sign(j.delta) !== Math.sign(jumps[i - 1].delta);
+    return (reversal ? 40 : 28);
+  });
+
+  const chip = (x, state, value, key) => {
+    const w = 46, h = 26, y = baseY + 12;
+    const fill = state === "blank" ? COLORS.yellow : state === "correct" ? COLORS.green : "white";
+    return (
+      <g key={key} style={{ animation: animate ? "fadeSlideUp 0.3s ease both" : "none" }}>
+        <rect x={x - w / 2} y={y} width={w} height={h} rx={5} fill={fill} stroke={COLORS.black} strokeWidth={2.5} />
+        {state !== "blank" && (
+          <text x={x} y={y + h / 2 + 1} textAnchor="middle" dominantBaseline="central"
+            fontFamily="'Shrikhand', cursive" fontSize={15} fill={COLORS.black}>{value}</text>
+        )}
+      </g>
+    );
+  };
+
+  return (
+    <div style={{ width: "100%", maxWidth: 340 }}>
+      <div style={{ opacity, transition: "opacity 0.6s ease" }}>
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
+          <line x1={lineL} y1={baseY} x2={lineR} y2={baseY} stroke={COLORS.black} strokeWidth={3} strokeLinecap="round" />
+          {/* ticks: start is always lit; a landing lights when its jump is drawn */}
+          {xs.map((x, i) => {
+            const lit = i === 0 || i <= nDrawn;
+            return (
+              <circle key={`t${i}`} cx={x} cy={baseY} r={5.5}
+                fill={i === 0 ? COLORS.black : lit ? COLORS.yellow : "white"}
+                stroke={COLORS.black} strokeWidth={2.5} />
+            );
+          })}
+          {/* arcs */}
+          {jumps.slice(0, nDrawn).map((j, i) => {
+            const xa = xs[i], xb = xs[i + 1];
+            const mid = (xa + xb) / 2;
+            const h = heights[i];
+            const cy = baseY - 2 * h;
+            const dirX = xb - mid, dirY = baseY - cy;
+            const len = Math.hypot(dirX, dirY) || 1;
+            const ux = dirX / len, uy = dirY / len;
+            const tip = [xb, baseY - 6];
+            const bx = tip[0] - ux * 9, by = tip[1] - uy * 9;
+            const px = -uy * 4.5, py = ux * 4.5;
+            const pillW = 14 + 8 * j.label.length;
+            const pillY = baseY - h - 22;
+            // A reversing jump's pill slides away from the previous jump's pill.
+            const reversal = i > 0 && Math.sign(j.delta) !== Math.sign(jumps[i - 1].delta);
+            const pillX = reversal ? mid + 10 * Math.sign(jumps[i - 1].delta) : mid;
+            return (
+              <g key={`a${i}`} style={{ animation: animate ? `fadeSlideUp 0.3s ease ${i * 120}ms both` : "none" }}>
+                <path d={`M ${xa} ${baseY - 6} Q ${mid} ${cy} ${xb} ${baseY - 6}`}
+                  fill="none" stroke={COLORS.black} strokeWidth={2.5} strokeLinecap="round" />
+                <polygon points={`${tip[0]},${tip[1]} ${bx + px},${by + py} ${bx - px},${by - py}`} fill={COLORS.black} />
+                <rect x={pillX - pillW / 2} y={pillY} width={pillW} height={20} rx={5}
+                  fill={COLORS.yellow} stroke={COLORS.black} strokeWidth={2.5} />
+                <text x={pillX} y={pillY + 11} textAnchor="middle" dominantBaseline="central"
+                  fontFamily="'Space Mono', monospace" fontSize={13} fontWeight={700} fill={COLORS.black}>
+                  {j.label}
+                </text>
+              </g>
+            );
+          })}
+          {/* chips: the given start, then one per drawn landing */}
+          {chip(xs[0], "numeral", start, "c0")}
+          {jumps.slice(0, nDrawn).map((j, i) => chip(xs[i + 1], (landingTokens && landingTokens[i]) || "blank", values[i + 1], `c${i + 1}`))}
+        </svg>
+      </div>
+      {interactive && (
+        <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 8, flexWrap: "wrap" }}>
+          {jumps.map((j, i) => {
+            const done = i < nDrawn;
+            const next = i === nDrawn;
+            return (
+              <PressButton
+                key={i}
+                disabled={!next || disabled}
+                onClick={() => onJump && onJump(i)}
+                aria-label={`Jump ${j.label}`}
+                style={{
+                  minWidth: 88, minHeight: 48, padding: "6px 14px", borderRadius: 8,
+                  border: BRUTAL_BORDER_SM,
+                  // Done / waiting buttons are "pressed in" in muted text at full
+                  // opacity (dimming the whole button fails contrast).
+                  color: next ? COLORS.black : "#666",
+                  backgroundColor: done ? "#EEE" : next ? COLORS.yellow : COLORS.cream,
+                  boxShadow: next ? BRUTAL_SHADOW_SM : "none",
+                  transform: next ? "none" : "translate(3px, 3px)",
+                  fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 16,
+                  cursor: next ? "pointer" : "default",
+                }}
+              >
+                {done ? "✓ " : ""}{j.label}
+              </PressButton>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

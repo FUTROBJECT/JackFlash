@@ -40,7 +40,7 @@ export const PRODUCTS = {
   "module.add.full": {
     id: "module.add.full",
     name: "Add & Subtract",
-    description: "Column adding & subtracting to 10,000 with number discs — plus a facts warm-up",
+    description: "Column adding & subtracting to 10,000 with number discs — plus mental math and bar-model word problems",
     gradeRange: "Grades 2–3",
     price: "$3.99",
     priceValue: 3.99,

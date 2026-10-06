@@ -27,8 +27,8 @@ import PlaceValuePractice from "./place-value-practice.jsx";
 import AddPractice from "./add-practice.jsx";
 // v1 ships Multiply/Divide + Fractions only. Connections (capstone) is built but
 // intentionally NOT registered in v1 — re-enable this import in v1.2 to ship it.
-// Place Value (pass 1: Groups B + V) and Add & Subtract (pass 1: Column Adding,
-// Column Subtracting, Facts Warm-Up) are registered for test-driving in the
+// Place Value (pass 1: Groups B + V) and Add & Subtract (Column Adding, Column
+// Subtracting, Mental Math, Word Problems, Facts Warm-Up) are registered for test-driving in the
 // preview/on-device build but their catalog products stay `available: false`
 // until launch pricing is wired.
 // import ConnectionsPractice from "./connections-practice.jsx";

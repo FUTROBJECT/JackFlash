@@ -1,7 +1,8 @@
 /**
  * AddPractice – the practice screen for the Add & Subtract module
  * (pass 1: groups colAdd A1–A3, colSub S1–S3 and the supporting facts F1–F2;
- * docs/add-spec.md §15). Mental Math and Word Problems arrive in pass 2.
+ * pass 2: mental M1–M3 on the open number line and words W1–W3 on bar models;
+ * docs/add-spec.md §15).
  *
  * Rewritten from place-value-practice.jsx (the newest screen): the same state
  * machine — retry/missCount/revealStage/comebackQueueRef/missedKeysRef/
@@ -14,7 +15,8 @@
  * Add-specific differences (docs/add-spec.md):
  *  - Two answerTypes only: `column` (right-to-left digit grid + in-app pad,
  *    shared/ColumnMethod.jsx — no <input>, no auto-submit) and `singleNumber`
- *    (facts). Every chart is the extended Place Value disc chart.
+ *    (facts, mental, words). Column and facts charts are the extended Place
+ *    Value disc chart; mental is the OpenNumberLine; words are the bar models.
  *  - NO speed gate anywhere (§8): updateMastery is never passed responseMs.
  *  - Retrieval finish line extended to Concrete (§8): at correct === 2 the
  *    chart starts hidden behind "Show me", in Concrete AND Pictorial.
@@ -35,6 +37,7 @@ import addModule, {
   ADD_POOL, REGROUP, shouldAllowSkill, wasAttempted, digitArr,
   initDiscState, tradeAdd, tradeSub, takeSub, tradeableFor, takeLabelsFor,
   afterTradesState, canonicalMarks, subRegroupCheck, chartRegroupCheck, correctDigitCells, diagnosedPlace, buildAddLine,
+  mentalPlan,
 } from "./modules/add.jsx";
 import { formatNumber } from "./modules/placeValue.jsx";
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
@@ -49,7 +52,9 @@ import { isContentAccessible } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
 import WrongAnswerReveal from "./shared/WrongAnswerReveal.jsx";
 import DerivationLine from "./shared/DerivationLine.jsx";
-import { PlaceValueChart, PressButton } from "./shared/barComponents.jsx";
+import {
+  PlaceValueChart, PressButton, OpenNumberLine, PartWholeBar, ComparisonBar,
+} from "./shared/barComponents.jsx";
 import {
   ColumnAnswerInput, emptyMarks, applyTopTap, mirrorChartTrade, subMarksView,
 } from "./shared/ColumnMethod.jsx";
@@ -78,11 +83,13 @@ const HEADER_TAILS = [
 // headers; the tight layout uses this one-liner and drops the prompt text.
 const TIGHT_HEADER = "Not yet — use the picture.";
 
-// Only `singleNumber` (facts) opens a keyboard; `column` is the in-app pad.
+// Only `singleNumber` (facts, mental, words) opens a keyboard; `column` is the in-app pad.
 const TYPED_ANSWER_TYPES = new Set(["singleNumber"]);
 
-function revealPictureMax(answerType, tight) {
-  if (answerType === "column") return tight ? "min(84px, 15dvh)" : "min(110px, 18dvh)";
+function revealPictureMax(item, tight) {
+  if (item.answerType === "column") return tight ? "min(84px, 15dvh)" : "min(110px, 18dvh)";
+  // W3's stacked bar pair needs more height than one picture to keep its captions legible.
+  if (item.group === "words" && item.steps.length > 1) return "min(220px, 36dvh)";
   return "min(150px, 24dvh)";
 }
 
@@ -149,10 +156,208 @@ function QuestionChart({ item, disc, interactive, opacity, animate, notice, onTr
   );
 }
 
-function ScaffoldForItem({ item, disc, showScaffold, scaffoldOpacity, mode, interactive, notice, onTrade, onTake, onStartOver }) {
+// ---------------------------------------------------------------------------
+// Word-problem bar models (§4.4, §11.4). One WordBar per step: the correct
+// model with the unknown as "?" before the answer (never a number — §4.0), or,
+// in the reveal, the unknown driven by the ONE tokenState. A W3 pair is drawn
+// compact and stacked; step 2's carried-in cell is "?" until the reveal.
+// ---------------------------------------------------------------------------
+function WordBar({ step, unknownToken = null, unknownValue = null, carryText = "?", compact = false, animate = false }) {
+  const sp = step.spec;
+  const show = (v) => (v === "step1" ? carryText : formatNumber(v));
+  const tok = unknownToken ? { missingToken: unknownToken, missingValue: unknownValue } : {};
+  if (sp.model === "partWhole") {
+    return (
+      <PartWholeBar
+        whole={typeof sp.whole === "number" ? sp.whole : 0}
+        partA={sp.partA.value} partB={sp.partB.value}
+        labelWhole={sp.unknown === "whole" ? null : show(sp.whole)}
+        labelA={sp.unknown === "partA" ? null : show(sp.partA.value)}
+        labelB={sp.unknown === "partB" ? null : show(sp.partB.value)}
+        missingIs={sp.unknown}
+        names={{ whole: "Whole", partA: sp.partA.name, partB: sp.partB.name }}
+        compact={compact} animate={animate} {...tok}
+      />
+    );
+  }
+  return (
+    <ComparisonBar
+      baseLabel={sp.base.name} biggerLabel={sp.bigger.name}
+      valueText={{
+        base: sp.unknown === "base" ? null : show(sp.base.value),
+        bigger: sp.unknown === "bigger" ? null : show(sp.bigger.value),
+        diff: sp.unknown === "diff" ? null : show(sp.diff),
+      }}
+      missingIs={sp.unknown} schematic compact={compact} animate={animate} {...tok}
+    />
+  );
+}
+
+// Before the answer: bars for the first `upTo` steps, every unknown "?" and
+// step 2's carried cell "?" (a step-1 result printed as a number is intermediate
+// work handed over, and a pre-reveal leak of half the problem).
+const STEP_CAPTION_STYLE = {
+  fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12, color: COLORS.black,
+  textAlign: "left", lineHeight: 1.2, marginBottom: 2,
+};
+
+function WordModel({ item, upTo = item.steps.length, animateLast = false }) {
+  const multi = item.steps.length > 1;
+  return (
+    <div style={{ width: "100%", maxWidth: 320, display: "flex", flexDirection: "column", gap: multi ? 6 : 0 }}>
+      {item.steps.slice(0, upTo).map((st, i) => (
+        <div key={i}>
+          {multi && <div style={STEP_CAPTION_STYLE}>Step {i + 1}</div>}
+          <WordBar step={st} compact={multi} animate={animateLast && i === upTo - 1} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const MODEL_BUTTONS = [
+  { id: "partWhole", label: "Parts make a whole" },
+  { id: "comparison", label: "Compare two amounts" },
+];
+const MODEL_CLUE = {
+  // shown when the picked model is the OTHER one (§4.4: not scored, not logged)
+  partWhole: "Is one amount compared with another? Look for “more” or “fewer”.",
+  comparison: "Do parts join to make a whole? Look for “in all” or “left”.",
+};
+
+function ModelIcon({ id, faded = false }) {
+  // A tiny bar-model glyph per button.
+  return (
+    <svg width="44" height="30" viewBox="0 0 44 30" aria-hidden="true" style={{ display: "block", margin: "0 auto 4px", opacity: faded ? 0.5 : 1 }}>
+      {id === "partWhole" ? (
+        <g stroke={COLORS.black} strokeWidth="2.5" strokeLinejoin="round">
+          <rect x="2" y="2" width="40" height="10" rx="2" fill={COLORS.yellow} />
+          <rect x="2" y="18" width="19" height="10" rx="2" fill={COLORS.blue} />
+          <rect x="23" y="18" width="19" height="10" rx="2" fill={COLORS.green} />
+        </g>
+      ) : (
+        <g stroke={COLORS.black} strokeWidth="2.5" strokeLinejoin="round">
+          <rect x="2" y="3" width="26" height="10" rx="2" fill={COLORS.blue} />
+          <rect x="2" y="17" width="40" height="10" rx="2" fill={COLORS.orange} />
+        </g>
+      )}
+    </svg>
+  );
+}
+
+// Concrete words: "pick the model". A wrong pick dims that button and shows a
+// cream clue; it is not scored or logged — it is the manipulation.
+function ModelPicker({ item, pick, onPick, onNextStep, live }) {
+  const multi = item.steps.length > 1;
+  if (!pick.right) {
+    return (
+      <div style={{ width: "100%", maxWidth: 320 }}>
+        <div style={{ ...PROMPT_STYLE, fontSize: 14, marginBottom: 8 }}>
+          {multi ? "Start with step 1. What kind of problem is it?" : "What kind of problem is it?"}
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          {MODEL_BUTTONS.map((m) => {
+            const dim = pick.wrong.includes(m.id);
+            return (
+              <PressButton
+                key={m.id}
+                disabled={!live || dim}
+                onClick={() => onPick(m.id)}
+                style={{
+                  flex: 1, minHeight: 72, padding: "8px 6px", borderRadius: 8, border: BRUTAL_BORDER_SM,
+                  // A wrong pick is "pressed in" in muted text at full opacity (dimming
+                  // the whole button fails contrast); only the icon fades.
+                  backgroundColor: dim ? "#EEE" : "white", color: dim ? "#666" : COLORS.black,
+                  boxShadow: dim ? "none" : BRUTAL_SHADOW_SM,
+                  transform: dim ? "translate(3px, 3px)" : "none",
+                  fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 14, lineHeight: 1.2,
+                  cursor: dim ? "default" : "pointer",
+                }}
+              >
+                <ModelIcon id={m.id} faded={dim} />
+                {m.label}
+              </PressButton>
+            );
+          })}
+        </div>
+        {pick.wrong.length > 0 && (
+          <div style={{
+            marginTop: 10, display: "inline-block", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
+            fontSize: "clamp(14px, 4vw, 16px)", color: COLORS.black, backgroundColor: COLORS.cream,
+            border: BRUTAL_BORDER_SM, borderRadius: 8, padding: "6px 12px", animation: "fadeSlideUp 0.3s ease both",
+          }}>
+            {MODEL_CLUE[pick.wrong[pick.wrong.length - 1]]}
+          </div>
+        )}
+      </div>
+    );
+  }
+  // Right pick: the model draws. W3 builds in two child-triggered beats.
+  const beats = multi ? pick.beat : 1;
+  return (
+    <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <WordModel key={`beat${beats}`} item={item} upTo={beats} animateLast />
+      {multi && pick.beat === 1 && (
+        <div style={{ marginTop: 8 }}>
+          <BrutalButton small onClick={onNextStep} bg={COLORS.yellow}>Next step</BrutalButton>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ScaffoldForItem({
+  item, disc, showScaffold, scaffoldOpacity, mode, interactive, notice, onTrade, onTake, onStartOver,
+  jumpsDrawn, onJump, modelPick, onPickModel, onNextStep,
+}) {
   if (mode === "abstract" && !showScaffold) return null;
   const opacity = showScaffold ? 1 : scaffoldOpacity;
   if (opacity <= 0) return null;
+
+  if (item.group === "mental") {
+    const plan = mentalPlan(item);
+    return (
+      <div style={{ marginTop: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
+        {/* Landing chips stay blank (§4.0): he computes each landing. */}
+        {/* In Concrete the jump row, prompt and Start over stay mounted (inert) once the
+            answer is in, so the card never shrinks under a finger. */}
+        <OpenNumberLine
+          start={item.a} jumps={plan.jumps} landingTokens={["blank", "blank"]}
+          drawn={mode === "concrete" ? jumpsDrawn : null}
+          interactive={mode === "concrete"} disabled={!interactive} onJump={onJump} opacity={opacity}
+        />
+        {mode === "concrete" && (
+          <>
+            <div style={{ ...PROMPT_STYLE, fontSize: 13, marginTop: 6 }}>Tap the jumps in order.</div>
+            <button disabled={!interactive} onClick={onStartOver} style={{
+              minHeight: 44, minWidth: 44, padding: "0 12px", marginBottom: -8, background: "none", border: "none",
+              cursor: interactive ? "pointer" : "default", fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12,
+              color: interactive ? COLORS.black : "#666", textDecoration: "underline",
+            }}>
+              Start over
+            </button>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  if (item.group === "words") {
+    return (
+      <div style={{ marginTop: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
+        {mode === "concrete" ? (
+          <div style={{ width: "100%", display: "flex", justifyContent: "center", opacity }}>
+            <ModelPicker item={item} pick={modelPick} live={interactive} onPick={onPickModel} onNextStep={onNextStep} />
+          </div>
+        ) : (
+          <div style={{ width: "100%", display: "flex", justifyContent: "center", opacity, transition: "opacity 0.6s ease" }}>
+            <WordModel item={item} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div style={{ marginTop: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
       <QuestionChart
@@ -192,7 +397,16 @@ function QuestionDisplay({ item }) {
       </div>
     );
   }
-  // Facts: "8 + 5 = ?" — the question, never the answer.
+  if (item.group === "words") {
+    // The story is 2–3 short sentences, Space Grotesk 17px; the question is bold.
+    return (
+      <div style={{ textAlign: "left", fontFamily: "'Space Grotesk', sans-serif", fontSize: 17, lineHeight: 1.45, color: COLORS.black }}>
+        <p style={{ margin: 0, fontWeight: 500 }}>{item.story}</p>
+        <p style={{ margin: "8px 0 0", fontWeight: 700 }}>{item.question}</p>
+      </div>
+    );
+  }
+  // Facts and mental: "8 + 5 = ?" — the question, never the answer.
   return (
     <div style={{ textAlign: "center" }}>
       <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: 44, color: COLORS.black }}>
@@ -209,6 +423,14 @@ function QuestionDisplay({ item }) {
 function buildProblem(item) {
   // Column items: the problem slot is null — the re-ask grid restates it (§9.1).
   if (item.answerType === "column") return null;
+  // Words: the QUESTION SENTENCE only — the story is too long for R2 (§9.2).
+  if (item.group === "words") {
+    return (
+      <span style={{ display: "block", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: "clamp(15px, 4.4vw, 17px)", lineHeight: 1.25 }}>
+        {item.question}
+      </span>
+    );
+  }
   return (
     <span>
       {item.a} <span style={{ color: MODULE_COLORS.add }}>{item.op === "+" ? "+" : MINUS}</span> {item.b}
@@ -221,6 +443,37 @@ function buildProblem(item) {
 // crossed, the diagnosed column outlined. The count chips are the answer
 // digits, so they take the ONE tokenState (blank while asking).
 function revealPicture(item, tokenState, animate, entered) {
+  if (item.group === "mental") {
+    // The two arcs; landing 1 is an INTERMEDIATE (a numeral), landing 2 is the
+    // answer token (§9.2) — blank while asking.
+    const plan = mentalPlan(item);
+    return <OpenNumberLine start={item.a} jumps={plan.jumps} landingTokens={["numeral", tokenState]} animate={animate} />;
+  }
+  if (item.group === "words") {
+    const multi = item.steps.length > 1;
+    const answerText = formatNumber(item.correctAnswer);
+    if (!multi) {
+      return (
+        <WordBar step={item.steps[0]} unknownToken={tokenState} unknownValue={answerText} />
+      );
+    }
+    // Two compact bars stacked: step 1's unknown printed (intermediate), step 2's
+    // carried cell a numeral and its unknown the token.
+    const [s1, s2] = item.steps;
+    const mid = formatNumber(s1.result);
+    return (
+      <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 4 }}>
+        <div>
+          <div style={STEP_CAPTION_STYLE}>Step 1</div>
+          <WordBar step={s1} compact unknownToken="numeral" unknownValue={mid} />
+        </div>
+        <div>
+          <div style={STEP_CAPTION_STYLE}>Step 2</div>
+          <WordBar step={s2} compact carryText={mid} unknownToken={tokenState} unknownValue={answerText} />
+        </div>
+      </div>
+    );
+  }
   const { state } = afterTradesState(item);
   const place = item.answerType === "column" ? diagnosedPlace(item, entered) : null;
   return (
@@ -298,6 +551,10 @@ export default function AddPractice({
   const [cardMarks, setCardMarks] = useState(emptyMarks());
   const [reaskMarks, setReaskMarks] = useState(emptyMarks());
   const [notice, setNotice] = useState(null);
+  // Mental (Concrete): jumps tapped so far. Words (Concrete): the "pick the model"
+  // step — the model is picked once; wrong picks are free (not scored, not logged).
+  const [jumpsDrawn, setJumpsDrawn] = useState(0);
+  const [modelPick, setModelPick] = useState({ right: false, wrong: [], beat: 1 });
   const [firstSubmit, setFirstSubmit] = useState(null); // the first-submit value (drives the bug line)
   const [markNotice, setMarkNotice] = useState(null); // "Nothing to regroup here" chip on the grid
   const markNoticeTimerRef = useRef(null);
@@ -454,6 +711,8 @@ export default function AddPractice({
     setNotice(null);
     setMarkNotice(null);
     setFirstSubmit(null);
+    setJumpsDrawn(0);
+    setModelPick({ right: false, wrong: [], beat: 1 });
     setCardMarks(emptyMarks());
     setReaskMarks(emptyMarks());
     setDisc(selected ? initDiscState(selected) : { counts: [], counts2: null, carried: [], taken: [] });
@@ -687,8 +946,22 @@ export default function AddPractice({
     }
   };
 
+  const handleJump = useCallback((i) => {
+    setJumpsDrawn((n) => (i === n ? n + 1 : n));
+  }, []);
+
+  const handlePickModel = useCallback((model) => {
+    if (!currentItem) return;
+    setModelPick((p) => (model === currentItem.pickModel
+      ? { ...p, right: true }
+      : { ...p, wrong: p.wrong.includes(model) ? p.wrong : [...p.wrong, model] }));
+  }, [currentItem]);
+
+  const handleNextStep = useCallback(() => setModelPick((p) => ({ ...p, beat: 2 })), []);
+
   const handleStartOver = useCallback(() => {
     if (!currentItem) return;
+    setJumpsDrawn(0);
     setDisc(initDiscState(currentItem));
     setCardMarks(emptyMarks());
     setNotice(null);
@@ -1023,8 +1296,9 @@ export default function AddPractice({
                 // A parent lock on another group: this group's skills can't be focused.
                 const groupLockedOut = !!lockedGroupId && group.id !== lockedGroupId;
                 const groupItems = ADD_POOL.filter((i) => i.group === group.id);
-                // Column pairs ("2,346+1,527") need wider cells than fact pairs ("9 + 2").
-                const cellCols = group.id === "facts" ? 5 : 3;
+                // Column pairs ("2,346+1,527") need wider cells than fact pairs ("9 + 2");
+                // two-step word problems ("4860−1520−1520") need the widest.
+                const cellColsFor = (skill) => (group.id === "facts" ? 5 : group.id === "mental" ? 4 : skill === "W3" ? 2 : 3);
                 return (
                   <div key={group.id} style={{
                     backgroundColor: "white", borderRadius: 12, padding: 18,
@@ -1091,7 +1365,7 @@ export default function AddPractice({
                                   {groupLockedOut ? "🔒 locked" : focusSkill === skill ? "practising ✓" : "practise this ›"}
                                 </span>
                               </button>
-                              <div style={{ display: "grid", gridTemplateColumns: `repeat(${cellCols}, 1fr)`, gap: 5 }}>
+                              <div style={{ display: "grid", gridTemplateColumns: `repeat(${cellColsFor(skill)}, 1fr)`, gap: 5 }}>
                                 {items.map((item) => {
                                   const level = getMasteryLevel(item.itemKey);
                                   const mastered = level >= DEFAULT_MASTERY_THRESHOLD;
@@ -1163,7 +1437,11 @@ export default function AddPractice({
                       backgroundColor: addModule.groups.find((g) => g.id === currentItem.group)?.color || COLORS.purple,
                       color: COLORS.black, padding: "3px 10px", borderRadius: 20, border: BRUTAL_BORDER_SM,
                     }}>
-                      {addModule.skillLabels[currentItem.skill] || currentItem.skill}
+                      {/* W1/W2 labels ("Part and whole", "More or fewer") name the model the child
+                          is about to pick in Concrete, so the card says "Word problem" instead. */}
+                      {currentItem.skill === "W1" || currentItem.skill === "W2"
+                        ? "Word problem"
+                        : (addModule.skillLabels[currentItem.skill] || currentItem.skill)}
                     </span>
                     {focusSkill && (
                       <div style={{ marginTop: 8 }}>
@@ -1211,6 +1489,11 @@ export default function AddPractice({
                         onTrade={handleChartTrade}
                         onTake={handleChartTake}
                         onStartOver={handleStartOver}
+                        jumpsDrawn={jumpsDrawn}
+                        onJump={handleJump}
+                        modelPick={modelPick}
+                        onPickModel={handlePickModel}
+                        onNextStep={handleNextStep}
                       />
                     </div>
                   )}
@@ -1275,9 +1558,9 @@ export default function AddPractice({
                             padding: "4px 0", MozAppearance: "textfield", WebkitAppearance: "none",
                           }}
                         />
-                        {!feedback && (
-                          <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
-                        )}
+                        {/* Held (hidden) rather than unmounted once answered, so the card keeps its height. */}
+                        <BrutalButton onClick={feedback ? undefined : handleSubmit} bg={COLORS.yellow}
+                          style={feedback ? { visibility: "hidden" } : undefined}>Check!</BrutalButton>
                       </div>
                     </div>
                   )}
@@ -1357,7 +1640,7 @@ export default function AddPractice({
           <WrongAnswerReveal
             open={feedback === "incorrect"}
             focusDelayMs={1000}
-            pictureMax={revealPictureMax(currentItem.answerType, tight)}
+            pictureMax={revealPictureMax(currentItem, tight)}
             fit="width"
             autoFocus={TYPED_ANSWER_TYPES.has(currentItem.answerType)}
             header={header}
