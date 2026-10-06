@@ -1542,8 +1542,8 @@ export default function PlaceValuePractice({
       // nod is skipped when the matching one-time achievement (`sameAs`)
       // unlocks on the same answer, so a child never gets two popups at once.
       const streakMilestones = [
-        { at: 10, name: "Nice and steady", icon: "👍", description: "10 right in a row.", sameAs: "on-fire" },
-        { at: 25, name: "Great focus", icon: "🎯", description: "25 right in a row.", sameAs: "unstoppable" },
+        { at: 10, name: "Nice and steady", icon: "👍", description: "10 right in a row.", kicker: "Good practice", sameAs: "on-fire" },
+        { at: 25, name: "Great focus", icon: "🎯", description: "25 right in a row.", kicker: "Good practice", sameAs: "unstoppable" },
       ];
       const milestone = streakMilestones.find((m) => m.at === newStreak);
       // Only an unassisted correct answer reaches a milestone: a first miss

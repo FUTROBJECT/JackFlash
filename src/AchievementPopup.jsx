@@ -177,7 +177,9 @@ export default function AchievementPopup({ achievement, onDismiss }) {
             animation: "scaleIn 0.6s ease 0.2s both",
           }}
         >
-          Achievement Unlocked!
+          {/* Repeatable in-practice nods pass their own calmer header (`kicker`),
+              so "Achievement unlocked" is only ever said about real achievements. */}
+          {achievement.kicker || "Achievement Unlocked!"}
         </div>
 
         {/* Achievement Name */}
