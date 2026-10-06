@@ -32,7 +32,7 @@ import {
 // Add & Subtract is a conceptual module (docs/add-spec.md §8) — no speed
 // gate, no responseMs passed to updateMastery, so FLUENCY_MS_* is not imported.
 import addModule, {
-  ADD_POOL, TRADE, shouldAllowSkill, wasAttempted, digitArr,
+  ADD_POOL, REGROUP, shouldAllowSkill, wasAttempted, digitArr,
   initDiscState, tradeAdd, tradeSub, takeSub, tradeableFor, takeLabelsFor,
   afterTradesState, canonicalMarks, correctDigitCells, diagnosedPlace, buildAddLine,
 } from "./modules/add.jsx";
@@ -140,7 +140,7 @@ function QuestionChart({ item, disc, interactive, opacity, animate, notice, onTr
       carried={disc.carried} taken={disc.taken}
       takeLabels={isAdd ? null : takeLabelsFor(item)}
       onTake={interactive && !isAdd ? onTake : null}
-      tradeable={flags} tradeLabels={labels} tradeText={`${TRADE.noun} →`}
+      tradeable={flags} tradeLabels={labels} tradeText={`${REGROUP.noun} →`}
       onTrade={interactive ? onTrade : null}
       notice={interactive ? notice : null}
       countTokens={disc.counts.map(() => "blank")}
@@ -299,7 +299,7 @@ export default function AddPractice({
   const [reaskMarks, setReaskMarks] = useState(emptyMarks());
   const [notice, setNotice] = useState(null);
   const [firstSubmit, setFirstSubmit] = useState(null); // the first-submit value (drives the bug line)
-  const [markNotice, setMarkNotice] = useState(null); // "Nothing to trade here" chip on the grid
+  const [markNotice, setMarkNotice] = useState(null); // "Nothing to regroup here" chip on the grid
   const markNoticeTimerRef = useRef(null);
   const inputRef = useRef(null);
   const headerRef = useRef(null);   // the sticky header — measured by the grid's scroll-into-view
@@ -655,7 +655,7 @@ export default function AddPractice({
     const next = applyTopTap(currentItem, marks, idx);
     if (next !== marks) { setMarks(next); return; }
     if (currentItem.op === "-") {
-      setMarkNotice("Nothing to trade here");
+      setMarkNotice("Nothing to regroup here");
       if (markNoticeTimerRef.current) clearTimeout(markNoticeTimerRef.current);
       markNoticeTimerRef.current = setTimeout(() => setMarkNotice(null), 1800);
     }
@@ -1275,7 +1275,7 @@ export default function AddPractice({
                       live={!feedback}
                       sticky
                       state={feedback === "correct" ? "correct" : "input"}
-                      tradeVerb={TRADE.verb}
+                      tradeVerb={REGROUP.verb}
                     />
                   )}
                 </div>
@@ -1364,7 +1364,7 @@ export default function AddPractice({
                       compact={tight}
                       hintRow={!snug}
                       reserveHintRow={!snug}
-                      tradeVerb={TRADE.verb}
+                      tradeVerb={REGROUP.verb}
                     />
                   </div>
                 );

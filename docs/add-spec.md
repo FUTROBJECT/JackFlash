@@ -7,6 +7,8 @@
 
 > **Main-loop verification (2026-10-06):** every column item in §6.1 (112 items) was checked by script: arithmetic, key uniqueness, and the exact regroup places against each item's tag. All pass. The §7 worked bug outputs (367 + 256 → 513, 503 − 178 → 475, 72 − 38 → 46) also check. F1 = 20 and F2 = 36 confirmed by enumeration; M1/M2/M3 crossing claims checked by hand.
 
+> **Vocabulary (decided 2026-10-06): the kid word is "regroup".** Regrouping changes how a number is grouped while its value stays the same (3 tens 2 ones = 2 tens 12 ones). "Trade" suggests a swap game, "borrow" suggests giving something back, and "carry" hides the place-value idea, so none of them appear in anything Jack sees: buttons, chips, reveal lines, skill labels, achievement names. Phrase it "regroup 10 ones into 1 ten" / "regroup 1 ten into 10 ones". Where this spec says "trade" below it is a developer term for the chart action only.
+
 > **The wrong-answer block in `fractions-spec.md` §6 and in the old add draft §8 is dead**: scaffold + because + hint + bond + "Next →". This spec writes only to the full-screen reveal: **picture + ONE derivation line whose answer is a blank token + the same item re-asked**.
 
 ---
@@ -166,8 +168,8 @@ Pre-reveal leaks have shipped three times (fractions caption, division caption, 
 The chart is Jack's Place Value chart: columns labelled Thousands · Hundreds · Tens · Ones (3 columns for within-1,000 items, 2 columns — Tens · Ones — for facts), with the same place colours (`PV_PLACE_COLOR`). Two differences, both deliberate:
 - **Plain discs, 5 per row**, not the stamped 3-per-row discs. A column can hold up to 19 discs (9 + 9 + 1 carried), and a 5-per-row frame makes **ten = two full rows**, so "a full ten-frame trades for one disc" is visible at a glance. The column heading carries the value, as in Place Value's compact charts.
 - **Trading is now allowed.** Place Value deliberately stopped at "a column only holds 9". Here a trade is a tap:
-  - **Addition:** a column with 10+ discs shows **"Trade →"** (label: "10 ones → 1 ten", and so on). Tapping it animates 10 discs out. One disc arrives at the **top of the left column with a yellow ring** ("carried").
-  - **Subtraction:** every non-ones column with an uncrossed disc shows **"Trade →"** (label: "1 ten → 10 ones"). Tapping it moves one disc right, where it becomes **10 yellow-ringed discs** that form a full two-row frame.
+  - **Addition:** a column with 10+ discs shows **"Regroup →"** (label: "10 ones → 1 ten", and so on). Tapping it animates 10 discs out. One disc arrives at the **top of the left column with a yellow ring** ("carried").
+  - **Subtraction:** every non-ones column with an uncrossed disc shows **"Regroup →"** (label: "1 ten → 10 ones"). Tapping it moves one disc right, where it becomes **10 yellow-ringed discs** that form a full two-row frame.
   - **Take-away (subtraction):** under each column a chip-button **"Take 8"** (the subtrahend digit, a given). If enough uncrossed discs remain, tapping crosses out that many, **crossing yellow-ringed (traded-in) discs first**. That is "subtract from the ten", the same strategy as F2. If there are not enough, a cream chip appears instead and nothing changes: "Only 3 ones. Trade 1 ten for 10 ones first." For a zero column: "No tens to trade — trade 1 hundred first."
   - Count chips under the columns stay **blank** in every mode before the reveal. Counting the remaining discs is the work.
 
@@ -211,7 +213,7 @@ The story is 2–3 short sentences, Space Grotesk 16–18px. The answer is `sing
 
 ### 4.5 Facts Warm-Up (F1–F2): the same chart, 2 columns
 
-- **F1 (8 + 5):** the ones column holds 8 discs, then a dashed line, then 5. Concrete: "Trade →" makes the ten.
+- **F1 (8 + 5):** the ones column holds 8 discs, then a dashed line, then 5. Concrete: "Regroup →" makes the ten.
 - **F2 (13 − 5):** 1 ten disc and 3 ones, with "Take 5" under the ones. Concrete: trade the ten (10 ringed discs form the frame), then take 5, crossing the ringed ten first. The picture *is* "take 5 from the ten, 5 left, and 3 more."
 - Pictorial and Abstract behave as in §4.2. The answer is `singleNumber`.
 
@@ -478,21 +480,21 @@ This section is governed by R1–R7, Phase 2 and C1. Restated because the builde
 
 **Addition (A1–A3)**
 1. `noCarry` matched. Here P is the rightmost place that carries.
-   Line: `{P} made 10 or more — trade 10 {P} for 1 {next} → [ans]`.
-   Example: "Ones made 10 or more — trade 10 ones for 1 ten → [623]".
+   Line: `{P} made 10 or more — regroup 10 {P} into 1 {next} → [ans]`.
+   Example: "Ones made 10 or more — regroup 10 ones into 1 ten → [623]".
 2. Otherwise, let D be the **rightmost column where the entered digit ≠ the correct digit** (compare right-aligned; a missing digit counts as wrong):
-   - A trade comes into D: `{D}: {x} + {y} + 1 traded {d} → [ans]`. Example: "Tens: 6 + 5 + 1 traded ten → [623]".
-   - D carries out: `{D}: {x} + {y} is 10 or more — trade it → [ans]`.
+   - A trade comes into D: `{D}: {x} + {y} + 1 regrouped {d} → [ans]`. Example: "Tens: 6 + 5 + 1 regrouped ten → [623]".
+   - D carries out: `{D}: {x} + {y} is 10 or more — regroup it → [ans]`.
    - Otherwise: `{D}: {x} + {y} — count the discs → [ans]`.
 
 **Subtraction (S1–S3)**
 1. `smallerFromLarger` matched. Here P is the rightmost place needing a trade and L is the place to its left.
-   - L's top digit ≠ 0: `{P}: {t} take {b}? Trade 1 {L} for 10 {P} first → [ans]`. Example: "Ones: 2 take 7? Trade 1 ten for 10 ones first → [315]".
-   - L's top digit = 0: `No {L} to trade — trade 1 {next non-zero place} first → [ans]`. Example: "No tens to trade — trade 1 hundred first → [325]".
+   - L's top digit ≠ 0: `{P}: {t} take {b}? Regroup 1 {L} into 10 {P} first → [ans]`. Example: "Ones: 2 take 7? Regroup 1 ten into 10 ones first → [315]".
+   - L's top digit = 0: `No {L} yet — regroup 1 {next non-zero place} first → [ans]`. Example: "No tens yet — regroup 1 hundred first → [325]".
 2. `zeroStays10` matched. Here Z is the rightmost zero place that passed a trade.
-   Line: `The 10 {Z} gave 1 away — 9 {Z} are left → [ans]`.
+   Line: `Regroup 1 of the 10 {Z} — 9 {Z} are left → [ans]`.
 3. `noDecrement` matched. Here L lent to P at the rightmost trade.
-   Line: `1 {L} went to the {P}, so 1 fewer {L} → [ans]`.
+   Line: `1 {L} was regrouped, so 1 fewer {L} → [ans]`.
 4. Otherwise D = the rightmost wrong column, and T = D's top value after all correct trades.
    Line: `{D}: {T} take {b} — count the discs → [ans]`. Example: "Tens: 9 take 7 — count the discs → [325]".
 
@@ -507,7 +509,7 @@ This section is governed by R1–R7, Phase 2 and C1. Restated because the builde
 | Skill | Line (≤2 lines at 375) | Bug override | Picture |
 |---|---|---|---|
 | M1 | `47 + 30 = 77, then 8 more → [85]` | `dropTen`: `7 + 8 ones make a new ten — keep it → [85]` | `OpenNumberLine`: arcs, landing 1 **numeral** (intermediate), landing 2 = token |
-| M2 | `72 − 30 = 42, then take 8 more → [34]` | `smallerFromLarger`: `2 ones take 8? Trade a ten first → [34]` | same |
+| M2 | `72 − 30 = 42, then take 8 more → [34]` | `smallerFromLarger`: `2 ones take 8? Regroup a ten first → [34]` | same |
 | M3 | add: `46 + 30 = 76, then take 1 back → [75]` · sub: `72 − 20 = 52, then add 1 back → [53]` | `wrongWay`: `+30 is 1 too many — take 1 back → [75]` / `−20 takes 1 too many — add 1 back → [53]` | same; jumps "+30", "−1" |
 | W1 whole | `The parts make the whole: 2,456 + 1,378 → [3,834]` | — | `PartWholeBar`; unknown cell = token |
 | W1 part | `Whole take away the part you know: 3,000 − 1,265 → […]` | `otherOp`: `The whole is already 3,000 — take away → […]` | same |
@@ -605,7 +607,7 @@ No speed achievement in any form (C3). The shared `comeback-kid` covers persiste
 
 | id | name | trigger |
 |---|---|---|
-| `add-carry-captain` | Carry Captain | master group `colAdd` |
+| `add-carry-captain` | Regroup Captain (id kept) | master group `colAdd` |
 | `add-take-away-pro` | Take-Away Pro | master group `colSub` |
 | `add-head-for-numbers` | Head for Numbers | master group `mental` |
 | `add-bar-builder` | Bar Model Builder | master group `words` |
@@ -617,7 +619,7 @@ No speed achievement in any form (C3). The shared `comeback-kid` covers persiste
 
 ## 13. Kid-language skill labels (`skillLabels`)
 
-| A1 Add to 1,000 | A2 Add to 10,000 | A3 Lots of trades |
+| A1 Add to 1,000 | A2 Add to 10,000 | A3 Lots of regrouping |
 |---|---|---|
 | **S1** Take away to 1,000 | **S2** Take away to 10,000 | **S3** Across zeros |
 | **M1** Add in your head | **M2** Subtract in your head | **M3** Round and fix |
@@ -660,7 +662,7 @@ Facts ride along because they reuse the same chart at 2 columns with `singleNumb
 
 | # | Decision | Default |
 |---|---|---|
-| D1 | Kid verb for regrouping: "trade" / "regroup" / "rename" (what does Jack's teacher say?) | **"trade"** in lines and chart buttons; one constant to change |
+| D1 | Kid verb for regrouping | **Decided 2026-10-06 (Adam): "regroup"** — the Singapore Math term. Never "trade", "borrow" or "carry" in anything Jack sees. `REGROUP` in `src/modules/add.jsx` |
 | D2 | Keep any P1 content? | **Yes, only** the supporting Facts Warm-Up (F1/F2, crossing-ten, 56 items). N/M/K/X are dropped |
 | D3 | Free content at launch | **Column Adding + Facts Warm-Up** |
 | D4 | Finish-line on-ramp in Concrete | **On** |
@@ -741,3 +743,7 @@ Built by `module-builder` from this spec, play-tested by the main loop at 393×8
 - `PressButton` (barComponents) carries `touchAction: manipulation` and no text selection; the Add screen's buttons all render through it.
 
 **Not yet done:** `mental` and `words` (pass 2), `add-master`, RevenueCat entitlement for `module.add.full`, launch `freeContent` (`["colAdd", "facts"]`).
+
+## Vocabulary change: "regroup" (2026-10-06)
+
+Adam decided D1: every kid-facing string uses **regroup**, the Singapore Math term, instead of "trade". Changed: the chart button ("Regroup →"), the refusal chips ("Only 3 ones. Regroup 1 ten into 10 ones first." / "No tens yet — regroup 1 hundred first."), every reveal line in §9.1 (the `zeroStays10` line is now "Regroup 1 of the 10 tens — 9 tens are left"; the `noDecrement` line is "1 hundred was regrouped, so 1 fewer hundred", dropping the destination because a thousand regroups into hundreds, not ones), the mark hint ("Tap a top digit to regroup"), the "Nothing to regroup here" chip, the A3 label ("Lots of regrouping") and the colAdd achievement ("Regroup Captain"; its id `add-carry-captain` is kept because achievement ids are persisted). The constant is `REGROUP` in `src/modules/add.jsx`. Internal identifiers (`tradeAdd`, pattern tags such as "one trade into ones") are never displayed and were left alone. Every line was regenerated and checked at 320×568.

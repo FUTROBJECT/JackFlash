@@ -138,8 +138,8 @@ export function ColumnGrid({
   compact = false,   // short viewports: top 36 / bottom 32 / answer 44
   hintRow = true,    // show the hint / Undo row while marks are interactive
   reserveHintRow = false, // keep the row's 30px even when marks aren't interactive (no layout jump)
-  tradeVerb = "trade", // D1: the module's kid verb for regrouping (modules/add.jsx TRADE.verb)
-  markNotice = null, // brief cream chip over the grid ("Nothing to trade here")
+  tradeVerb = "regroup", // D1: the module's kid verb (modules/add.jsx REGROUP.verb)
+  markNotice = null, // brief cream chip over the grid ("Nothing to regroup here")
 }) {
   const cols = item.columns;
   const heads = HEADS[cols] || HEADS[4];
@@ -397,7 +397,7 @@ export function ColumnPad({ onDigit, onBack, onCheck, checkEnabled, disabled = f
 export function ColumnAnswerInput({
   item, marks, marksInteractive = false, onTopTap = null, onUndoMarks = null,
   onSubmit, live = true, sticky = false, state = "input", fill = null, fillMarks = null,
-  compact = false, hintRow = true, reserveHintRow = false, tradeVerb = "trade",
+  compact = false, hintRow = true, reserveHintRow = false, tradeVerb = "regroup",
   markNotice = null, headerRef = null, getClampEl = null,
 }) {
   const cols = item.columns;

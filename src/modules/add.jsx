@@ -22,10 +22,14 @@ import { COLORS, MODULE_COLORS } from "../constants.js";
 import { PLACE_CODES, formatNumber } from "./placeValue.jsx";
 
 // ---------------------------------------------------------------------------
-// D1 (open decision): the kid verb for regrouping. ONE constant to change —
-// every line, chart button and refusal chip reads from here.
+// D1 (decided 2026-10-06): the kid word is "regroup" — the Singapore Math
+// term. Regrouping changes how a number is grouped while its value stays the
+// same (3 tens 2 ones = 2 tens 12 ones). Not "trade" (a swap game), never
+// "borrow" (nothing is given back) or "carry". Every line, chart button and
+// refusal chip reads from here; sentences are phrased "regroup 1 ten into
+// 10 ones" / "regroup 10 ones into 1 ten".
 // ---------------------------------------------------------------------------
-export const TRADE = { verb: "trade", past: "traded", noun: "Trade" };
+export const REGROUP = { verb: "regroup", past: "regrouped", noun: "Regroup" };
 
 const PL_SING = { k: "thousand", h: "hundred", t: "ten", o: "one" };
 const PL_PLUR = { k: "thousands", h: "hundreds", t: "tens", o: "ones" };
@@ -465,12 +469,12 @@ export function takeSub(st, i, n) {
   const p = codes[i];
   if (i > 0 && uncrossed(st, i - 1) >= 1) {
     const first = have === 0 ? `No ${PL_PLUR[p]} left.` : `Only ${have} ${have === 1 ? PL_SING[p] : PL_PLUR[p]}.`;
-    return { state: st, notice: `${first} ${TRADE.noun} 1 ${PL_SING[codes[i - 1]]} for 10 ${PL_PLUR[p]} first.` };
+    return { state: st, notice: `${first} ${REGROUP.noun} 1 ${PL_SING[codes[i - 1]]} into 10 ${PL_PLUR[p]} first.` };
   }
   let lender = -1;
   for (let k = i - 1; k >= 0; k--) { if (uncrossed(st, k) >= 1) { lender = k; break; } }
   if (i > 0 && lender >= 0) {
-    return { state: st, notice: `No ${PL_PLUR[codes[i - 1]]} to ${TRADE.verb} — ${TRADE.verb} 1 ${PL_SING[codes[lender]]} first.` };
+    return { state: st, notice: `No ${PL_PLUR[codes[i - 1]]} yet — ${REGROUP.verb} 1 ${PL_SING[codes[lender]]} first.` };
   }
   return { state: st, notice: `Not enough ${PL_PLUR[p]} to take ${n}.` };
 }
@@ -598,7 +602,7 @@ function addColumnLine(item, tokenState, entered) {
       const P = codes[g];
       const next = codes[g - 1];
       return [
-        { t: "text", v: `${cap(PL_PLUR[P])} made 10 or more — ${TRADE.verb} 10 ${PL_PLUR[P]} for 1 ${PL_SING[next]} → ` },
+        { t: "text", v: `${cap(PL_PLUR[P])} made 10 or more — ${REGROUP.verb} 10 ${PL_PLUR[P]} into 1 ${PL_SING[next]} → ` },
         tokenSeg(item, tokenState),
       ];
     }
@@ -612,8 +616,8 @@ function addColumnLine(item, tokenState, entered) {
   const x = st.A[D];
   const y = st.B[D];
   let text;
-  if (st.carryIn[D]) text = `${cap(PL_PLUR[Dc])}: ${x} + ${y} + 1 ${TRADE.past} ${PL_SING[Dc]} → `;
-  else if (st.carryOut[D]) text = `${cap(PL_PLUR[Dc])}: ${x} + ${y} is 10 or more — ${TRADE.verb} it → `;
+  if (st.carryIn[D]) text = `${cap(PL_PLUR[Dc])}: ${x} + ${y} + 1 ${REGROUP.past} ${PL_SING[Dc]} → `;
+  else if (st.carryOut[D]) text = `${cap(PL_PLUR[Dc])}: ${x} + ${y} is 10 or more — ${REGROUP.verb} it → `;
   else text = `${cap(PL_PLUR[Dc])}: ${x} + ${y} — count the discs → `;
   return [{ t: "text", v: text }, tokenSeg(item, tokenState)];
 }
@@ -636,14 +640,14 @@ function subColumnLine(item, tokenState, entered) {
     const L = P - 1;
     if (st.A[L] !== 0) {
       return [
-        { t: "text", v: `${cap(PL_PLUR[codes[P]])}: ${st.A[P]} take ${st.B[P]}? ${TRADE.noun} 1 ${PL_SING[codes[L]]} for 10 ${PL_PLUR[codes[P]]} first → ` },
+        { t: "text", v: `${cap(PL_PLUR[codes[P]])}: ${st.A[P]} take ${st.B[P]}? ${REGROUP.noun} 1 ${PL_SING[codes[L]]} into 10 ${PL_PLUR[codes[P]]} first → ` },
         tokenSeg(item, tokenState),
       ];
     }
     const nz = firstNonZeroLeftOf(L);
     if (nz >= 0) {
       return [
-        { t: "text", v: `No ${PL_PLUR[codes[L]]} to ${TRADE.verb} — ${TRADE.verb} 1 ${PL_SING[codes[nz]]} first → ` },
+        { t: "text", v: `No ${PL_PLUR[codes[L]]} yet — ${REGROUP.verb} 1 ${PL_SING[codes[nz]]} first → ` },
         tokenSeg(item, tokenState),
       ];
     }
@@ -652,7 +656,7 @@ function subColumnLine(item, tokenState, entered) {
   if (bug === "zeroStays10" && st.passed.length > 0) {
     const Z = codes[Math.max(...st.passed)];
     return [
-      { t: "text", v: `The 10 ${PL_PLUR[Z]} gave 1 away — 9 ${PL_PLUR[Z]} are left → ` },
+      { t: "text", v: `${REGROUP.noun} 1 of the 10 ${PL_PLUR[Z]} — 9 ${PL_PLUR[Z]} are left → ` },
       tokenSeg(item, tokenState),
     ];
   }
@@ -662,7 +666,7 @@ function subColumnLine(item, tokenState, entered) {
     const lender = st.A[P - 1] > 0 ? P - 1 : firstNonZeroLeftOf(P - 1);
     if (lender >= 0) {
       return [
-        { t: "text", v: `1 ${PL_SING[codes[lender]]} went to the ${PL_PLUR[codes[P]]}, so 1 fewer ${PL_SING[codes[lender]]} → ` },
+        { t: "text", v: `1 ${PL_SING[codes[lender]]} was ${REGROUP.past}, so 1 fewer ${PL_SING[codes[lender]]} → ` },
         tokenSeg(item, tokenState),
       ];
     }
@@ -767,7 +771,7 @@ const addModule = {
   skillLabels: {
     A1: "Add to 1,000",
     A2: "Add to 10,000",
-    A3: "Lots of trades",
+    A3: "Lots of regrouping",
     S1: "Take away to 1,000",
     S2: "Take away to 10,000",
     S3: "Across zeros",
@@ -789,7 +793,7 @@ const addModule = {
   defaultModeByGroup: { colAdd: "concrete", colSub: "concrete", facts: "concrete" },
 
   achievements: [
-    { id: "add-carry-captain", name: "Carry Captain", description: "Mastered every Column Adding item", trigger: "masterAddGroup", params: { group: "colAdd" } },
+    { id: "add-carry-captain", name: "Regroup Captain", description: "Mastered every Column Adding item", trigger: "masterAddGroup", params: { group: "colAdd" } },
     { id: "add-take-away-pro", name: "Take-Away Pro", description: "Mastered every Column Subtracting item", trigger: "masterAddGroup", params: { group: "colSub" } },
     { id: "add-ten-maker", name: "Ten Maker", description: "Mastered every Facts Warm-Up item", trigger: "masterAddGroup", params: { group: "facts" } },
     { id: "add-zero-crosser", name: "Zero Crosser", description: "15 correct answers on across-zeros subtraction", trigger: "addZeroCrosser", params: { count: 15 } },

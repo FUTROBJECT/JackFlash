@@ -730,7 +730,7 @@ export function TenFrame({
 //   onTake(idx)   — tap handler for the take chips.
 //   tradeable     — per-column booleans: show the "Trade →" button.
 //   tradeLabels   — per-column long label ("10 ones → 1 ten") under "Trade →".
-//   tradeText     — button text (default "Trade →").
+//   tradeText     — button text (default "Regroup →").
 //   onTrade(idx)  — tap handler for the trade buttons.
 //   notice        — cream refusal chip under the chart ("Only 3 ones. …").
 //   Count chips (countTokens) show REMAINING = column total − taken[i].
@@ -779,7 +779,7 @@ export function PlaceValueChart({
   onTake = null,
   tradeable = null,
   tradeLabels = null,
-  tradeText = "Trade →",
+  tradeText = "Regroup →",
   onTrade = null,
   notice = null,
 }) {
@@ -845,7 +845,7 @@ export function PlaceValueChart({
                 <text x={x} y={96} textAnchor="middle"
                   fontFamily="'Space Mono', monospace" fontSize={8} fontWeight={700}
                   fill={COLORS.orange} style={{ animation: "fadeSlideUp 0.3s ease both" }}>
-                  {op === "+" ? "carry!" : "borrow!"}
+                  {"regroup!" /* Singapore term — never "carry"/"borrow" (docs/add-spec.md D1) */}
                 </text>
               )}
             </g>
@@ -1027,7 +1027,7 @@ function PlaceValueDiscChart({
   ticks = null, onTapColumn = null, // tap-to-count (B1 Concrete)
   plain = false, layers = null, carried = null, taken = null,
   takeLabels = null, onTake = null, tradeable = null, tradeLabels = null,
-  tradeText = "Trade →", onTrade = null, notice = null,
+  tradeText = "Regroup →", onTrade = null, notice = null,
 }) {
   const places = pvColumnPlaces(columns);
   const arith = plain || !!layers || !!carried || !!taken || !!takeLabels || !!tradeable || !!notice;
