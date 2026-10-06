@@ -191,7 +191,7 @@ export function HelpFAQ({ onBack }) {
       <AccordionItem title="What is the CPA approach?">
         <p style={{ margin: "0 0 8px" }}><strong>Concrete:</strong> dot arrays show what multiplication actually means — groups of things.</p>
         <p style={{ margin: "0 0 8px" }}><strong>Pictorial:</strong> bar models (for division) show the total being split into equal parts.</p>
-        <p style={{ margin: 0 }}><strong>Abstract:</strong> numbers alone — once the concept is owned, the scaffolds step back and speed builds.</p>
+        <p style={{ margin: 0 }}><strong>Abstract:</strong> numbers alone — once the concept is owned, the scaffolds step back, and the picture is always one tap away.</p>
       </AccordionItem>
 
       <AccordionItem title="Why teach multiplication and division together?">

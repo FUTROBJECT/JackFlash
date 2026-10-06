@@ -408,7 +408,7 @@ function HowItWorksScreen({ onNext, onBack }) {
                   Know it — Abstract
                 </p>
                 <p style={{ fontSize: "12px", color: "#555", lineHeight: 1.5, margin: 0 }}>
-                  Numbers only. Your child owns the fact. Scaffolds step back, speed builds.
+                  Numbers only. Your child owns the fact. The picture is still one tap away if they need it.
                 </p>
               </div>
             </div>
