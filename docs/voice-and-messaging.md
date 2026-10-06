@@ -41,5 +41,8 @@ The time window is an implementation detail for telling memory from counting. Me
 ## Open questions (Adam to decide)
 
 - The in-a-row streak milestones ("Getting Warm!", "On Fire!", "Unstoppable!", "LEGENDARY!") and the achievements of the same names celebrate consecutive correct answers. They aren't about speed, but they are performance hype.
-- The "Century Club" achievement rewards 100 problems in one session, which pulls against "five minutes a day".
 - The tagline "Math fluency, the right way." Fluency in the education sense means accurate, flexible and efficient, but many parents hear "fast".
+
+## Decided
+
+- **2026-10-06 — Century Club → Habit Builder.** "Century Club" (100 problems in one session) rewarded volume and pulled against "five minutes a day". It is replaced by **Habit Builder 🌱 — "Practiced on 10 different days"**: a total, not a streak, so a missed day never takes it away. Profiles track `dailyStreak.daysPracticed` (back-filled from streak and recent sessions for existing profiles). The same change wired the day-based achievements to actually fire: Week Warrior and Month Master had never been able to unlock because `checkAfterSession` was never called.

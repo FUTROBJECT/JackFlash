@@ -88,6 +88,7 @@ export function initData() {
           current: 0,
           lastPracticeDate: null,
           longest: 0,
+          daysPracticed: 0,
         },
         achievements: [],
         sessionHistory: [],
@@ -201,6 +202,7 @@ export function createProfile({ name, avatar, activeModule = "multiply" }) {
       current: 0,
       lastPracticeDate: null,
       longest: 0,
+      daysPracticed: 0,
     },
     achievements: [],
     sessionHistory: [],
@@ -376,6 +378,13 @@ export function updateStreak(profileId, problemCount) {
     return streak;
   }
 
+  // daysPracticed: total distinct days with a counted session — it never
+  // resets, so coming back after a gap still counts ("showing up", see the
+  // Habit Builder achievement). Profiles from before the field existed are
+  // back-filled from their streak and recent session history.
+  if (typeof streak.daysPracticed !== "number") streak.daysPracticed = backfillDaysPracticed(profile);
+  if (problemCount >= STREAK_MIN_PROBLEMS) streak.daysPracticed += 1;
+
   if (streak.lastPracticeDate === null) {
     // First practice ever
     if (problemCount >= STREAK_MIN_PROBLEMS) {
@@ -410,6 +419,15 @@ export function updateStreak(profileId, problemCount) {
 
   saveData();
   return streak;
+}
+
+function backfillDaysPracticed(profile) {
+  const days = new Set(
+    (profile.sessionHistory || [])
+      .filter((s) => s && s.recordedAt && (s.total === undefined || s.total >= STREAK_MIN_PROBLEMS))
+      .map((s) => String(s.recordedAt).slice(0, 10))
+  );
+  return Math.max(profile.dailyStreak?.longest || 0, days.size);
 }
 
 export function checkStreakOnLaunch(profileId) {

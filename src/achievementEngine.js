@@ -51,12 +51,17 @@ export const UNIVERSAL_ACHIEVEMENTS = [
     params: { count: 30 },
   },
   {
-    id: "century-club",
-    name: "Century Club",
-    description: "100 problems in one session",
-    icon: "💯",
-    trigger: "sessionTotal",
-    params: { count: 100 },
+    // Replaces "Century Club" (100 problems in one session), which rewarded
+    // volume and pulled against "five minutes a day" (docs/voice-and-
+    // messaging.md). Habit Builder rewards showing up: 10 different days,
+    // not in a row, so a missed day never takes it away. A stored
+    // "century-club" id is simply no longer rendered (like speed-demon).
+    id: "habit-builder",
+    name: "Habit Builder",
+    description: "Practiced on 10 different days",
+    icon: "🌱",
+    trigger: "daysPracticed",
+    params: { count: 10 },
   },
   {
     // Confidence pass (docs/confidence-pass-spec.md, C3): Speed Demon is
@@ -137,6 +142,9 @@ function checkTrigger(triggerType, params, values) {
 
     case "dailyStreak":
       return values.dailyStreak && values.dailyStreak.current >= params.count;
+
+    case "daysPracticed":
+      return !!values.dailyStreak && (values.dailyStreak.daysPracticed || 0) >= params.count;
 
     case "masterTable":
       return checkMasterTable(params.table, values.mastery, values.masteryThreshold);
@@ -382,7 +390,7 @@ export function checkAfterSession({ profileId, moduleId, module, dailyStreak, se
   };
 
   // Check only daily-streak based universal achievements
-  const dailyStreakAchievements = UNIVERSAL_ACHIEVEMENTS.filter((a) => a.trigger === "dailyStreak");
+  const dailyStreakAchievements = UNIVERSAL_ACHIEVEMENTS.filter((a) => a.trigger === "dailyStreak" || a.trigger === "daysPracticed");
 
   for (const achievement of dailyStreakAchievements) {
     if (unlockedIds.includes(achievement.id)) {

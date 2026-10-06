@@ -32,7 +32,7 @@ import {
   initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch,
   recordAnswerInSession, recordAssistedInSession, recordPeekInSession, finalizeLiveSession, getProfile, getPreferredMode, setPreferredMode,
 } from "./dataManager.js";
-import { checkAfterAnswer, getAllAchievementsForProfile } from "./achievementEngine.js";
+import { checkAfterAnswer, checkAfterSession, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
@@ -1662,6 +1662,13 @@ export default function FractionsPractice({
     if (profileId && newTotal >= 10) {
       const updatedStreak = updateStreak(profileId, newTotal);
       setDailyStreak(updatedStreak);
+      // Day-based achievements (Week Warrior, Month Master, Habit Builder)
+      // are checked when the day's practice counts; before this hookup
+      // checkAfterSession was never called, so they could never unlock.
+      {
+        const dayUnlocks = checkAfterSession({ profileId, moduleId, module: mod, dailyStreak: updatedStreak, sessionTotal: newTotal });
+        if (dayUnlocks.length > 0) setAchievementQueue((prev) => [...prev, ...dayUnlocks]);
+      }
     }
 
     if (isCorrect) {
