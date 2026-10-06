@@ -2330,7 +2330,7 @@ export default function PlaceValuePractice({
                         fontSize: "clamp(32px, 9vw, 44px)", fontFamily: "'Shrikhand', cursive",
                         fontWeight: 400, textAlign: "center", border: "none",
                         borderBottom: `4px solid ${COLORS.black}`,
-                        backgroundColor: retry.phase === "missed" ? COLORS.yellow : retry.phase === "done" ? COLORS.green : "#FFF0F0",
+                        backgroundColor: retry.phase === "missed" ? COLORS.yellow : retry.phase === "done" ? COLORS.green : COLORS.cream, // cream, not pink: no red in the reveal (wrong-answer-reveal-spec R4)
                         color: COLORS.black, outline: "none", padding: "2px 0",
                         WebkitAppearance: "none", MozAppearance: "textfield",
                         animation: retry.phase === "done" ? "correctPulse 0.4s ease" : "none",
