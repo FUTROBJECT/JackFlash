@@ -7,20 +7,20 @@ parents, reviewers, and press. Technical sources of truth: `docs/mastery-fluency
 ## Short version (parent-facing)
 
 Most apps call a fact "mastered" after three right answers — even if your child counted
-on their fingers every time. JackFlash holds a higher bar: **mastered means fast *and*
-unaided**. A fact only counts when it's answered from memory, quickly, with no hints on
-screen — the same standard classrooms use for real fluency. And the clock is fair: it
-allows extra time for typing longer answers and for division (which kids rightly solve
-through the matching multiplication fact). Slow answers are still celebrated — kids never
-see a timer or a "too slow." The app just quietly waits until the fact is truly automatic
-before marking it done.
+on their fingers every time. JackFlash holds a different bar: **mastered means from
+memory, unaided**. The third answer has to come with no picture on screen, and in
+Multiply & Divide the app also checks that the answer came from memory rather than
+counting, using a generous window your child never sees. Math isn't a race: there's no
+timer, no leaderboard and no "too slow," and every correct answer is celebrated. The goal
+is a fact that's automatic, so it gets out of the way and leaves room for thinking —
+not a fast one. (Messaging rules: `docs/voice-and-messaging.md`.)
 
 ## Deeper dive
 
 1. **Mastery = 3 credited answers.** Every fact tracks its own count. Answers always
    record an attempt, but only *credited* answers advance the count.
-2. **Gate 1 — speed.** A correct answer credits only if it beats a time limit that says
-   "this was recall, not counting." The limit is digit-scaled: a base of 4s
+2. **Gate 1 — memory, not counting (Multiply & Divide only).** A correct answer credits only
+   if it lands inside a window that says "this was recall, not counting." The limit is digit-scaled: a base of 4s
    (multiplication) or 6s (division) plus 1.2s per digit of the answer — recalling 6×1
    and 10×10 is the same mental act, but typing "6" vs "100" on a touchscreen isn't.
    Division's larger base reflects real pedagogy: kids retrieve 42÷7 *through* 6×7, and

@@ -12,7 +12,7 @@ export default function SmartPracticeExplainer() {
   return (
     <div style={{ fontSize: "13px", lineHeight: 1.7, color: COLORS.black }}>
       <p style={{ margin: "0 0 12px" }}>
-        JackFlash uses Smart Practice, so your child never sees random problems. Every question is picked based on what they know, what they're still learning, and what they're ready to review.
+        JackFlash uses Smart Practice, so your child never sees random problems. Every question is picked based on what they know, what they're still learning, and what they're ready to review. The only comparison it ever makes is your child against their own last week.
       </p>
 
       <h4 style={{
@@ -26,11 +26,11 @@ export default function SmartPracticeExplainer() {
       </h4>
       <div style={{ display: "flex", flexDirection: "column", gap: "9px", marginBottom: "14px" }}>
         {[
-          { label: "New", desc: "Only 2–3 unseen facts introduced at a time, so nothing gets overwhelming.", color: COLORS.blue },
-          { label: "Learning", desc: "Seen before but not yet mastered. Shown often.", color: COLORS.yellow },
-          { label: "Struggling", desc: "Missed repeatedly. Top priority.", color: COLORS.pink },
-          { label: "Mastered", desc: "3 fast, unaided correct answers. Moves into long-term review.", color: COLORS.green },
-          { label: "Review-due", desc: "Mastered facts whose review window has come up.", color: COLORS.orange },
+          { label: "New", desc: "Only 2–3 new facts or problems at a time, so nothing gets overwhelming.", color: COLORS.blue },
+          { label: "Learning", desc: "Seen before and still forming. Comes up often.", color: COLORS.yellow },
+          { label: "Needs practice", desc: "Missed a few times. Comes back first, with the picture ready.", color: COLORS.pink },
+          { label: "Mastered", desc: "Answered from memory 3 times, the last one with no picture on screen. Moves into long-term review.", color: COLORS.green },
+          { label: "Review-due", desc: "Mastered facts whose review day has come around.", color: COLORS.orange },
         ].map((row) => (
           <div key={row.label} style={{
             display: "flex",
@@ -67,10 +67,10 @@ export default function SmartPracticeExplainer() {
         margin: "14px 0 8px",
         color: COLORS.black,
       }}>
-        Mastery isn't permanent
+        What “mastered” means
       </h4>
       <p style={{ margin: "0 0 12px" }}>
-        A fact becomes mastered after 3 correct answers that count — and an answer only counts when it comes quickly (recall, not finger-counting) with no hints on screen for the final one. The time limit is fair: it stretches for longer answers and for division, and your child never sees a timer or a "too slow" — slow answers still celebrate, they just don't advance the meter yet. If your child misses a mastered fact during review, it drops back into learning — the standard stays honest.
+        A fact is mastered after 3 correct answers, the last one with no picture on screen. The goal is a fact that comes from memory and gets out of the way, so your child's thinking has room for the bigger problem. Math isn't a race, and being fast is never the point. In Multiply &amp; Divide, JackFlash also checks that an answer came from memory rather than counting, using a generous window your child never sees: there's no timer and no "too slow", and a slower correct answer is still celebrated, it just doesn't count toward mastery yet. Fractions, Place Value and Add &amp; Subtract have no time window at all. If a mastered fact is missed during review, it simply comes back into practice.
       </p>
 
       <h4 style={{
@@ -94,7 +94,7 @@ export default function SmartPracticeExplainer() {
         next day → 3 days → 7 days → 14 days → 30 days
       </p>
       <p style={{ margin: "0 0 12px" }}>
-        Each correct review pushes the interval out. A miss resets it. This is how facts move from short-term into long-term memory.
+        Each correct review pushes the next one further out. A miss brings the fact back sooner, which is the app doing its job, not a mark against your child. This is how facts move from short-term into long-term memory.
       </p>
 
       <h4 style={{
@@ -107,7 +107,7 @@ export default function SmartPracticeExplainer() {
         When your child gets one wrong
       </h4>
       <p style={{ margin: 0 }}>
-        The visual scaffold (dot array or bar model) appears automatically and the fact's mastery level drops by one. The app assumes your child needs to see the math, not guess harder.
+        Nothing flashes red. The picture comes back with one short line showing how to get there, and your child tries the same question again. Only the first answer is recorded, so the second try is pure practice. An answer that comes in too fast to be a real try is treated as "not sure": the picture appears and nothing is counted. The app assumes your child needs to see the math, not guess harder.
       </p>
     </div>
   );

@@ -28,9 +28,9 @@ Alternatives, if search data later argues for a change:
 
 ## Promotional Text  *(limit: 170 characters — editable any time without an app update)*
 
-> Real Singapore Math practice. Multiply & Divide is free; Fractions is $3.99 once — no subscription. Mastered means fast and unaided. No ads. No tracking. Fully offline.
+> Real Singapore Math practice. Multiply & Divide is free; Fractions is $3.99 once — no subscription. Mastered means from memory. No ads. No tracking. Fully offline.
 
-168 characters. Leads with the three pillars in priority order: real pedagogy, one-time price, private by architecture. Good slot for seasonal or feature updates later (e.g. "Now with Add & Subtract").
+163 characters. Leads with the three pillars in priority order: real pedagogy, one-time price, private by architecture. Good slot for seasonal or feature updates later (e.g. "Now with Add & Subtract").
 
 ---
 
@@ -56,16 +56,16 @@ SEE THE MATH, DON'T JUST GUESS
 Built on the Concrete–Pictorial–Abstract method, JackFlash teaches multiplication and division as visual fact families, not flashcard drills. Kids build each fact with their hands in Concrete mode, see it as dot arrays, number bonds, and bar models, then answer without help. As mastery grows, the scaffolding fades on its own. Understanding first, fluency second.
 
 SMART PRACTICE THAT ADAPTS
-Smart Practice — JackFlash's adaptive engine — sorts every fact into five categories: new, learning, struggling, mastered, and review-due. A child who owns their 2s and 5s but keeps missing 7s and 8s sees far more 7s and 8s. No time wasted drilling facts they already know.
+Smart Practice — JackFlash's adaptive engine — sorts every fact into five categories: new, learning, needs practice, mastered, and review-due. A child who owns their 2s and 5s but keeps missing 7s and 8s sees far more 7s and 8s. No time wasted drilling facts they already know.
 
-MASTERED MEANS FAST AND UNAIDED
-Most apps call a fact mastered after three lucky taps. JackFlash waits until your child can answer quickly, without the visual — because that's what real recall looks like. Slow answers still get the full celebration, still count toward streaks and session scores; your child will never see "too slow." Mastery simply waits until it's real. Then each fact comes back on a widening review schedule — next day, 3 days, 7, 14, 30 — so it stays real.
+MASTERED MEANS FROM MEMORY
+Most apps call a fact mastered after three lucky taps. JackFlash waits until your child can answer from memory, without the picture — because a fact that's truly learned gets out of the way and leaves room for thinking. Math isn't a race: there's no timer, no leaderboard, and your child will never see "too slow." Every correct answer gets the full celebration. Mastery simply waits until it's real. Then each fact comes back on a widening review schedule — next day, 3 days, 7, 14, 30 — so it stays real.
 
 ONE APP. EVERY CHILD'S LEVEL.
 Siblings share one device, each with their own profile, avatar, progress, streaks, and achievements. Tap your face and you're in your own world.
 
 BUILT FOR PARENTS, TOO
-The Parent Zone sits behind a quick multiplication gate, so kids can't wander in. Inside: per-child progress reports, the exact facts your child is struggling with, a "ready to try unaided" list, module assignment, and settings. Every purchase lives behind that gate too.
+The Parent Zone sits behind a quick multiplication gate, so kids can't wander in. Inside: per-child progress reports, the exact facts your child is working on, a "ready to try unaided" list, module assignment, and settings. Every purchase lives behind that gate too.
 
 PRIVATE BY ARCHITECTURE
 No accounts. No ads. No tracking. JackFlash works fully offline, and everything your child does stays on the device. That's not a policy promise — the app has nowhere to send data.
@@ -90,7 +90,7 @@ Short, benefit-led lines to pair with each screenshot:
 1. One app. Every child's level.
 2. Smart Practice adapts to your child
 3. See the math — don't just guess
-4. Mastered means fast and unaided
+4. Mastered means from memory
 5. Parents see what matters
 6. Free to start. $3.99 once. No subscription.
 
@@ -129,6 +129,6 @@ This is true by architecture, not policy: the app makes zero network calls at ru
 - **What ships at launch:** Two modules — Multiply & Divide (entirely free, all groups) and Fractions ($3.99 one-time, Foundations group free to sample). Add & Subtract, Place Value, and Connections are visible in-app as Coming Soon teasers but are not purchasable. The description says "coming soon" without naming dates — keep it that way until each is real, to stay within Apple's rules on advertising unreleased content.
 - **No bundle at launch.** The bundle exists in code but stays hidden until 3+ paid modules are live, so it's an honest discount rather than a pre-sale of unbuilt content. It never appears in customer-facing copy until then. Do not create a bundle IAP product in App Store Connect / Play until the threshold is met.
 - **Pricing in metadata:** the description and promo text say $3.99 (it's the loudest pillar for the homeschool audience). Apple sets regional price tiers, so verify the USD tier matches before submission, and remember promo text is editable without an app update if it ever drifts.
-- **Mastery copy rule:** "mastered means fast and unaided" is a selling point — but never phrase it as kids being timed, tested, or penalized. The app never shows "too slow," never decrements for a slow answer, and celebrates every correct answer. Copy must always pair the standard with that reassurance, as the description's MASTERED section does.
+- **Mastery copy rule (revised 2026-10-06):** the selling point is "mastered means from memory," never "fast." Math isn't a race; never phrase mastery as speed, or kids as timed, tested, ranked or penalized. The Multiply & Divide time window is an invisible way to tell memory from counting — mention it only as reassurance (no timer, no "too slow"). Full rules: `docs/voice-and-messaging.md`.
 - **Category / age rating:** Education; Kids category age bands 6–8 and 9–11; rating 4+. Kids-category rules are already satisfied: no ads, no tracking, purchases behind a parental gate.
 - **"Smart Practice" is a branded feature name.** Always capitalized, used as a proper noun — never as a loose adjective ("smart practice"). It names the five-category adaptive engine. Keep it consistent across the app, this listing, the FAQ, the screenshots, and the landing page.

@@ -426,7 +426,7 @@ function HowItWorksScreen({ onNext, onBack }) {
               Smart Practice, not random drills
             </p>
             <p style={{ fontSize: "12px", color: "#555", lineHeight: 1.5, margin: 0 }}>
-              Struggling facts come up more often. Mastered facts space out over days. Every session is tailored to your child.
+              Tricky facts come back more often. Mastered facts space out over days. Every session is tailored to your child.
             </p>
           </div>
 
@@ -439,16 +439,16 @@ function HowItWorksScreen({ onNext, onBack }) {
               5 minutes a day
             </p>
             <p style={{ fontSize: "12px", color: "#555", lineHeight: 1.5, margin: 0 }}>
-              Short and frequent beats long and grinding. The daily streak keeps them coming back.
+              Short and frequent beats long and grinding. No timers, no leaderboards: math isn't a race.
             </p>
           </div>
 
           {/* "Perfect For" callout — solid-fill accent block (no left stripe) */}
           <Callout title="Perfect For">
             {[
-              "Kids in grades 2–5 building math fact fluency",
+              "Kids in grades 2–5 learning their math facts for keeps",
               "Swapping random drills for visual, adaptive practice",
-              "Short 5-minute daily sessions that build a streak",
+              "Short 5-minute daily sessions, with no timers and no pressure",
             ].map((t) => (
               <div key={t} style={{
                 display: "flex", gap: "10px", alignItems: "baseline",

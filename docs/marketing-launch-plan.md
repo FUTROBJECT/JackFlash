@@ -10,11 +10,11 @@ This doc adds what those don't cover: the asset **status/gap list**, the **landi
 ## 1. Positioning (one paragraph, use everywhere)
 
 JackFlash is real Singapore Math practice — the CPA method (concrete → pictorial → abstract), bar models,
-and mastery that means **fast and unaided**, not three lucky taps. Built by a dad for his son Jack.
+and mastery that means **from memory and unaided**, not three lucky taps. Built by a dad for his son Jack.
 One-time $3.99, no subscription. No ads, no tracking, no account — works fully offline.
 
 Three pillars, in priority order:
-1. **Real pedagogy** — CPA scaffolds that fade, touch-the-math concrete mode, fluency-gated mastery. Competitors drill; JackFlash teaches the way top classrooms do.
+1. **Real pedagogy** — CPA scaffolds that fade, touch-the-math concrete mode, mastery from memory (never a race — see `docs/voice-and-messaging.md`). Competitors drill; JackFlash teaches the way top classrooms do.
 2. **One-time $3.99** — against a market of $60–100/yr subscriptions. This is the loudest single line in homeschool communities.
 3. **Genuinely private** — COPPA-clean by architecture (local-only, zero network). Not a policy promise; a design fact.
 
@@ -65,7 +65,7 @@ Serve as the **App Store "Marketing URL"** and the link used in every community 
 Sections, top to bottom:
 1. **Hero** — animated wordmark lockup + "Math fluency, the right way." + App Store badge + *Try it free in your browser* (links to the live web app).
 2. **Three pillars** — the §1 trio, one tight paragraph each.
-3. **How it works** — the CPA story with the dots-fade visual (reuse onboarding's Concrete/Pictorial/Abstract framing); one line on fluency-gated mastery: "Mastered means fast *and* unaided."
+3. **How it works** — the CPA story with the dots-fade visual (reuse onboarding's Concrete/Pictorial/Abstract framing); one line on mastery: "Mastered means from memory *and* unaided."
 4. **Screenshots** — 3–4 framed shots (same set as the store).
 5. **Pricing, plainly** — "Multiply & Divide: free forever. Fractions: $3.99 once. No subscription. No ads. Ever."
 6. **Built for Jack** — 3-sentence founder note. This is the trust anchor for the homeschool audience.

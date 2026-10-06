@@ -166,6 +166,10 @@ submission). Read it before any store-facing work. Key state:
 - `src/shared/` — cross-module bar components, illustrations, UI bits
 - `src/modules/` + `src/*-practice.jsx` — one pair per module
 - `docs/*-spec.md` — curriculum specs (the build contract for each module)
+- `docs/voice-and-messaging.md` — copy rules for anything describing the app,
+  its goals or success: math isn't a race; mastery means "from memory", never
+  "fast"; the child is only compared with their own last week. Read before
+  writing any copy.
 - `NOTES-next-modules.md` — cross-session build notes; read before building
   a new module
 

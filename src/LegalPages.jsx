@@ -184,13 +184,13 @@ export function HelpFAQ({ onBack }) {
 
       <AccordionItem title="What is JackFlash?" defaultOpen>
         <p style={{ margin: 0 }}>
-          A math fluency app for grades 2–5. It helps kids master multiplication, division, and fractions — and then connect them — using the Concrete-Pictorial-Abstract (CPA) approach from Singapore Math, the same method used in top-performing classrooms worldwide.
+          A math practice app for grades 2–5, built on the Concrete-Pictorial-Abstract (CPA) approach from Singapore Math. Your child sees each idea as a picture before it becomes numbers, so facts and methods are understood first and then remembered. The goal is math your child owns, not a race to answer first.
         </p>
       </AccordionItem>
 
       <AccordionItem title="What is the CPA approach?">
-        <p style={{ margin: "0 0 8px" }}><strong>Concrete:</strong> dot arrays show what multiplication actually means — groups of things.</p>
-        <p style={{ margin: "0 0 8px" }}><strong>Pictorial:</strong> bar models (for division) show the total being split into equal parts.</p>
+        <p style={{ margin: "0 0 8px" }}><strong>Concrete:</strong> your child handles the math directly — dot arrays for multiplication, fraction bars, place-value discs — to see what it actually means.</p>
+        <p style={{ margin: "0 0 8px" }}><strong>Pictorial:</strong> the picture stays on screen and fades as the idea becomes familiar.</p>
         <p style={{ margin: 0 }}><strong>Abstract:</strong> numbers alone — once the concept is owned, the scaffolds step back, and the picture is always one tap away.</p>
       </AccordionItem>
 
@@ -226,7 +226,7 @@ export function HelpFAQ({ onBack }) {
           <strong>2. Your child has mastered the foundations</strong> — all of Multiplication, Division, <em>and</em> Fractions.
         </p>
         <p style={{ margin: "0 0 8px" }}>
-          <strong>Buying it won't be enough on its own.</strong> Even after purchase, Connections will stay locked until your child has mastered all three foundation skills — they earn their way in. Until then the module card will show a checklist of what's still left to master, filling in as each one is conquered.
+          <strong>Buying it won't be enough on its own.</strong> Even after purchase, Connections will stay locked until your child has mastered all three foundation skills — they earn their way in. Until then the module card will show a checklist of what's still left to master, filling in as each one is mastered.
         </p>
         <p style={{ margin: 0 }}>
           (Mastering Fractions, in turn, requires the Fractions module to be unlocked in the Parent Zone — so the foundations have to be in place first. Mastering them now means Connections opens the moment it arrives.)
@@ -237,7 +237,15 @@ export function HelpFAQ({ onBack }) {
         <SmartPracticeExplainer />
       </AccordionItem>
 
-      <AccordionItem title="Can I see what my child is struggling with?">
+      <AccordionItem title="Is JackFlash about answering fast?">
+        <p style={{ margin: "0 0 8px" }}>
+          No. Math isn't a race, and being the fastest isn't the goal. We do want facts to become automatic, the way you read a word without sounding it out, because a fact that comes from memory gets out of the way and leaves room for thinking.
+        </p>
+        <p style={{ margin: 0 }}>
+          JackFlash never shows a timer, never ranks your child against anyone, and never says &ldquo;too slow.&rdquo; A wrong answer brings the picture back and your child tries again. The only comparison it makes is your child against their own last week: what they couldn&rsquo;t do on Tuesday and can do on Thursday.
+        </p>
+      </AccordionItem>
+      <AccordionItem title="Can I see what my child is working on?">
         <p style={{ margin: 0 }}>
           Yes. During practice, tap the chart icon to see mastery dots for every fact. In the Parent Zone, the &ldquo;Needs Practice&rdquo; section lists the specific facts with the lowest mastery — including ones your child hasn't attempted yet.
         </p>

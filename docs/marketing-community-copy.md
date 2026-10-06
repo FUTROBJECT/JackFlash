@@ -14,7 +14,7 @@ The 3-sentence honest ask. Adapt the first clause to the venue ("Fellow Primary 
 "Hi r/homeschool —", etc.).
 
 > I built a Singapore Math practice app for my son Jack — real CPA method (concrete → pictorial →
-> abstract), bar models, and mastery that means fast *and* unaided, not three lucky taps. Before it
+> abstract), bar models, and mastery that means from memory *and* unaided, not three lucky taps. Before it
 > goes on the App Store I'd love critical feedback from parents who actually teach this way: TestFlight
 > beta is free, the app has no ads, no accounts, and works fully offline. If you homeschool with
 > Primary Mathematics, Dimensions, or Math in Focus, you're exactly who I want to hear from — link in
@@ -40,7 +40,7 @@ The one honest post, adapted per venue. Title suggestions:
 > So I built the app I wanted. JackFlash does practice the way the CPA method actually teaches:
 > concrete first (kids build the array with their hands), then pictorial (bar models and groups),
 > then abstract (just the numbers). Scaffolds fade as understanding grows. A fact only counts as
-> mastered when Jack answers it fast *and* unaided — the same standard his curriculum uses.
+> mastered when Jack answers it from memory *and* unaided. No timers, no leaderboards: math isn't a race.
 >
 > The parts I refused to compromise on: no ads, no tracking, no accounts. Everything stays on the
 > device — it works in airplane mode. Purchases sit behind a parent gate.
@@ -79,7 +79,7 @@ Subject: JackFlash — Singapore Math practice app, one-time $3.99, COPPA-clean 
 >
 > I'm Adam Murray, a solo developer (Laser Lab Studio). I built JackFlash for my son Jack: Singapore
 > Math practice using the real CPA method — kids physically build arrays in concrete mode, work bar
-> models in pictorial, and only then drill abstract facts. Mastery is fluency-gated: fast and unaided.
+> models in pictorial, and only then practise abstract facts. Mastery means from memory and unaided, never fast.
 >
 > What might interest your readers: Multiply & Divide is entirely free, Fractions is a one-time $3.99
 > (no subscription), and the app is COPPA-clean by architecture — no ads, no tracking, no accounts,
