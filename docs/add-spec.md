@@ -365,7 +365,9 @@ The split shown on the number line is fixed per item.
 
 ### 6.3 Word-problem pools (builder writes the literal stories to these rules)
 
-**Style.** 2–3 sentences, ≤12 words each, US classroom wording ("in all", "altogether", "how many more", "left"). One-word first names (≤6 letters, varied), everyday countables (stickers, beads, books, visitors, apples, cards, laps). No money with cents, no units. Numbers display with commas.
+**Style.** 2–3 sentences, ≤12 words each, US classroom wording ("in all", "altogether", "how many more", "left"). One-word first names (≤6 letters, varied). No money with cents. Numbers display with commas.
+
+**Realism (Adam, 2026-10-09; supersedes "everyday countables, no units").** Every story is something a kid meets in real life (school, games, family, a ballgame, Halloween) or a real fact that sparks curiosity (landmarks, planets, mountains, the body, records, St. Louis places). Never a random pile of this or that, a collection no kid owns, or a count nobody makes. A real fact cites its source in `docs/add-word-problems.md`; a real place with invented day-of numbers says so there. Units (feet, meters, miles) are fine when both amounts share one unit.
 
 **Arithmetic ≤ 1 regroup per operation**: the item tests the model, not the algorithm. Every intermediate and answer is ≤ 9,999.
 

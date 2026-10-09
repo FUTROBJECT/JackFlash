@@ -2,9 +2,12 @@
 
 **Author:** curriculum agent, 2026-10-06 · **Verified:** main loop by script (arithmetic of every step, ≤1 regroup per operation, every value 0–9,999, unique keys, story numbers match keys, answer ≠ the other operation for 1-step items, answer ≠ step 1 for W3, every sentence ≤12 words, no trade/borrow/carry). All 56 pass.
 
+**Revised 2026-10-09 (Adam's realism review).** Every story must be something a kid meets in real life, or a real fact that sparks curiosity, never a random pile of this or that. Two review rounds: 13 stories kept, 21 rewritten in a kid's own world with the same numbers (keys and progress unchanged), and 22 replaced with real facts (landmarks, planets, mountains, the human body, baseball records, two LEGO sets) or real St. Louis places (Gateway Arch, Busch Stadium, CITYPARK, City Museum, the zoo, Steinberg Rink, the rivers). 14 of the replacements needed new numbers, so they have new keys. Each fact-based story carries a `source:` line; where the place is real but the day's numbers are invented, the source line says so. Facts may use units (feet, meters, miles) when both amounts share the unit. Numbers stay under 10,000 (P3), so a real figure over that, like CITYPARK's 22,423 seats, is reframed to part of the whole. All 56 re-verified by script and by the DEV self-check.
+
 This file is the source of truth for the `WORD_PROBLEMS` literals in `src/modules/add.jsx`. Item order within each skill is the introduction order. Keys are persisted mastery units: never edit a key once shipped.
 
 Notes from the author:
+- **Realism rule:** a new story uses a real fact (with a `source:` line) or a real setting a kid would recognize. No collections no kid owns (5,742 marbles), no counting what nobody counts (6,509 flowers).
 - The spec's worked-example keys `add:wp:whole:2456+1378` and `add:wp:part:3000-1265` break the ≤1-regroup rule, so they are not in the pool (`2456+1327` is used instead). `1250-480+200` in §9.2 stays as an illustration only.
 - Two of the six comparison-then-whole items (W3) are "fewer" stories.
 - In W3 labels, `[step 1]` stands for the step-1 result: shown as "?" (or blank) before the answer, filled with the number only in the reveal.
@@ -17,20 +20,20 @@ key: add:wp:whole:324+152
 skill: W1
 kind: whole
 model: partWhole
-story: Leo has 324 red beads. He has 152 blue beads.
-question: How many beads does Leo have in all?
+story: Leo built a castle with 324 bricks. Then he built a ship with 152 bricks.
+question: How many bricks did Leo use in all?
 answer: 476
-labels: parts: Red beads 324 | Blue beads 152 ; whole: ?
+labels: parts: Castle 324 | Ship 152 ; whole: ?
 ```
 ```
 key: add:wp:part:586-243
 skill: W1
 kind: part
 model: partWhole
-story: Mia has 586 stickers. She has 243 star stickers. The rest are heart stickers.
-question: How many heart stickers does Mia have?
+story: Mia's school has 586 students. Of these, 243 ride the bus. The rest walk or come by car.
+question: How many students do not ride the bus?
 answer: 343
-labels: parts: Star stickers 243 | Heart stickers ? ; whole: 586
+labels: parts: Bus 243 | Walk or car ? ; whole: 586
 ```
 ```
 key: add:wp:whole:438+247
@@ -67,8 +70,8 @@ key: add:wp:part:725-461
 skill: W1
 kind: part
 model: partWhole
-story: Priya and Omar have 725 shells together. Priya has 461 shells.
-question: How many shells does Omar have?
+story: Priya and Omar scored 725 points together in a game. Priya scored 461 points.
+question: How many points did Omar score?
 answer: 264
 labels: parts: Priya 461 | Omar ? ; whole: 725
 ```
@@ -97,40 +100,41 @@ key: add:wp:part:3895-1640
 skill: W1
 kind: left
 model: partWhole
-story: A shop had 3,895 balloons. It sold 1,640 balloons.
-question: How many balloons were left?
+story: Dad's phone had 3,895 photos. He deleted 1,640 blurry photos.
+question: How many photos are left on Dad's phone?
 answer: 2255
-labels: parts: Sold 1640 | Left ? ; whole: 3895
+labels: parts: Deleted 1640 | Left ? ; whole: 3895
 ```
 ```
 key: add:wp:whole:5203+3614
 skill: W1
 kind: whole
 model: partWhole
-story: A farm grew 5,203 red apples. It grew 3,614 green apples.
-question: How many apples did the farm grow in all?
+story: Grandma walked 5,203 steps on Saturday. She walked 3,614 steps on Sunday.
+question: How many steps did Grandma walk on the two days?
 answer: 8817
-labels: parts: Red apples 5203 | Green apples 3614 ; whole: ?
+labels: parts: Saturday 5203 | Sunday 3614 ; whole: ?
 ```
 ```
 key: add:wp:whole:2456+1327
 skill: W1
 kind: whole
 model: partWhole
-story: Zara has 2,456 gold stars. She has 1,327 silver stars.
-question: How many stars does Zara have altogether?
+story: Zara has 2,456 gems in her video game. Then she earns 1,327 gems on a new level.
+question: How many gems does Zara have now?
 answer: 3783
-labels: parts: Gold stars 2456 | Silver stars 1327 ; whole: ?
+labels: parts: Had 2456 | Earned 1327 ; whole: ?
 ```
 ```
 key: add:wp:part:6385-2147
 skill: W1
 kind: part
 model: partWhole
-story: A stadium has 6,385 seats. Of these, 2,147 seats are blue. The rest are red.
-question: How many red seats are there?
+story: St. Louis CITY SC plays soccer at CITYPARK. At one game, 6,385 fans sat in the top deck. Of these, 2,147 were kids.
+question: How many grown-ups sat in the top deck?
 answer: 4238
-labels: parts: Blue seats 2147 | Red seats ? ; whole: 6385
+labels: parts: Kids 2147 | Grown-ups ? ; whole: 6385
+source: CITYPARK: two tiers of seats, 22,423 in all (Wikipedia).
 ```
 ```
 key: add:wp:whole:3742+2165
@@ -147,18 +151,18 @@ key: add:wp:part:5460-2830
 skill: W1
 kind: left
 model: partWhole
-story: Sam had 5,460 stamps. He gave 2,830 stamps to his cousin.
-question: How many stamps does Sam have left?
+story: A pumpkin patch grew 5,460 pumpkins. Families picked 2,830 of them in October.
+question: How many pumpkins were left?
 answer: 2630
-labels: parts: Gave away 2830 | Left ? ; whole: 5460
+labels: parts: Picked 2830 | Left ? ; whole: 5460
 ```
 ```
 key: add:wp:whole:4615+3830
 skill: W1
 kind: whole
 model: partWhole
-story: Aisha's class collected 4,615 bottle caps. Noah's class collected 3,830 bottle caps.
-question: How many bottle caps did both classes collect altogether?
+story: Aisha's class read 4,615 pages in the read-a-thon. Noah's class read 3,830 pages.
+question: How many pages did both classes read altogether?
 answer: 8445
 labels: parts: Aisha's class 4615 | Noah's class 3830 ; whole: ?
 ```
@@ -167,8 +171,8 @@ key: add:wp:part:6254-3182
 skill: W1
 kind: part
 model: partWhole
-story: Ravi and Hana used 6,254 blocks to build a city. Ravi used 3,182 of the blocks.
-question: How many blocks did Hana use?
+story: Ravi and Hana built a brick city with 6,254 bricks. Ravi put in 3,182 of the bricks.
+question: How many bricks did Hana put in?
 answer: 3072
 labels: parts: Ravi 3182 | Hana ? ; whole: 6254
 ```
@@ -177,30 +181,31 @@ key: add:wp:whole:6509+1284
 skill: W1
 kind: whole
 model: partWhole
-story: A garden has 6,509 yellow flowers. It has 1,284 purple flowers.
-question: How many flowers are in the garden altogether?
+story: On race day, 6,509 people ran the long race. Another 1,284 people ran the kids' race.
+question: How many runners were there altogether?
 answer: 7793
-labels: parts: Yellow flowers 6509 | Purple flowers 1284 ; whole: ?
+labels: parts: Long race 6509 | Kids' race 1284 ; whole: ?
 ```
 ```
-key: add:wp:part:6836-2592
+key: add:wp:part:2340-1180
 skill: W1
 kind: left
 model: partWhole
-story: A bakery made 6,836 cookies for a fair. It sold 2,592 cookies.
-question: How many cookies were left?
-answer: 4244
-labels: parts: Sold 2592 | Left ? ; whole: 6836
+story: The Mississippi River is 2,340 miles long. Rosa's aunt is paddling the whole river in a canoe. So far, she has paddled 1,180 miles.
+question: How many miles does she have left to paddle?
+answer: 1160
+labels: parts: Paddled 1180 | Left ? ; whole: 2340
+source: Mississippi River: 2,340 miles (USGS Water Science School).
 ```
 ```
 key: add:wp:whole:5347+2425
 skill: W1
 kind: whole
 model: partWhole
-story: Mei planted 5,347 corn seeds. She planted 2,425 bean seeds.
-question: How many seeds did Mei plant in all?
+story: Mei scored 5,347 points in round one of a game. She scored 2,425 points in round two.
+question: How many points did Mei score in all?
 answer: 7772
-labels: parts: Corn seeds 5347 | Bean seeds 2425 ; whole: ?
+labels: parts: Round one 5347 | Round two 2425 ; whole: ?
 ```
 ```
 key: add:wp:part:8175-1640
@@ -220,60 +225,64 @@ key: add:wp:more:320+145
 skill: W2
 kind: more
 model: comparison
-story: Ben has 320 stickers. Mia has 145 more stickers than Ben.
-question: How many stickers does Mia have?
+story: Ben's book has 320 pages. Mia's book has 145 more pages than Ben's.
+question: How many pages are in Mia's book?
 answer: 465
 labels: bars: Ben 320 | Mia ? ; difference: 145
 ```
 ```
-key: add:wp:diff:587-352
+key: add:wp:diff:762-703
 skill: W2
 kind: diff-more
 model: comparison
-story: Lily has 587 beads. Omar has 352 beads.
-question: How many more beads does Lily have than Omar?
-answer: 235
-labels: bars: Lily 587 | Omar 352 ; difference: ?
+story: Barry Bonds hit 762 home runs, the most ever. Albert Pujols hit 703 home runs.
+question: How many more home runs did Bonds hit than Pujols?
+answer: 59
+labels: bars: Bonds 762 | Pujols 703 ; difference: ?
+source: Bonds 762, Pujols 703 career home runs (MLB.com, 700 Home Run Club).
 ```
 ```
-key: add:wp:less:768-235
+key: add:wp:less:555-250
 skill: W2
 kind: less
 model: comparison
-story: Jin has 768 cards. Ella has 235 fewer cards than Jin.
-question: How many cards does Ella have?
-answer: 533
-labels: bars: Jin 768 | Ella ? ; difference: 235
+story: The Washington Monument is 555 feet tall. The Statue of Liberty is 250 feet shorter.
+question: How tall is the Statue of Liberty?
+answer: 305
+labels: bars: Monument 555 | Statue ? ; difference: 250
+source: Washington Monument 555 ft; Statue of Liberty 305 ft ground to torch (NPS).
 ```
 ```
-key: add:wp:more:456+227
+key: add:wp:more:330+498
 skill: W2
 kind: more
 model: comparison
-story: Kofi scored 456 points in a game. Nora scored 227 more points than Kofi.
-question: How many points did Nora score?
-answer: 683
-labels: bars: Kofi 456 | Nora ? ; difference: 227
+story: The Eiffel Tower is 330 meters tall. The Burj Khalifa in Dubai is 498 meters taller.
+question: How tall is the Burj Khalifa?
+answer: 828
+labels: bars: Eiffel Tower 330 | Burj Khalifa ? ; difference: 498
+source: Eiffel Tower 330 m (toureiffel.paris); Burj Khalifa 828 m.
 ```
 ```
 key: add:wp:diff:814-352
 skill: W2
 kind: diff-more
 model: comparison
-story: The red train had 814 riders. The blue train had 352 riders.
-question: How many more riders did the red train have than the blue?
+story: The roller coaster had 814 riders on Saturday. It had 352 riders on Monday.
+question: How many more riders were there on Saturday than on Monday?
 answer: 462
-labels: bars: Red train 814 | Blue train 352 ; difference: ?
+labels: bars: Saturday 814 | Monday 352 ; difference: ?
 ```
 ```
-key: add:wp:more:2130+1415
+key: add:wp:more:674+902
 skill: W2
 kind: more
 model: comparison
-story: Diego has 2,130 stamps. Ruby has 1,415 more stamps than Diego.
-question: How many stamps does Ruby have?
-answer: 3545
-labels: bars: Diego 2130 | Ruby ? ; difference: 1415
+story: Visitors can climb 674 steps up the Eiffel Tower. The Empire State Building race has 902 more steps.
+question: How many steps are in the Empire State Building race?
+answer: 1576
+labels: bars: Eiffel Tower 674 | Empire State ? ; difference: 902
+source: Eiffel Tower 674 steps to floor 2 (toureiffel.paris); Empire State Run-Up 1,576 stairs (esbnyc.com).
 ```
 ```
 key: add:wp:diff:4867-2543
@@ -290,20 +299,22 @@ key: add:wp:less:5742-1325
 skill: W2
 kind: less
 model: comparison
-story: Luis has 5,742 marbles. Amir has 1,325 fewer marbles than Luis.
-question: How many marbles does Amir have?
+story: Luis walked 5,742 steps on Monday. Amir walked 1,325 fewer steps than Luis.
+question: How many steps did Amir walk?
 answer: 4417
 labels: bars: Luis 5742 | Amir ? ; difference: 1325
 ```
 ```
-key: add:wp:less:642-218
+key: add:wp:less:630-25
 skill: W2
 kind: trap
 model: comparison
-story: Sofia has 642 shells. She has 218 more shells than Theo.
-question: How many shells does Theo have?
-answer: 424
-labels: bars: Sofia 642 | Theo ? ; difference: 218
+trap: true
+story: The Gateway Arch is 630 feet tall. It is 25 feet taller than the Space Needle.
+question: How tall is the Space Needle?
+answer: 605
+labels: bars: Gateway Arch 630 | Space Needle ? ; difference: 25
+source: Gateway Arch 630 ft (NPS); Space Needle 605 ft.
 ```
 ```
 key: add:wp:more:3264+2519
@@ -326,34 +337,37 @@ answer: 2476
 labels: bars: Ines 5893 | Dev 3417 ; difference: ?
 ```
 ```
-key: add:wp:more:4580+1270
+key: add:wp:more:3630+141
 skill: W2
 kind: more
 model: comparison
-story: A farm has 4,580 chickens. It has 1,270 more ducks than chickens.
-question: How many ducks does the farm have?
-answer: 5850
-labels: bars: Chickens 4580 | Ducks ? ; difference: 1270
+story: Stan Musial got 3,630 hits for the St. Louis Cardinals. Hank Aaron got 141 more hits than Musial.
+question: How many hits did Hank Aaron get?
+answer: 3771
+labels: bars: Musial 3630 | Aaron ? ; difference: 141
+source: Musial 3,630 hits (Baseball Hall of Fame); Aaron 3,771.
 ```
 ```
 key: add:wp:less:3625-1408
 skill: W2
 kind: trap
 model: comparison
-story: Felix has 3,625 stickers. He has 1,408 more stickers than Yuki.
-question: How many stickers does Yuki have?
+trap: true
+story: Felix's tablet has 3,625 photos. It has 1,408 more photos than Yuki's tablet.
+question: How many photos are on Yuki's tablet?
 answer: 2217
 labels: bars: Felix 3625 | Yuki ? ; difference: 1408
 ```
 ```
-key: add:wp:less:6460-2830
+key: add:wp:less:8849-2659
 skill: W2
 kind: less
 model: comparison
-story: The big pond has 6,460 fish. The small pond has 2,830 fewer fish.
-question: How many fish are in the small pond?
-answer: 3630
-labels: bars: Big pond 6460 | Small pond ? ; difference: 2830
+story: Mount Everest is 8,849 meters tall. Denali, in Alaska, is 2,659 meters shorter.
+question: How tall is Denali?
+answer: 6190
+labels: bars: Everest 8849 | Denali ? ; difference: 2659
+source: Everest 8,849 m; Denali 6,190 m.
 ```
 ```
 key: add:wp:diff:5182-3951
@@ -366,22 +380,24 @@ answer: 1231
 labels: bars: Hugo's school 5182 | Lucy's school 3951 ; difference: ?
 ```
 ```
-key: add:wp:more:3148+2705
+key: add:wp:more:6020+3070
 skill: W2
 kind: more
 model: comparison
-story: Arjun has 3,148 blocks. Jade has 2,705 more blocks than Arjun.
-question: How many blocks does Jade have?
-answer: 5853
-labels: bars: Arjun 3148 | Jade ? ; difference: 2705
+story: The LEGO Hogwarts Castle set has 6,020 pieces. The LEGO Titanic set has 3,070 more pieces.
+question: How many pieces does the LEGO Titanic set have?
+answer: 9090
+labels: bars: Hogwarts 6020 | Titanic ? ; difference: 3070
+source: Hogwarts Castle 71043: 6,020 pieces; Titanic 10294: 9,090 pieces (Brick Fanatics).
 ```
 ```
 key: add:wp:less:4350-1820
 skill: W2
 kind: trap
 model: comparison
-story: Owen planted 4,350 seeds. He planted 1,820 more seeds than Nia.
-question: How many seeds did Nia plant?
+trap: true
+story: Owen's school collected 4,350 cans for the food drive. That is 1,820 more cans than Nia's school.
+question: How many cans did Nia's school collect?
 answer: 2530
 labels: bars: Owen 4350 | Nia ? ; difference: 1820
 ```
@@ -390,30 +406,33 @@ key: add:wp:diff:8416-1293
 skill: W2
 kind: diff-more
 model: comparison
-story: The fair had 8,416 visitors on Saturday. It had 1,293 visitors on Sunday.
+story: The fair had 8,416 visitors on Saturday. It rained on Sunday, and 1,293 people came.
 question: How many more visitors came on Saturday than on Sunday?
 answer: 7123
 labels: bars: Saturday 8416 | Sunday 1293 ; difference: ?
 ```
 ```
-key: add:wp:more:1574+1362
+key: add:wp:more:3032+1180
 skill: W2
 kind: more
 model: comparison
-story: Kai has 1,574 beads. Zoe has 1,362 more beads than Kai.
-question: How many beads does Zoe have?
-answer: 2936
-labels: bars: Kai 1574 | Zoe ? ; difference: 1362
+story: Mercury is 3,032 miles across. Mars is 1,180 miles wider than Mercury.
+question: How many miles across is Mars?
+answer: 4212
+labels: bars: Mercury 3032 | Mars ? ; difference: 1180
+source: Mercury 3,032 mi, Mars 4,212 mi across (NASA radii x 2).
 ```
 ```
-key: add:wp:less:6205-2140
+key: add:wp:less:7918-397
 skill: W2
 kind: trap
 model: comparison
-story: A shop sold 6,205 pencils. It sold 2,140 more pencils than erasers.
-question: How many erasers did the shop sell?
-answer: 4065
-labels: bars: Pencils 6205 | Erasers ? ; difference: 2140
+trap: true
+story: Earth is 7,918 miles across. It is 397 miles wider than Venus.
+question: How many miles across is Venus?
+answer: 7521
+labels: bars: Earth 7918 | Venus ? ; difference: 397
+source: Earth 7,918 mi, Venus 7,521 mi across (NASA).
 ```
 
 ## W3 — Two steps (16)
@@ -423,20 +442,21 @@ key: add:wp:two:485-132+210
 skill: W3
 kind: two-change
 model: two
-story: Leo had 485 stickers. He gave 132 stickers to his sister. Then he bought 210 more stickers.
-question: How many stickers does Leo have now?
+story: A hot dog stand at Busch Stadium had 485 hot dogs. It sold 132 in the first inning. Then the cooks made 210 more.
+question: How many hot dogs does the stand have now?
 answer: 563
 step1: 485 - 132 = 353
 step2: 353 + 210 = 563
-labels: 1) parts: Gave away 132 | Left ? ; whole: 485 // 2) parts: Left [step 1] | Bought 210 ; whole: ?
+labels: 1) parts: Sold 132 | Left ? ; whole: 485 // 2) parts: Left [step 1] | Made 210 ; whole: ?
+source: Event numbers are made up; Busch Stadium is real.
 ```
 ```
 key: add:wp:two:213+142+213
 skill: W3
 kind: two-compare-whole
 model: two
-story: Ava has 213 beads. Mei has 142 more beads than Ava.
-question: How many beads do they have altogether?
+story: Ava read 213 pages this week. Mei read 142 more pages than Ava.
+question: How many pages did they read altogether?
 answer: 568
 step1: 213 + 142 = 355
 step2: 213 + 355 = 568
@@ -447,103 +467,110 @@ key: add:wp:two:650-280+145
 skill: W3
 kind: two-change
 model: two
-story: A shop had 650 pens. It sold 280 pens. Then 145 more pens came in.
-question: How many pens does the shop have now?
+story: The houses on Elm Street had 650 pieces of Halloween candy. Trick-or-treaters took 280 pieces before dark. Then the neighbors bought 145 more pieces.
+question: How many pieces of candy do they have now?
 answer: 515
 step1: 650 - 280 = 370
 step2: 370 + 145 = 515
-labels: 1) parts: Sold 280 | Left ? ; whole: 650 // 2) parts: Left [step 1] | Came in 145 ; whole: ?
+labels: 1) parts: Taken 280 | Left ? ; whole: 650 // 2) parts: Left [step 1] | Bought 145 ; whole: ?
+source: Event numbers are made up.
 ```
 ```
-key: add:wp:two:236+118+236
+key: add:wp:two:162+53+162
 skill: W3
 kind: two-compare-whole
 model: two
-story: Ezra has 236 cards. Grace has 118 more cards than Ezra.
-question: How many cards do they have in all?
-answer: 590
-step1: 236 + 118 = 354
-step2: 236 + 354 = 590
-labels: 1) bars: Ezra 236 | Grace ? ; difference: 118 // 2) parts: Ezra 236 | Grace [step 1] ; whole: ?
+story: From the pedestal, 162 steps lead to the Statue of Liberty's crown. The stairs up to the pedestal have 53 more steps than that.
+question: How many steps are there from the ground to the crown?
+answer: 377
+step1: 162 + 53 = 215
+step2: 162 + 215 = 377
+labels: 1) bars: Crown stairs 162 | Pedestal stairs ? ; difference: 53 // 2) parts: Crown stairs 162 | Pedestal stairs [step 1] ; whole: ?
+source: 162 steps pedestal to crown (NPS); 215 to the pedestal (NPR); 377 in all.
 ```
 ```
-key: add:wp:two:750-240-240
+key: add:wp:two:206-106-100
 skill: W3
 kind: two-whole-compare
 model: two
-story: Rosa and Ali have 750 marbles together. Rosa has 240 marbles.
-question: How many more marbles does Ali have than Rosa?
-answer: 270
-step1: 750 - 240 = 510
-step2: 510 - 240 = 270
-labels: 1) parts: Rosa 240 | Ali ? ; whole: 750 // 2) bars: Ali [step 1] | Rosa 240 ; difference: ?
+story: An adult has 206 bones. The hands and feet have 106 of them!
+question: How many more bones are in the hands and feet than elsewhere?
+answer: 6
+step1: 206 - 106 = 100
+step2: 106 - 100 = 6
+labels: 1) parts: Hands and feet 106 | Rest of body ? ; whole: 206 // 2) bars: Hands and feet 106 | Rest of body [step 1] ; difference: ?
+source: 206 bones; 27 per hand, 26 per foot = 106 (Wikipedia, list of bones).
 ```
 ```
 key: add:wp:two:3460-1230+2105
 skill: W3
 kind: two-change
 model: two
-story: A sports shop had 3,460 tennis balls. It sold 1,230 tennis balls. Then it got 2,105 more tennis balls.
-question: How many tennis balls does the shop have now?
+story: The town library had 3,460 books. It gave away 1,230 old books. Then it got 2,105 new books.
+question: How many books does the library have now?
 answer: 4335
 step1: 3460 - 1230 = 2230
 step2: 2230 + 2105 = 4335
-labels: 1) parts: Sold 1230 | Left ? ; whole: 3460 // 2) parts: Left [step 1] | Got 2105 ; whole: ?
+labels: 1) parts: Gave away 1230 | Left ? ; whole: 3460 // 2) parts: Left [step 1] | New books 2105 ; whole: ?
 ```
 ```
 key: add:wp:two:2130+1240+2130
 skill: W3
 kind: two-compare-whole
 model: two
-story: Hana collected 2,130 shells. Kofi collected 1,240 more shells than Hana.
-question: How many shells did they collect altogether?
+story: On Saturday, 2,130 people skated at Steinberg Rink in Forest Park. On Sunday, 1,240 more people skated than on Saturday.
+question: How many people skated on the two days?
 answer: 5500
 step1: 2130 + 1240 = 3370
 step2: 2130 + 3370 = 5500
-labels: 1) bars: Hana 2130 | Kofi ? ; difference: 1240 // 2) parts: Hana 2130 | Kofi [step 1] ; whole: ?
+labels: 1) bars: Saturday 2130 | Sunday ? ; difference: 1240 // 2) parts: Saturday 2130 | Sunday [step 1] ; whole: ?
+source: Event numbers are made up; Steinberg Rink is real.
 ```
 ```
 key: add:wp:two:5250-1630+2415
 skill: W3
 kind: two-change
 model: two
-story: Amir had 5,250 stamps. He gave 1,630 stamps to a friend. Then he got 2,415 more stamps.
-question: How many stamps does Amir have now?
+story: Bird watchers counted 5,250 white pelicans on the river near St. Louis. Then 1,630 pelicans flew south. Later, 2,415 more pelicans landed.
+question: How many pelicans are on the river now?
 answer: 6035
 step1: 5250 - 1630 = 3620
 step2: 3620 + 2415 = 6035
-labels: 1) parts: Gave away 1630 | Left ? ; whole: 5250 // 2) parts: Left [step 1] | Got 2415 ; whole: ?
+labels: 1) parts: Flew south 1630 | Stayed ? ; whole: 5250 // 2) parts: Stayed [step 1] | Landed 2415 ; whole: ?
+source: Event numbers are made up; the migration is real (NPS, Riverlands).
 ```
 ```
 key: add:wp:two:1425+1318+1425
 skill: W3
 kind: two-compare-whole
 model: two
-story: Wei folded 1,425 paper stars. Lena folded 1,318 more stars than Wei.
-question: How many stars did they fold altogether?
+story: On Friday, 1,425 kids zoomed down the ten-story slide at City Museum. On Saturday, 1,318 more kids slid down than on Friday.
+question: How many kids went down the slide on the two days?
 answer: 4168
 step1: 1425 + 1318 = 2743
 step2: 1425 + 2743 = 4168
-labels: 1) bars: Wei 1425 | Lena ? ; difference: 1318 // 2) parts: Wei 1425 | Lena [step 1] ; whole: ?
+labels: 1) bars: Friday 1425 | Saturday ? ; difference: 1318 // 2) parts: Friday 1425 | Saturday [step 1] ; whole: ?
+source: Event numbers are made up; the slide is real (City Museum).
 ```
 ```
 key: add:wp:two:4860-1520-1520
 skill: W3
 kind: two-whole-compare
 model: two
-story: Isla and Max sold 4,860 tickets together. Isla sold 1,520 tickets.
-question: How many more tickets did Max sell than Isla?
+story: One day, 4,860 people rode the trams up the Gateway Arch. Of these, 1,520 were kids.
+question: How many more grown-ups than kids rode the trams?
 answer: 1820
 step1: 4860 - 1520 = 3340
 step2: 3340 - 1520 = 1820
-labels: 1) parts: Isla 1520 | Max ? ; whole: 4860 // 2) bars: Max [step 1] | Isla 1520 ; difference: ?
+labels: 1) parts: Kids 1520 | Grown-ups ? ; whole: 4860 // 2) bars: Grown-ups [step 1] | Kids 1520 ; difference: ?
+source: Event numbers are made up; tram capacity from the Gateway Arch fact sheet.
 ```
 ```
 key: add:wp:two:2145+1320-1280
 skill: W3
 kind: two-change
 model: two
-story: Nora had 2,145 beads. She bought 1,320 more beads. Then she used 1,280 beads to make bracelets.
+story: Nora had 2,145 beads. She bought a tub of 1,320 more beads. Then she used 1,280 beads to make a bead picture.
 question: How many beads does Nora have now?
 answer: 2185
 step1: 2145 + 1320 = 3465
@@ -551,16 +578,17 @@ step2: 3465 - 1280 = 2185
 labels: 1) parts: Had 2145 | Bought 1320 ; whole: ? // 2) parts: Used 1280 | Left ? ; whole: [step 1]
 ```
 ```
-key: add:wp:two:4250-1630+4250
+key: add:wp:two:2540-200+2540
 skill: W3
 kind: two-compare-whole
 model: two
-story: Tom has 4,250 cards. Ana has 1,630 fewer cards than Tom.
-question: How many cards do they have altogether?
-answer: 6870
-step1: 4250 - 1630 = 2620
-step2: 4250 + 2620 = 6870
-labels: 1) bars: Tom 4250 | Ana ? ; difference: 1630 // 2) parts: Tom 4250 | Ana [step 1] ; whole: ?
+story: The Missouri River is 2,540 miles long. The Mississippi River is 200 miles shorter. The two rivers meet near St. Louis.
+question: How many miles long are the two rivers altogether?
+answer: 4880
+step1: 2540 - 200 = 2340
+step2: 2540 + 2340 = 4880
+labels: 1) bars: Missouri 2540 | Mississippi ? ; difference: 200 // 2) parts: Missouri 2540 | Mississippi [step 1] ; whole: ?
+source: Missouri 2,540 mi, Mississippi 2,340 mi (USGS list). Other sources differ a little.
 ```
 ```
 key: add:wp:two:6480-2150-2150
@@ -579,12 +607,13 @@ key: add:wp:two:7325-2140+1608
 skill: W3
 kind: two-change
 model: two
-story: A farm had 7,325 seeds. The farmer planted 2,140 seeds. Then she bought 1,608 more seeds.
-question: How many seeds does the farmer have now?
+story: At noon, 7,325 people were at the Saint Louis Zoo. Later, 2,140 people went home. Then 1,608 more people came in.
+question: How many people are at the zoo now?
 answer: 6793
 step1: 7325 - 2140 = 5185
 step2: 5185 + 1608 = 6793
-labels: 1) parts: Planted 2140 | Left ? ; whole: 7325 // 2) parts: Left [step 1] | Bought 1608 ; whole: ?
+labels: 1) parts: Went home 2140 | Stayed ? ; whole: 7325 // 2) parts: Stayed [step 1] | Came in 1608 ; whole: ?
+source: Event numbers are made up; the zoo gets about 3 million visitors a year.
 ```
 ```
 key: add:wp:two:5370-1450+5370
@@ -603,10 +632,10 @@ key: add:wp:two:8950-3725-3725
 skill: W3
 kind: two-whole-compare
 model: two
-story: Yuki and Ivan have 8,950 stickers together. Yuki has 3,725 stickers.
-question: How many more stickers does Ivan have than Yuki?
+story: Yuki's class and Ivan's class read 8,950 pages in the read-a-thon. Yuki's class read 3,725 pages.
+question: How many more pages did Ivan's class read than Yuki's class?
 answer: 1500
 step1: 8950 - 3725 = 5225
 step2: 5225 - 3725 = 1500
-labels: 1) parts: Yuki 3725 | Ivan ? ; whole: 8950 // 2) bars: Ivan [step 1] | Yuki 3725 ; difference: ?
+labels: 1) parts: Yuki's class 3725 | Ivan's class ? ; whole: 8950 // 2) bars: Ivan's class [step 1] | Yuki's class 3725 ; difference: ?
 ```
