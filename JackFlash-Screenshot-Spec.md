@@ -1,5 +1,7 @@
 # JackFlash — App Store Screenshot Design Spec
 
+> **Updated 2026-10-12.** Frames are rendered and live in `screenshots/appstore/` (iPhone 6.9" and iPad 13"), captured from the store build with demo profiles Olive, Leo and Maya. Caption changes from this draft, to follow `docs/voice-and-messaging.md`: frame 3 is now the tagline **"See it. Get it. Keep it."** (Concrete mode, building 6 × 7), frame 4 is **"Mastered means from memory"**, and frame 6 is **"Progress you can see"** with "No clock, no race" in the subline. The old frame 6 caption ("Streaks and badges keep them coming back") is on the messaging guide's don't-say list.
+
 Draft v1 · Marketing screenshots for the Apple App Store (iPhone + iPad).
 Pairs with `JackFlash-AppStore-Listing.md` — the six caption headlines come from that doc's "Screenshot Caption Headlines" section.
 

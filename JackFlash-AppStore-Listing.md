@@ -89,10 +89,12 @@ Short, benefit-led lines to pair with each screenshot:
 
 1. One app. Every child's level.
 2. Smart Practice adapts to your child
-3. See the math — don't just guess
+3. See it. Get it. Keep it.
 4. Mastered means from memory
 5. Parents see what matters
-6. Free to start. $3.99 once. No subscription.
+6. Progress you can see *(subline: "No clock, no race. Badges celebrate showing up and steady work.")*
+
+Rendered frames (2026-10-12, from the store build on the simulators with demo data): `screenshots/appstore/iphone-6.9/` (1320 × 2868) and `screenshots/appstore/ipad-13/` (2064 × 2752).
 
 ---
 

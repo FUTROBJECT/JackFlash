@@ -118,10 +118,10 @@
   var frames = [
     { src: "./landing/frames/frame1_profiles.png", alt: "One app. Every child’s level — profiles screen on yellow" },
     { src: "./landing/frames/frame2_smartpractice.png", alt: "Smart Practice adapts to your child — five categories on green" },
-    { src: "./landing/frames/frame3_practice.png", alt: "See the math, don’t just guess — practice screen on blue" },
-    { src: "./landing/frames/frame4_mastery.png", alt: "Mastery that actually sticks — practice sets on pink" },
+    { src: "./landing/frames/frame3_practice.png", alt: "See it. Get it. Keep it. — building 6 × 7 in groups on blue" },
+    { src: "./landing/frames/frame4_mastery.png", alt: "Mastered means from memory — mastery grid on pink" },
     { src: "./landing/frames/frame5_parentzone.png", alt: "Parents see what matters — parent zone on purple" },
-    { src: "./landing/frames/frame6_badges.png", alt: "Streaks and badges keep them coming back — on orange" }
+    { src: "./landing/frames/frame6_badges.png", alt: "Progress you can see — no clock, no race — badges on orange" }
   ];
 
   var lightbox = document.getElementById("lightbox");
