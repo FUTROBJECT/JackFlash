@@ -98,13 +98,13 @@ Short, benefit-led lines to pair with each screenshot:
 
 ## App Review Notes  *(App Store Connect → App Review Information → Notes)*
 
-> JackFlash is fully offline. There is no account, no sign-in, and no network activity at runtime — all content is reviewable immediately, no credentials needed.
+> JackFlash has no account and no sign-in — all content is reviewable immediately, no credentials needed. The only network activity is the in-app purchase, handled by Apple's StoreKit through RevenueCat; practice works fully offline.
 >
-> Reaching settings and the store: from the home screen, tap "Parent Zone." A parental gate asks a multiplication question (e.g. "What is 37 × 6?") — type the answer to enter. The store is on the Modules tab inside the Parent Zone.
+> Reaching settings and the store: from the home screen, tap "Parent Zone." A parental gate asks a multiplication question (e.g. "What is 26 × 3?") — type the answer to enter. The store is on the Modules tab inside the Parent Zone, along with Restore Purchases.
 >
 > In-app purchases: one product at launch — Fractions Full (`module.fractions.full`, $3.99 one-time), which unlocks the Fractions module beyond its free Foundations group. Multiply & Divide is entirely free with full access to all content — no purchase involved. Add & Subtract, Place Value, and Connections appear as "Coming Soon" previews and cannot be purchased.
 >
-> All children's progress data is stored on-device only. Nothing is collected or transmitted.
+> All children's progress data is stored on-device only. Nothing about the child is collected or transmitted; no ads, analytics, or tracking.
 
 (~135 words. Update the product list here with each module release.)
 
