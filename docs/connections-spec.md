@@ -67,8 +67,9 @@ The summit type. A whole quantity is shown as one bar; a fraction names part of 
 ### Group T — Two-Step Word Problems *(Integration; P3 core multiplication/division word problems)*
 Genuine two-step problems requiring the child to choose and chain operations, each modeled with a bar. These are word-problem-shaped (short, one-sentence-per-line, 8-year-old reading level) but answered with a single number.
 
-- **T1. Two multiplicative steps.** e.g. "4 bags. Each bag has 6 apples. They are shared equally onto 3 plates. How many apples on each plate?" → 4 × 6 = 24, then 24 ÷ 3 = 8.
-- **T2. One multiplicative step + a fraction-of-quantity step.** e.g. "There are 5 boxes of 4 pencils. 1/2 of the pencils are red. How many are red?" → 5 × 4 = 20, then 1/2 of 20 = 10. (This is the deepest unification of all three source topics; gated to the end — see §5.)
+- **T1. Two multiplicative steps.** e.g. "Dad orders 3 large pizzas. Each pizza is cut into 8 slices. 6 kids share the slices equally. How many slices does each kid get?" → 3 × 8 = 24, then 24 ÷ 6 = 4. Or a real fact: "Each Gateway Arch tram has 8 capsules. Each capsule seats 5 people. The Arch has 2 trams. How many people can ride up at once?" → 8 × 5 = 40, then 40 × 2 = 80.
+- **Realism (Adam, 2026-10-12):** every T story is everyday life a kid has lived (sharing pizza, Halloween candy, a class trip to the zoo) or a real fact (Arch trams, dice, checkers, a chessboard, teeth, hockey). No random piles of bags, sweets and marbles. Same rule as `docs/add-spec.md` §6.3.
+- **T2. One multiplicative step + a fraction-of-quantity step.** e.g. "A grown-up has 4 groups of 8 teeth. One quarter of them are incisors, the flat front teeth. How many incisors does a grown-up have?" → 4 × 8 = 32, then 1/4 of 32 = 8. (This is the deepest unification of all three source topics; gated to the end — see §5.)
 
 ### Group S — Shuffle Drill *(INTERLEAVING; secondary)*
 Single-operation items drawn from the three source topics, shuffled together so the child must decide *which* kind of problem it is before solving. This trains discrimination, the skill that disappears when you drill one operation at a time. **All items here are restricted to facts/items the child has already mastered in the source modules** — interleaving is for fluency and discrimination, not first learning.
