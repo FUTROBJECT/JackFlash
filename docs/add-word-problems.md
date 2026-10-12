@@ -2,7 +2,7 @@
 
 **Author:** curriculum agent, 2026-10-06 · **Verified:** main loop by script (arithmetic of every step, ≤1 regroup per operation, every value 0–9,999, unique keys, story numbers match keys, answer ≠ the other operation for 1-step items, answer ≠ step 1 for W3, every sentence ≤12 words, no trade/borrow/carry). All 56 pass.
 
-**Revised 2026-10-09 (Adam's realism review).** Every story must be something a kid meets in real life, or a real fact that sparks curiosity, never a random pile of this or that. Two review rounds: 13 stories kept, 21 rewritten in a kid's own world with the same numbers (keys and progress unchanged), and 22 replaced with real facts (landmarks, planets, mountains, the human body, baseball records, two LEGO sets) or real St. Louis places (Gateway Arch, Busch Stadium, CITYPARK, City Museum, the zoo, Steinberg Rink, the rivers). 14 of the replacements needed new numbers, so they have new keys. Each fact-based story carries a `source:` line; where the place is real but the day's numbers are invented, the source line says so. Facts may use units (feet, meters, miles) when both amounts share the unit. Numbers stay under 10,000 (P3), so a real figure over that, like CITYPARK's 22,423 seats, is reframed to part of the whole. All 56 re-verified by script and by the DEV self-check.
+**Revised 2026-10-09 (Adam's realism review).** Every story must be something a kid meets in real life, or a real fact that sparks curiosity, never a random pile of this or that. Two review rounds: 13 stories kept, 21 rewritten in a kid's own world with the same numbers (keys and progress unchanged), and 22 replaced with real facts (landmarks, planets, mountains, the human body, baseball records, two LEGO sets) or real St. Louis places (Gateway Arch, Busch Stadium, CITYPARK, City Museum, the zoo, Steinberg Rink, the rivers). 14 of the replacements needed new numbers. On 2026-10-12 five more generic stories (#6, #11, #16, #19, #42) became real facts too (calendar, Everest base camp, Golden Gate Bridge, Willis Tower, Harry Potter page counts), with new keys, so they have new keys. Each fact-based story carries a `source:` line; where the place is real but the day's numbers are invented, the source line says so. Facts may use units (feet, meters, miles) when both amounts share the unit. Numbers stay under 10,000 (P3), so a real figure over that, like CITYPARK's 22,423 seats, is reframed to part of the whole. All 56 re-verified by script and by the DEV self-check.
 
 This file is the source of truth for the `WORD_PROBLEMS` literals in `src/modules/add.jsx`. Item order within each skill is the introduction order. Keys are persisted mastery units: never edit a key once shipped.
 
@@ -66,14 +66,15 @@ answer: 847
 labels: parts: Saturday 563 | Sunday 284 ; whole: ?
 ```
 ```
-key: add:wp:part:725-461
+key: add:wp:part:365-104
 skill: W1
 kind: part
 model: partWhole
-story: Priya and Omar scored 725 points together in a game. Priya scored 461 points.
-question: How many points did Omar score?
-answer: 264
-labels: parts: Priya 461 | Omar ? ; whole: 725
+story: A year has 365 days. In most years, 104 of them are Saturdays or Sundays.
+question: How many days are weekdays?
+answer: 261
+labels: parts: Weekend days 104 | Weekdays ? ; whole: 365
+source: Calendar: 52 weeks x 2 weekend days; a 365-day year has one extra day, so most years have 104.
 ```
 ```
 key: add:wp:whole:2345+1432
@@ -116,14 +117,15 @@ answer: 8817
 labels: parts: Saturday 5203 | Sunday 3614 ; whole: ?
 ```
 ```
-key: add:wp:whole:2456+1327
+key: add:wp:whole:5364+3485
 skill: W1
 kind: whole
 model: partWhole
-story: Zara has 2,456 gems in her video game. Then she earns 1,327 gems on a new level.
-question: How many gems does Zara have now?
-answer: 3783
-labels: parts: Had 2456 | Earned 1327 ; whole: ?
+story: Everest climbers start at base camp, 5,364 meters high. From there, they climb another 3,485 meters to the top.
+question: How high is the top of Mount Everest?
+answer: 8849
+labels: parts: Base camp 5364 | Climb 3485 ; whole: ?
+source: Everest South Base Camp 5,364 m; summit 8,849 m.
 ```
 ```
 key: add:wp:part:6385-2147
@@ -167,14 +169,15 @@ answer: 8445
 labels: parts: Aisha's class 4615 | Noah's class 3830 ; whole: ?
 ```
 ```
-key: add:wp:part:6254-3182
+key: add:wp:part:8981-4200
 skill: W1
 kind: part
 model: partWhole
-story: Ravi and Hana built a brick city with 6,254 bricks. Ravi put in 3,182 of the bricks.
-question: How many bricks did Hana put in?
-answer: 3072
-labels: parts: Ravi 3182 | Hana ? ; whole: 6254
+story: The Golden Gate Bridge is 8,981 feet long. The part between its two towers is 4,200 feet long.
+question: How many feet of the bridge are outside the towers?
+answer: 4781
+labels: parts: Between towers 4200 | Outside towers ? ; whole: 8981
+source: Golden Gate Bridge: 8,981 ft long; main span between the towers 4,200 ft (Golden Gate Bridge District).
 ```
 ```
 key: add:wp:whole:6509+1284
@@ -198,14 +201,15 @@ labels: parts: Paddled 1180 | Left ? ; whole: 2340
 source: Mississippi River: 2,340 miles (USGS Water Science School).
 ```
 ```
-key: add:wp:whole:5347+2425
+key: add:wp:whole:1451+278
 skill: W1
 kind: whole
 model: partWhole
-story: Mei scored 5,347 points in round one of a game. She scored 2,425 points in round two.
-question: How many points did Mei score in all?
-answer: 7772
-labels: parts: Round one 5347 | Round two 2425 ; whole: ?
+story: Willis Tower in Chicago is 1,451 feet tall to its roof. Its antennas add another 278 feet.
+question: How tall is Willis Tower to the top of its antennas?
+answer: 1729
+labels: parts: Roof 1451 | Antennas 278 ; whole: ?
+source: Willis Tower: roof 1,451 ft; antenna tip 1,729 ft.
 ```
 ```
 key: add:wp:part:8175-1640
@@ -451,16 +455,17 @@ labels: 1) parts: Sold 132 | Left ? ; whole: 485 // 2) parts: Left [step 1] | Ma
 source: Event numbers are made up; Busch Stadium is real.
 ```
 ```
-key: add:wp:two:213+142+213
+key: add:wp:two:309+32+309
 skill: W3
 kind: two-compare-whole
 model: two
-story: Ava read 213 pages this week. Mei read 142 more pages than Ava.
-question: How many pages did they read altogether?
-answer: 568
-step1: 213 + 142 = 355
-step2: 213 + 355 = 568
-labels: 1) bars: Ava 213 | Mei ? ; difference: 142 // 2) parts: Ava 213 | Mei [step 1] ; whole: ?
+story: Harry Potter and the Sorcerer's Stone has 309 pages. Chamber of Secrets has 32 more pages than that.
+question: How many pages are the two books altogether?
+answer: 650
+step1: 309 + 32 = 341
+step2: 309 + 341 = 650
+labels: 1) bars: Book 1 309 | Book 2 ? ; difference: 32 // 2) parts: Book 1 309 | Book 2 [step 1] ; whole: ?
+source: US first editions: Sorcerer's Stone 309 pages, Chamber of Secrets 341 pages (library catalog records).
 ```
 ```
 key: add:wp:two:650-280+145

@@ -464,10 +464,10 @@ export const WORD_PROBLEMS = [
     labels: { parts: [["Saturday", 563], ["Sunday", 284]], whole: null },
   },
   {
-    key: "add:wp:part:725-461", skill: "W1", kind: "part", model: "partWhole",
-    story: "Priya and Omar scored 725 points together in a game. Priya scored 461 points.",
-    question: "How many points did Omar score?", answer: 264,
-    labels: { parts: [["Priya", 461], ["Omar", null]], whole: 725 },
+    key: "add:wp:part:365-104", skill: "W1", kind: "part", model: "partWhole",
+    story: "A year has 365 days. In most years, 104 of them are Saturdays or Sundays.",
+    question: "How many days are weekdays?", answer: 261,
+    labels: { parts: [["Weekend days", 104], ["Weekdays", null]], whole: 365 },
   },
   {
     key: "add:wp:whole:2345+1432", skill: "W1", kind: "whole", model: "partWhole",
@@ -494,10 +494,10 @@ export const WORD_PROBLEMS = [
     labels: { parts: [["Saturday", 5203], ["Sunday", 3614]], whole: null },
   },
   {
-    key: "add:wp:whole:2456+1327", skill: "W1", kind: "whole", model: "partWhole",
-    story: "Zara has 2,456 gems in her video game. Then she earns 1,327 gems on a new level.",
-    question: "How many gems does Zara have now?", answer: 3783,
-    labels: { parts: [["Had", 2456], ["Earned", 1327]], whole: null },
+    key: "add:wp:whole:5364+3485", skill: "W1", kind: "whole", model: "partWhole",
+    story: "Everest climbers start at base camp, 5,364 meters high. From there, they climb another 3,485 meters to the top.",
+    question: "How high is the top of Mount Everest?", answer: 8849,
+    labels: { parts: [["Base camp", 5364], ["Climb", 3485]], whole: null },
   },
   {
     key: "add:wp:part:6385-2147", skill: "W1", kind: "part", model: "partWhole",
@@ -524,10 +524,10 @@ export const WORD_PROBLEMS = [
     labels: { parts: [["Aisha's class", 4615], ["Noah's class", 3830]], whole: null },
   },
   {
-    key: "add:wp:part:6254-3182", skill: "W1", kind: "part", model: "partWhole",
-    story: "Ravi and Hana built a brick city with 6,254 bricks. Ravi put in 3,182 of the bricks.",
-    question: "How many bricks did Hana put in?", answer: 3072,
-    labels: { parts: [["Ravi", 3182], ["Hana", null]], whole: 6254 },
+    key: "add:wp:part:8981-4200", skill: "W1", kind: "part", model: "partWhole",
+    story: "The Golden Gate Bridge is 8,981 feet long. The part between its two towers is 4,200 feet long.",
+    question: "How many feet of the bridge are outside the towers?", answer: 4781,
+    labels: { parts: [["Between towers", 4200], ["Outside towers", null]], whole: 8981 },
   },
   {
     key: "add:wp:whole:6509+1284", skill: "W1", kind: "whole", model: "partWhole",
@@ -542,10 +542,10 @@ export const WORD_PROBLEMS = [
     labels: { parts: [["Paddled", 1180], ["Left", null]], whole: 2340 },
   },
   {
-    key: "add:wp:whole:5347+2425", skill: "W1", kind: "whole", model: "partWhole",
-    story: "Mei scored 5,347 points in round one of a game. She scored 2,425 points in round two.",
-    question: "How many points did Mei score in all?", answer: 7772,
-    labels: { parts: [["Round one", 5347], ["Round two", 2425]], whole: null },
+    key: "add:wp:whole:1451+278", skill: "W1", kind: "whole", model: "partWhole",
+    story: "Willis Tower in Chicago is 1,451 feet tall to its roof. Its antennas add another 278 feet.",
+    question: "How tall is Willis Tower to the top of its antennas?", answer: 1729,
+    labels: { parts: [["Roof", 1451], ["Antennas", 278]], whole: null },
   },
   {
     key: "add:wp:part:8175-1640", skill: "W1", kind: "part", model: "partWhole",
@@ -682,12 +682,12 @@ export const WORD_PROBLEMS = [
     labels: [{ parts: [["Sold", 132], ["Left", null]], whole: 485 }, { parts: [["Left", "step1"], ["Made", 210]], whole: null }],
   },
   {
-    key: "add:wp:two:213+142+213", skill: "W3", kind: "two-compare-whole", model: "two",
-    story: "Ava read 213 pages this week. Mei read 142 more pages than Ava.",
-    question: "How many pages did they read altogether?", answer: 568,
-    step1: { op: "+", a: 213, b: 142, result: 355 },
-    step2: { op: "+", a: 213, b: 355, result: 568 },
-    labels: [{ bars: [["Ava", 213], ["Mei", null]], diff: 142 }, { parts: [["Ava", 213], ["Mei", "step1"]], whole: null }],
+    key: "add:wp:two:309+32+309", skill: "W3", kind: "two-compare-whole", model: "two",
+    story: "Harry Potter and the Sorcerer's Stone has 309 pages. Chamber of Secrets has 32 more pages than that.",
+    question: "How many pages are the two books altogether?", answer: 650,
+    step1: { op: "+", a: 309, b: 32, result: 341 },
+    step2: { op: "+", a: 309, b: 341, result: 650 },
+    labels: [{ bars: [["Book 1", 309], ["Book 2", null]], diff: 32 }, { parts: [["Book 1", 309], ["Book 2", "step1"]], whole: null }],
   },
   {
     key: "add:wp:two:650-280+145", skill: "W3", kind: "two-change", model: "two",
