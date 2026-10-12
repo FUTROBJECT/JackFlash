@@ -40,9 +40,11 @@ The time window is an implementation detail for telling memory from counting. Me
 
 ## Open questions (Adam to decide)
 
-- The tagline "Math fluency, the right way." Fluency in the education sense means accurate, flexible and efficient, but many parents hear "fast".
+- None right now.
 
 ## Decided
+
+- **2026-10-12 — Tagline: "See it. Get it. Keep it."** replaces "Math fluency, the right way." "Fluency" read as speed to most parents (it is what timed fact tests claim to measure), and "the right way" implied a wrong way, a verdict the paper argues against. The new line is the app's method in three beats: the picture (see), understanding (get), from memory (keep). The name "JackFlash" and its bolt already suggest speed, so the tagline says what the app values instead. It is used on the splash screen, in onboarding, on the landing page and on the social card. "Math you do, not math you are" (from *Before the Jet Pack*) is kept as a parent-facing headline for the landing page or marketing, where there is room to explain it.
 
 - **2026-10-06 — Century Club → Habit Builder.** "Century Club" (100 problems in one session) rewarded volume and pulled against "five minutes a day". It is replaced by **Habit Builder 🌱 — "Practiced on 10 different days"**: a total, not a streak, so a missed day never takes it away. Profiles track `dailyStreak.daysPracticed` (back-filled from streak and recent sessions for existing profiles). The same change wired the day-based achievements to actually fire: Week Warrior and Month Master had never been able to unlock because `checkAfterSession` was never called.
 - **2026-10-06 — Streak milestones toned down.** The repeatable in-practice popups went from four hype milestones ("Getting Warm!" at 3, "On Fire!" at 5, "Unstoppable!" at 10, "LEGENDARY!" at 25) to two calm nods: **"Nice and steady" 👍 at 10** and **"Great focus" 🎯 at 25** ("N right in a row."), with no fire, lightning or crown. A nod is skipped when the matching one-time achievement unlocks on the same answer. The one-time achievements keep their ids but are renamed: getting-warm → **Warming Up** 🌤️, on-fire → **Steady** 👍, unstoppable → **Deep Focus** 🎯 ("3/10/25 right in a row"). Testing this exposed a popup bug: a second achievement queued behind another was never shown (the 3s timer restarted on every re-render and the popup stayed hidden after the first closed). `AchievementPopup` now times each achievement once and shows each one. The nods use their own header, **"Good practice"**, so "Achievement unlocked!" is only said about real achievements.

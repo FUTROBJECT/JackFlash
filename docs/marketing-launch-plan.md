@@ -63,7 +63,7 @@ inlined, the wordmark animation ported as standalone SVG+CSS (it already is SVG+
 Serve as the **App Store "Marketing URL"** and the link used in every community post.
 
 Sections, top to bottom:
-1. **Hero** — animated wordmark lockup + "Math fluency, the right way." + App Store badge + *Try it free in your browser* (links to the live web app).
+1. **Hero** — animated wordmark lockup + "See it. Get it. Keep it." + App Store badge + *Try it free in your browser* (links to the live web app).
 2. **Three pillars** — the §1 trio, one tight paragraph each.
 3. **How it works** — the CPA story with the dots-fade visual (reuse onboarding's Concrete/Pictorial/Abstract framing); one line on mastery: "Mastered means from memory *and* unaided."
 4. **Screenshots** — 3–4 framed shots (same set as the store).

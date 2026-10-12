@@ -81,7 +81,7 @@ export default function SplashScreen({ onDone }) {
       }}
     >
       <div ref={markRef} style={{ transform: `scale(${scale})`, transformOrigin: "center" }}>
-        <AnimatedWordmark size={BASE_SIZE} accentColor="#4CC9F0" stacked subtitle="Math fluency, the right way." />
+        <AnimatedWordmark size={BASE_SIZE} accentColor="#4CC9F0" stacked subtitle="See it. Get it. Keep it." />
       </div>
 
       <div
