@@ -737,12 +737,10 @@ const placeValueModule = {
     { id: "compare", label: "Compare, Order & Patterns", skills: ["C1", "C2", "C3"], color: COLORS.green },
   ],
 
-  // Group V is free alongside Group B ONLY until launch pricing is wired —
-  // the native purchase provider is still a stub, so the $3.99 gate has to
-  // move V out of freeContent before this module ships for real (Build plan).
-  // X (Expanded Form) and C (Compare, Order & Patterns) are the paid groups
-  // and stay OUT of freeContent — pass 2 doesn't change the gate.
-  freeContent: ["build", "digits"],
+  // Preview: Build & Read is free; Digit Values, Expanded Form and Compare,
+  // Order & Patterns need the $3.99 unlock. Jack's phone runs the tester
+  // build (purchaseManager IS_TESTER_BUILD), which opens every group.
+  freeContent: ["build"],
 
   skillLabels: {
     B1: "Read the discs",

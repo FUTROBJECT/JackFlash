@@ -105,7 +105,13 @@ function moduleUnlockProducts() {
 // confirmed entitlement here. The app's content gating reads stay synchronous.
 // ============================================================================
 
+// Tester build (`npm run cap:sync:tester`, Jack's phone only): every module is
+// open so unshipped modules can be test-driven past their previews. The store
+// build (`npm run cap:sync`) never sets it.
+export const IS_TESTER_BUILD = import.meta.env.VITE_JF_TESTER === "1";
+
 export function isModuleFullyUnlocked(moduleId) {
+  if (IS_TESTER_BUILD) return true;
   if (isBundlePurchased()) return true;
   const { purchases } = getPurchases();
   // Look the product up by moduleId rather than string-building the id:

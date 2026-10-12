@@ -1473,11 +1473,10 @@ const addModule = {
     { id: "facts", label: "Facts Warm-Up", skills: ["F1", "F2"], color: COLORS.yellow, supporting: true },
   ],
 
-  // TEST-DRIVE VALUE: every built group is free while the native purchase
-  // provider is still a stub (Place Value precedent, §14). The LAUNCH value
-  // is ["colAdd", "facts"] per §14 — move colSub, mental and words out when
-  // pricing is wired.
-  freeContent: ["colAdd", "colSub", "mental", "words", "facts"],
+  // Preview (§14): Column Adding plus the facts warm-up are free; colSub,
+  // mental and words need the $3.99 unlock. Jack's phone runs the tester
+  // build (purchaseManager IS_TESTER_BUILD), which opens every group.
+  freeContent: ["colAdd", "facts"],
 
   skillLabels: {
     A1: "Add to 1,000",

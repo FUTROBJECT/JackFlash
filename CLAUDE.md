@@ -10,7 +10,8 @@ and to iOS/Android via a Capacitor shell (`com.laserlabstudio.jackflash`).
 ```
 npm run dev          # Vite dev server (port 5173)
 npm run build        # web build → dist/
-npm run cap:sync     # CAP=1 build + npx cap sync (native shell)
+npm run cap:sync     # CAP=1 build + npx cap sync (native shell) — the STORE build
+npm run cap:sync:tester  # same, with VITE_JF_TESTER=1: every module open (Jack's phone only)
 npm run cap:ios      # open Xcode project
 npm run deploy       # gh-pages -d dist
 ```
@@ -46,9 +47,16 @@ definition carries: `id, name, groups, freeContent, skillLabels, pool` (or
 |---|---|---|
 | Multiply & Divide | `multiply` | shipped — **the free module** (all groups free) |
 | Fractions | `fractions` | shipped — $3.99, **Foundations group free** (sample to drive conversion) |
-| Add & Subtract | `add` | **built + wired for test drive** (colAdd, colSub, mental, words, facts; `available: false`, all groups in `freeContent` until launch) — spec `docs/add-spec.md`, stories `docs/add-word-problems.md` |
+| Add & Subtract | `add` | **built + wired, preview only** (colAdd, colSub, mental, words, facts; `available: false`; `freeContent` = colAdd + facts) — spec `docs/add-spec.md`, stories `docs/add-word-problems.md` |
 | Connections (capstone word problems) | `connections` | built, **not wired** — v1.2 |
-| Place Value | `placeValue` | built + wired for test drive (`available: false`, `freeContent` widened until launch) — spec `docs/place-value-spec.md` |
+| Place Value | `placeValue` | built + wired, **preview only** (`available: false`; `freeContent` = build) — spec `docs/place-value-spec.md` |
+
+**Only Multiply is fully free.** Every other module is a preview (its
+`freeContent`) until bought; unsold modules show "Ask a parent to unlock" to
+the child and "Coming Soon" in Parent Zone. Jack test-drives the full modules
+through the **tester build** (`IS_TESTER_BUILD` in `purchaseManager.js`,
+set by `VITE_JF_TESTER=1`), which makes `isModuleFullyUnlocked` always true.
+Never widen `freeContent` for testing, and never ship a tester build.
 
 To ship a staged module: uncomment its import + routing branch in `App.jsx`,
 flip its product's `available: true` and entitlement mapping in
@@ -114,7 +122,8 @@ submission). Read it before any store-facing work. Key state:
 - **Phone test build** (Adam's iPhone 16 is usually connected; find its UDID
   with `xcrun devicectl list devices`). Run from the primary checkout, where
   `ios/` lives:
-  `npm run cap:sync` → `xcodebuild -project ios/App/App.xcodeproj -scheme App
+  `npm run cap:sync:tester` (tester build: all modules open for Jack) →
+  `xcodebuild -project ios/App/App.xcodeproj -scheme App
   -configuration Debug -destination id=<UDID> -allowProvisioningUpdates build`
   → `xcrun devicectl device install app --device <UDID> <…/Debug-iphoneos/App.app>`
   → `xcrun devicectl device process launch --device <UDID>

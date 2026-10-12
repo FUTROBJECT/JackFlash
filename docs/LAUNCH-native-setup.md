@@ -108,6 +108,8 @@ products yet — they're staged, and the bundle only becomes an honest discount 
    npm i @revenuecat/purchases-capacitor
    npm run cap:sync
    ```
+   Store and sandbox builds use `npm run cap:sync`, **never** `cap:sync:tester`:
+   the tester build (Jack's phone) opens every module and would hide the paywall.
 6. ⏳ **Test on a real device** with a sandbox / license-test account: buy
    Fractions, confirm the paid groups unlock, delete + reinstall, tap **Restore
    Purchases**, confirm they come back. (Apple requires a working Restore path —
