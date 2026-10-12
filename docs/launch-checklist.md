@@ -78,6 +78,9 @@ Cleanup nits (optional, non-blocking): `debugGetAllData()` export in `dataManage
 - [ ] Restore Purchases round-trip: delete app → reinstall from Xcode → Restore → Fractions returns without payment
 
 ### 📌 PINNED — TestFlight (ready to execute, ~1 day lead time)
+- [x] **Build 1.0 (1) uploaded to App Store Connect — 2026-10-12** (store build: Multiply + Fractions; Add/Place Value hidden; tagline "See it. Get it. Keep it."). Xcode's account login had gone stale (-501); removing and re-adding the Apple ID fixed it.
+- [ ] Processing email → TestFlight → Test Information → external group "Friends" → add build 1 → submit for Beta App Review
+- [ ] Next upload must bump `CURRENT_PROJECT_VERSION` (build 2, 3, …)
 All prerequisites verified 2026-08-22: encryption key in Info.plist, privacy URL live,
 Test Information values chosen (feedback email adamlaserlab@gmail.com). When ready:
 `npm run cap:sync` (store build, never the tester one) → Any iOS Device → Product → Archive → Distribute → wait for processing → TestFlight tab →
