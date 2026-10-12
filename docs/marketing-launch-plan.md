@@ -9,9 +9,10 @@ This doc adds what those don't cover: the asset **status/gap list**, the **landi
 
 ## 1. Positioning (one paragraph, use everywhere)
 
-JackFlash is real Singapore Math practice — the CPA method (concrete → pictorial → abstract), bar models,
-and mastery that means **from memory and unaided**, not three lucky taps. Built by a dad for his son Jack.
-One-time $3.99, no subscription. No ads, no tracking, no account — works fully offline.
+JackFlash is Singapore Math practice, from the picture to knowing it by heart (concrete → pictorial →
+abstract; mastered means **from memory and unaided**, not three lucky taps). Never timed, never ranked.
+Built by a dad for his kid, Jack. One-time $3.99, no subscription. No ads, no tracking, no account —
+practice works fully offline (only a parent's purchase goes through Apple).
 
 Three pillars, in priority order:
 1. **Real pedagogy** — CPA scaffolds that fade, touch-the-math concrete mode, mastery from memory (never a race — see `docs/voice-and-messaging.md`). Competitors drill; JackFlash teaches the way top classrooms do.
@@ -84,7 +85,7 @@ audience is reachable for free where they already gather; authenticity is the cu
 
 ### Phase A — Pre-launch (now, parallel with the native build; ~1–2 weeks)
 - Refresh listing copy; recapture + frame the 6 screenshots; build the landing page; make the OG image.
-- **TestFlight beta: recruit 10–20 parents** from 2–3 target communities (homeschool forums/subreddits/FB groups) with the honest ask: built this for my son, uses real Singapore Math, want critical feedback before the App Store. TestFlight = free access for them, feedback + a warm launch-day audience for us.
+- **TestFlight beta: recruit 10–20 parents** from 2–3 target communities (homeschool forums/subreddits/FB groups) with the honest ask: built this for my kid, uses Singapore Math, want critical feedback before the App Store. TestFlight = free access for them, feedback + a warm launch-day audience for us.
 - Fold beta feedback in; tune the fluency constants from real `responseMs` data (already on the tech checklist).
 
 ### Phase B — Launch week

@@ -28,9 +28,9 @@ Alternatives, if search data later argues for a change:
 
 ## Promotional Text  *(limit: 170 characters — editable any time without an app update)*
 
-> Real Singapore Math practice. Multiply & Divide is free; Fractions is $3.99 once — no subscription. Mastered means from memory. No ads. No tracking. Fully offline.
+> Singapore Math practice, never timed, never ranked. Multiply & Divide is free; Fractions is $3.99 once — no subscription. No ads. No tracking. Practice works offline.
 
-163 characters. Leads with the three pillars in priority order: real pedagogy, one-time price, private by architecture. Good slot for seasonal or feature updates later (e.g. "Now with Add & Subtract").
+166 characters. Leads with the three pillars in priority order: the approach (and that it's never timed or ranked), one-time price, private by architecture. "Practice works offline" rather than "fully offline": the purchase goes through Apple. Good slot for seasonal or feature updates later (e.g. "Now with Add & Subtract").
 
 ---
 
@@ -50,7 +50,7 @@ The first ~3 lines show before the "more" fold — they carry the most weight.
 
 ---
 
-JackFlash is real Singapore Math practice — the visual, mastery-based approach behind the world's top-performing classrooms, built by a dad for his son Jack. Multiply & Divide is completely free. No ads, no subscription, and nothing your child does ever leaves the device.
+JackFlash is Singapore Math practice — the visual, mastery-based approach behind the world's top-performing classrooms, built by a dad for his kid, Jack. Multiply & Divide is completely free. No ads, no subscription, and nothing your child does ever leaves the device.
 
 SEE THE MATH, DON'T JUST GUESS
 Built on the Concrete–Pictorial–Abstract method, JackFlash teaches multiplication and division as visual fact families, not flashcard drills. Kids build each fact with their hands in Concrete mode, see it as dot arrays, number bonds, and bar models, then answer without help. As mastery grows, the scaffolding fades on its own. Understanding first, fluency second.
@@ -68,7 +68,7 @@ BUILT FOR PARENTS, TOO
 The Parent Zone sits behind a quick multiplication gate, so kids can't wander in. Inside: per-child progress reports, the exact facts your child is working on, a "ready to try unaided" list, module assignment, and settings. Every purchase lives behind that gate too.
 
 PRIVATE BY ARCHITECTURE
-No accounts. No ads. No tracking. JackFlash works fully offline, and everything your child does stays on the device. That's not a policy promise — the app has nowhere to send data.
+No accounts. No ads. No tracking. Practice works fully offline, and everything your child does stays on the device. That's not a policy promise — the app has nowhere to send your child's data. The only thing that ever goes online is a parent's purchase, handled by Apple.
 
 SIMPLE, HONEST PRICING
 Multiply & Divide is free. All of it — every table group, forever. Fractions covers equivalent fractions, comparing and ordering, and fraction addition and subtraction: try the Foundations group free, then unlock the rest with a one-time $3.99 purchase. No subscription. Ever. Add & Subtract, Place Value, and the Connections capstone are coming soon.
@@ -79,7 +79,7 @@ Five minutes of focused practice beats thirty minutes of grinding. JackFlash mak
 
 ## What's New  *(version notes — for v1.0)*
 
-> Welcome to JackFlash. This first release includes Multiply & Divide (completely free) and Fractions (Foundations group free to try, one-time unlock for the rest) — with Smart Practice, touch-the-math Concrete mode, visual scaffolds, fluency-based mastery, daily streaks, achievements, and multi-child profiles. Built by a dad for his son Jack. We'd love your feedback.
+> Welcome to JackFlash. This first release includes Multiply & Divide (completely free) and Fractions (Foundations group free to try, one-time unlock for the rest) — with Smart Practice, touch-the-math Concrete mode, visual scaffolds, mastery that means from memory, daily streaks, achievements, and multi-child profiles. Built by a dad for his kid, Jack. We'd love your feedback.
 
 ---
 
