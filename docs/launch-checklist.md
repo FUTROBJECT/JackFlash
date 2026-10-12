@@ -29,9 +29,9 @@
 - [x] Dormant modules unregistered in `App.jsx` (imports commented; no routes)
 - [x] Connections gate: purchase + mastery prerequisites (`getConnectionsPrereqStatus`) — the old `CONNECTIONS_GATE_BYPASS` flag no longer exists; earlier checklist item retired
 - [x] Fonts self-hosted (8 local .woff2, no CDN refs anywhere)
-- [x] Fully offline: zero runtime network calls (`fetch`/XHR/beacon: none)
+- [x] Offline practice: the app's own code makes no network calls (`fetch`/XHR/beacon/WebSocket: none, re-checked 2026-10-12). The only network use is the native in-app purchase: the RevenueCat SDK talks to RevenueCat and Apple when the app starts and when a parent buys or restores. Web build: none.
 - [x] `capacitor.config.json` correct (appId/appName/webDir); `build:cap`/`cap:*` scripts + Vite base switch correct
-- [x] Capacitor deps installed (core/ios/android/preferences v8); RevenueCat scaffold inert with `__TODO` keys; both lazy `@vite-ignore` imports in place
+- [x] Capacitor deps installed (core/ios/android/preferences v8); RevenueCat installed, iOS key wired (Android key still `__TODO`); lazy imports flipped to static
 - [x] Icon (1024²ˣ³) + splash (2732², light/dark) sources ready in `assets/`
 - [x] Privacy Policy + Terms real and current (COPPA, local-only storage, no tracking); `public/privacy.html` + `public/support.html` ready for gh-pages
 - [x] Kids compliance: no ads/analytics/tracking SDKs; store behind the Parent Zone math gate
