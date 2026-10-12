@@ -12,9 +12,7 @@
     "cap:sync:tester": "VITE_JF_TESTER=1 npm run build:cap && npx cap sync",
     "cap:ios": "npx cap open ios",
     "cap:android": "npx cap open android",
-    "preview": "vite preview",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@capacitor-community/safe-area": "^8.0.1",

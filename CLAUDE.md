@@ -15,7 +15,7 @@ npm run cap:sync     # CAP=1 build + npx cap sync (native shell) — the STORE b
 npm run cap:sync:tester  # same, with VITE_JF_TESTER=1: every module open (Jack's phone only)
 npm run cap:ios      # open Xcode project
 # Web deploy: automatic. Pushing main (GitHub Desktop) runs .github/workflows/deploy.yml,
-# which builds and publishes GitHub Pages. `npm run deploy` (gh-pages branch) is obsolete — don't run it.
+# which builds and publishes GitHub Pages. (There is no deploy script; the old gh-pages one was removed.)
 ```
 
 Browser preview: `.claude/launch.json` defines `jackflash-dev` for the
