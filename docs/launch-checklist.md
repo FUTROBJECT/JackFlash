@@ -33,7 +33,7 @@
 - [x] `capacitor.config.json` correct (appId/appName/webDir); `build:cap`/`cap:*` scripts + Vite base switch correct
 - [x] Capacitor deps installed (core/ios/android/preferences v8); RevenueCat installed, iOS key wired (Android key still `__TODO`); lazy imports flipped to static
 - [x] Icon (1024²ˣ³) + splash (2732², light/dark) sources ready in `assets/`
-- [x] Privacy Policy + Terms real and current (COPPA, local-only storage, no tracking); `public/privacy.html` + `public/support.html` ready for gh-pages
+- [x] Privacy Policy + Terms real and current (COPPA, local-only storage, no tracking); `public/privacy.html` + `public/support.html` published on GitHub Pages
 - [x] Kids compliance: no ads/analytics/tracking SDKs; store behind the Parent Zone math gate
 
 Cleanup nits (optional, non-blocking): `debugGetAllData()` export in `dataManager.js` is unused dev tooling.
@@ -60,7 +60,7 @@ Cleanup nits (optional, non-blocking): `debugGetAllData()` export in `dataManage
 - [x] App Store Connect app record + IAP `module.fractions.full` ($3.99 tier) — done 2026-08-22; Paid Apps agreement Active
 - [x] RevenueCat: `fractions` entitlement → that product; `default` Offering current; iOS public key wired (commit faf184a)
 - [ ] Do **not** create bundle/other products yet (staged)
-- [x] Privacy/support URLs live (both 200, checked 2026-10-12) — re-run `npm run deploy` only if the pages change
+- [x] Privacy/support URLs live (both 200, checked 2026-10-12) — they redeploy automatically whenever `main` is pushed (`.github/workflows/deploy.yml`)
 - [ ] Confirm contact email (Laser Lab Studios / adamlaserlab@gmail.com)
 - [ ] Metadata, screenshots, age rating, "data not collected", review notes (explain the parental math gate)
 

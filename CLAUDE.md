@@ -2,7 +2,7 @@
 
 Math-fact practice app for Jack (8, Grade 3 / P3), aligned with the **think!
 Mathematics (Singapore Math)** curriculum. React + Vite, no TypeScript, no CSS
-frameworks, no test framework. Neo-brutalist design. Ships to web (gh-pages)
+frameworks, no test framework. Neo-brutalist design. Ships to web (GitHub Pages)
 and to iOS/Android via a Capacitor shell (`com.laserlabstudio.jackflash`).
 
 ## Commands
@@ -14,7 +14,8 @@ npm run build        # web build → dist/
 npm run cap:sync     # CAP=1 build + npx cap sync (native shell) — the STORE build
 npm run cap:sync:tester  # same, with VITE_JF_TESTER=1: every module open (Jack's phone only)
 npm run cap:ios      # open Xcode project
-npm run deploy       # gh-pages -d dist
+# Web deploy: automatic. Pushing main (GitHub Desktop) runs .github/workflows/deploy.yml,
+# which builds and publishes GitHub Pages. `npm run deploy` (gh-pages branch) is obsolete — don't run it.
 ```
 
 Browser preview: `.claude/launch.json` defines `jackflash-dev` for the
@@ -137,7 +138,7 @@ submission). Read it before any store-facing work. Key state:
   key is `…__TODO`. Still needed: `module.fractions.full` in both stores
   attached to the RevenueCat `fractions` entitlement, then a sandbox test.
 - **Store URLs:** `public/privacy.html` + `public/support.html` → live at the
-  gh-pages URLs after `npm run deploy`. Contact = Laser Lab Studios /
+  GitHub Pages URLs, published automatically when `main` is pushed. Contact = Laser Lab Studios /
   adamlaserlab@gmail.com (confirm before submitting).
 - **Icons/splash:** generated into `ios/App/App/Assets.xcassets` from the
   sources in `assets/` (`npx capacitor-assets generate`; re-run after

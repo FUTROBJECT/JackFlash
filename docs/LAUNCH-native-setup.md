@@ -16,7 +16,7 @@ Status legend: ✅ done in-repo · ⏳ needs a toolchain/account · 🔑 credent
 - ✅ `capacitor.config.json` — appId `com.laserlabstudio.jackflash`, `webDir: dist`, splash config. (Converted from `.ts` so the CLI reads it without adding TypeScript.)
 - ✅ `npm run build:cap` produces a native-relative web build; `npm run cap:sync` / `cap:ios` / `cap:android` scripts exist.
 - ✅ Durable storage bridge (`storage.js`) and RevenueCat provider scaffold (`purchaseManager.js`) — both lazy-load native plugins so the web build stays green.
-- ✅ Privacy Policy (`public/privacy.html`) and Support (`public/support.html`) pages — hosted at the gh-pages URLs below once deployed.
+- ✅ Privacy Policy (`public/privacy.html`) and Support (`public/support.html`) pages — hosted on GitHub Pages at the URLs below (published automatically when `main` is pushed).
 - ✅ Bundle hidden until 3+ paid modules ship; launch catalog = Multiply (free) + Fractions ($3.99, Foundations group free).
 
 ---
@@ -130,7 +130,7 @@ Copy is drafted in `JackFlash-AppStore-Listing.md`. Fields to fill in each store
 - **Name / subtitle / keywords / description / promo text** — from the listing doc.
 - **Privacy Policy URL:** `https://futrobject.github.io/JackFlash/privacy.html`
 - **Support URL:** `https://futrobject.github.io/JackFlash/support.html`
-  *(both go live after `npm run deploy` publishes gh-pages)*
+  *(live; GitHub Pages redeploys on every push to `main` via `.github/workflows/deploy.yml`)*
 - **Category:** Education. **Age rating:** 4+.
 - **App privacy label:** "Data Not Collected" for the app itself. Because
   RevenueCat/Apple/Google process purchases, disclose **Purchases** and a
@@ -148,4 +148,4 @@ Copy is drafted in `JackFlash-AppStore-Listing.md`. Fields to fill in each store
 
 1. **No native toolchain on this machine** — install Xcode/CocoaPods (+ Android Studio) before anything native can be generated or built. *(hard blocker for iOS)*
 2. **IAP not live** — create `module.fractions.full` in both stores + RevenueCat, paste the SDK keys. *(hard blocker — broken IAP = rejection)*
-3. **Privacy & Support URLs** — publish gh-pages (`npm run deploy`) so the two URLs above resolve before you enter them in the store listings.
+3. **Privacy & Support URLs** — ✅ live (GitHub Pages deploys automatically on push to `main`); both URLs resolve before you enter them in the store listings.
