@@ -21,22 +21,30 @@ import {
 import { ProfilePicker, CreateProfile } from "./ProfilePicker.jsx";
 import { ParentGate, ParentZone } from "./ParentZone.jsx";
 import { initPurchases } from "./purchaseManager.js";
+import { getModule } from "./modules/moduleRegistry.js";
 import MultiplicationPractice from "./multiplication-practice.jsx";
 import FractionsPractice from "./fractions-practice.jsx";
 import PlaceValuePractice from "./place-value-practice.jsx";
 import AddPractice from "./add-practice.jsx";
 // v1 ships Multiply/Divide + Fractions only. Connections (capstone) is built but
-// intentionally NOT registered in v1 — re-enable this import in v1.2 to ship it.
-// Place Value (pass 1: Groups B + V) and Add & Subtract (Column Adding, Column
-// Subtracting, Mental Math, Word Problems, Facts Warm-Up) are registered for test-driving in the
-// preview/on-device build but their catalog products stay `available: false`
-// until launch pricing is wired.
+// intentionally NOT imported in v1 — re-enable this import in v1.2 to ship it.
+// Place Value and Add & Subtract are imported but register only in the tester
+// build (STAGED_MODULES in moduleRegistry.js); their catalog products stay
+// `available: false` until they ship.
 // import ConnectionsPractice from "./connections-practice.jsx";
 import Onboarding from "./Onboarding.jsx";
 
 export default function App() {
   // Initialize data synchronously to avoid screen flash
-  const [data, setData] = useState(() => initData());
+  const [data, setData] = useState(() => {
+    const d = initData();
+    // A profile saved on a module this build doesn't register (a staged module
+    // chosen in the tester build) moves to Multiply; its mastery stays stored.
+    getAllProfiles().forEach((p) => {
+      if (!getModule(p.activeModule)) updateProfile(p.id, { activeModule: "multiply" });
+    });
+    return d;
+  });
   const [screen, setScreen] = useState(() => {
     initData(); // ensure data is loaded
     return isOnboardingComplete() ? "profilePicker" : "onboarding";
@@ -264,7 +272,9 @@ export default function App() {
       if (openProgress) {
         setTimeout(() => setProgressProfileId(null), 0);
       }
-      const activeModuleId = profile?.activeModule || "multiply";
+      // A module that isn't registered in this build (a staged module saved on a
+      // tester profile) falls back to Multiply.
+      const activeModuleId = getModule(profile?.activeModule) ? profile.activeModule : "multiply";
       const commonProps = {
         profileId: profile?.id,
         moduleId: activeModuleId,

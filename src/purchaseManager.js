@@ -1,5 +1,5 @@
 import { unlockModule, getPurchases, addPurchase, setBundlePurchased, isBundlePurchased, getMastery } from "./dataManager.js";
-import { getModule } from "./modules/moduleRegistry.js";
+import { getModule, IS_TESTER_BUILD } from "./modules/moduleRegistry.js";
 import { DEFAULT_MASTERY_THRESHOLD } from "./constants.js";
 import { FRACTION_POOL } from "./modules/fractions.jsx";
 
@@ -105,10 +105,9 @@ function moduleUnlockProducts() {
 // confirmed entitlement here. The app's content gating reads stay synchronous.
 // ============================================================================
 
-// Tester build (`npm run cap:sync:tester`, Jack's phone only): every module is
-// open so unshipped modules can be test-driven past their previews. The store
-// build (`npm run cap:sync`) never sets it.
-export const IS_TESTER_BUILD = import.meta.env.VITE_JF_TESTER === "1";
+// Tester build (Jack's phone only, flag lives in moduleRegistry.js): every
+// module is open so unshipped modules can be test-driven past their previews.
+export { IS_TESTER_BUILD };
 
 export function isModuleFullyUnlocked(moduleId) {
   if (IS_TESTER_BUILD) return true;

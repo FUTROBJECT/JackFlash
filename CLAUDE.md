@@ -8,7 +8,8 @@ and to iOS/Android via a Capacitor shell (`com.laserlabstudio.jackflash`).
 ## Commands
 
 ```
-npm run dev          # Vite dev server (port 5173)
+npm run dev          # Vite dev server (port 5173) — store shape
+npm run dev:tester   # same with VITE_JF_TESTER=1 (staged modules on) — preview config `jackflash-dev-tester`
 npm run build        # web build → dist/
 npm run cap:sync     # CAP=1 build + npx cap sync (native shell) — the STORE build
 npm run cap:sync:tester  # same, with VITE_JF_TESTER=1: every module open (Jack's phone only)
@@ -47,20 +48,24 @@ definition carries: `id, name, groups, freeContent, skillLabels, pool` (or
 |---|---|---|
 | Multiply & Divide | `multiply` | shipped — **the free module** (all groups free) |
 | Fractions | `fractions` | shipped — $3.99, **Foundations group free** (sample to drive conversion) |
-| Add & Subtract | `add` | **built + wired, preview only** (colAdd, colSub, mental, words, facts; `available: false`; `freeContent` = colAdd + facts) — spec `docs/add-spec.md`, stories `docs/add-word-problems.md` |
+| Add & Subtract | `add` | **staged: tester build only** (colAdd, colSub, mental, words, facts; `available: false`; `freeContent` = colAdd + facts for when it ships) — spec `docs/add-spec.md`, stories `docs/add-word-problems.md` |
 | Connections (capstone word problems) | `connections` | built, **not wired** — v1.2 |
-| Place Value | `placeValue` | built + wired, **preview only** (`available: false`; `freeContent` = build) — spec `docs/place-value-spec.md` |
+| Place Value | `placeValue` | **staged: tester build only** (`available: false`; `freeContent` = build for when it ships) — spec `docs/place-value-spec.md` |
 
-**Only Multiply is fully free.** Every other module is a preview (its
-`freeContent`) until bought; unsold modules show "Ask a parent to unlock" to
-the child and "Coming Soon" in Parent Zone. Jack test-drives the full modules
-through the **tester build** (`IS_TESTER_BUILD` in `purchaseManager.js`,
-set by `VITE_JF_TESTER=1`), which makes `isModuleFullyUnlocked` always true.
-Never widen `freeContent` for testing, and never ship a tester build.
+**v1 store build = Multiply (free, all of it) + Fractions (Foundations free,
+rest $3.99).** Add & Subtract and Place Value are *staged*: their screens are
+imported, but `registerModule` skips them (`STAGED_MODULES` in
+`moduleRegistry.js`) unless `IS_TESTER_BUILD` (`VITE_JF_TESTER=1`), so in the
+store build they exist only as "Coming Soon" cards in the Parent Zone store.
+A saved profile on an unregistered module is moved to Multiply at startup.
+The tester build (Jack's phone) registers them and makes
+`isModuleFullyUnlocked` always true. Never widen `freeContent` for testing,
+and never archive a tester build.
 
-To ship a staged module: uncomment its import + routing branch in `App.jsx`,
-flip its product's `available: true` and entitlement mapping in
-`purchaseManager.js`, then play-test.
+To ship a staged module: remove it from `STAGED_MODULES`, flip its product's
+`available: true` and entitlement mapping in `purchaseManager.js`
+(Connections also needs its import + routing branch uncommented in
+`App.jsx`), then play-test.
 
 **CPA modes.** Every module runs Concrete (interactive visual) → Pictorial
 (visual fades with mastery: `opacity = max(0.15, 1 − 0.3 × level)`) →

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:tester": "VITE_JF_TESTER=1 vite",
     "build": "vite build",
     "build:cap": "CAP=1 vite build",
     "cap:sync": "npm run build:cap && npx cap sync",

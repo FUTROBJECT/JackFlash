@@ -1,6 +1,6 @@
 # JackFlash — App Store v1 Launch: Readiness Status & Punch List
 
-**Audited:** 2026-08-21 (full repo verification sweep — build, flags, offline, assets, compliance).
+**Audited:** 2026-08-21 (full repo verification sweep — build, flags, offline, assets, compliance). **Updated:** 2026-10-12 (native build done; staged modules hidden in the store build; store sync run).
 **Verdict: the repo is launch-ready.** Everything left is off-repo: toolchain, store accounts, and wiring.
 
 **Runbooks (the how-to lives there, not here):**
@@ -14,7 +14,7 @@
 
 - **Multiply & Divide** — free, all groups ("✓ Included" in store)
 - **Fractions** — $3.99 (`module.fractions.full`), **Foundations group free to try** (`freeContent: ["foundations"]`)
-- **Add & Subtract, Place Value, Connections (capstone)** — built/staged, `available:false`, shown as grayed "Coming Soon" teasers
+- **Add & Subtract, Place Value, Connections (capstone)** — built/staged, `available:false`, shown as grayed "Coming Soon" teasers. Add & Place Value are imported but unregistered outside the tester build (`STAGED_MODULES` in `moduleRegistry.js`, re-checked 2026-10-12)
 - **Bundle ($9.99)** — auto-hidden until 3+ paid modules are `available` (honest-discount rule, `BUNDLE_MIN_PAID_MODULES`); surfaces by itself later
 - **Restore Purchases** — present (Apple requirement)
 - App id: `com.laserlabstudio.jackflash`
@@ -48,18 +48,20 @@ Cleanup nits (optional, non-blocking): `debugGetAllData()` export in `dataManage
 - [ ] (Later) Google Play Console ($25)
 
 ### 2. Native build (your Mac) — runbook: `LAUNCH-native-setup.md`
-- [ ] Xcode + CocoaPods installed
-- [ ] `npm i @revenuecat/purchases-capacitor` (only missing package)
-- [ ] `npm run build:cap` → `npx cap add ios` → `npm run cap:sync`; commit `ios/`
-- [ ] Flip the two `@vite-ignore` lazy imports to static (storage.js, purchaseManager.js) → re-sync
-- [ ] `npx capacitor-assets generate` (sources already in `assets/`)
-- [ ] Xcode: Team, bundle id, + In-App Purchase capability; run on simulator + device
+- [x] Xcode + CocoaPods installed
+- [x] `npm i @revenuecat/purchases-capacitor`
+- [x] `ios/` generated and committed (Capacitor 8, SPM plugins)
+- [x] Lazy imports flipped to static (storage.js, purchaseManager.js)
+- [x] `npx capacitor-assets generate`
+- [x] Xcode: Team 9BA8CS8TP8, bundle id, In-App Purchase capability; device builds run on Adam's iPhone 16
+- [ ] **Before every archive: `npm run cap:sync` (store build).** `cap:sync:tester` is for Jack's phone only — it opens every module and registers Add & Place Value.
 
 ### 3. Store wiring — runbook: `LAUNCH-revenuecat-setup.md`
 - [x] App Store Connect app record + IAP `module.fractions.full` ($3.99 tier) — done 2026-08-22; Paid Apps agreement Active
 - [x] RevenueCat: `fractions` entitlement → that product; `default` Offering current; iOS public key wired (commit faf184a)
 - [ ] Do **not** create bundle/other products yet (staged)
-- [ ] `npm run deploy` so privacy/support URLs are live; confirm contact email
+- [x] Privacy/support URLs live (both 200, checked 2026-10-12) — re-run `npm run deploy` only if the pages change
+- [ ] Confirm contact email (Laser Lab Studios / adamlaserlab@gmail.com)
 - [ ] Metadata, screenshots, age rating, "data not collected", review notes (explain the parental math gate)
 
 ### 4. Device test pass (updated for 2026-08 features)
@@ -78,7 +80,7 @@ Cleanup nits (optional, non-blocking): `debugGetAllData()` export in `dataManage
 ### 📌 PINNED — TestFlight (ready to execute, ~1 day lead time)
 All prerequisites verified 2026-08-22: encryption key in Info.plist, privacy URL live,
 Test Information values chosen (feedback email adamlaserlab@gmail.com). When ready:
-Any iOS Device → Product → Archive → Distribute → wait for processing → TestFlight tab →
+`npm run cap:sync` (store build, never the tester one) → Any iOS Device → Product → Archive → Distribute → wait for processing → TestFlight tab →
 Test Information → External group "Friends" → add build → Beta App Review (~1 day) → public link.
 First upload also replaces the placeholder icon on the ASC page.
 
