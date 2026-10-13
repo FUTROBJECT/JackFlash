@@ -62,10 +62,18 @@ Cleanup nits (optional, non-blocking): `debugGetAllData()` export in `dataManage
 - [ ] Do **not** create bundle/other products yet (staged)
 - [x] Privacy/support URLs live (both 200, checked 2026-10-12) — they redeploy automatically whenever `main` is pushed (`.github/workflows/deploy.yml`)
 - [ ] Confirm contact email (Laser Lab Studios / adamlaserlab@gmail.com)
-- [x] **Screenshots rendered (2026-10-12):** 6 iPhone 6.9" (1320 × 2868) in `screenshots/appstore/iphone-6.9/` + 6 iPad 13" (2064 × 2752) in `screenshots/appstore/ipad-13/`, from the store build with demo profiles; captions per `docs/voice-and-messaging.md`. Regenerate with `screenshots/appstore/compose.py` (README there).
-- [ ] Upload the screenshots: App Store Connect → 1.0 version → Previews and Screenshots → drag each folder into its slot, files 01 → 06
+- [x] **Screenshots rendered (2026-10-12):** 6 frames per slot in `screenshots/appstore/` — `iphone-6.3/` (1206 × 2622, the **required** 6.1"/6.3" slot), `iphone-6.9/` (1320 × 2868), `iphone-6.5/` (1284 × 2778), `ipad-13/` (2064 × 2752); from the store build with demo profiles; captions per `docs/voice-and-messaging.md`. Regenerate with `screenshots/appstore/compose.py` (README there). "File dimensions are invalid" = files dropped in the wrong slot.
+- [x] **Screenshots uploaded** to the 1.0 version page (2026-10-12)
 - [x] Review notes drafted (`JackFlash-AppStore-Listing.md` → App Review Notes; parental math gate, purchase-only network use)
-- [ ] Metadata (name, subtitle, promo, description, keywords from the listing doc), age rating 4+, "Data Not Collected" (+ purchase disclosure per RevenueCat guidance)
+
+### 3b. App Store version page (do while Beta App Review runs)
+- [ ] Text: name, subtitle, promo text, description, keywords — paste from `JackFlash-AppStore-Listing.md`
+- [ ] App Review Information: same review notes + contact as TestFlight; **sign-in required: off** (no accounts)
+- [ ] In-App Purchases section: **attach Fractions Full (`module.fractions.full`) to version 1.0** — Apple reviews it with the app; easy to miss
+- [ ] App Information: category Education; age rating questionnaire (expect 4+); privacy policy URL
+- [ ] App Privacy: "Data Not Collected" (+ Purchase History, not linked / not tracking, if RevenueCat's current guidance requires it)
+- [ ] Pricing and Availability: Free; territories
+- [ ] License agreement: leave as Apple's standard EULA
 
 ### 4. Device test pass (updated for 2026-08 features)
 - [ ] Onboarding → profile → practice Multiply free; Fractions Foundations free, rest gated
@@ -80,15 +88,19 @@ Cleanup nits (optional, non-blocking): `debugGetAllData()` export in `dataManage
 - [x] Sandbox purchase — passed on device 2026-08-22 (Sandbox sheet, $3.99, entitlement unlocked)
 - [ ] Restore Purchases round-trip: delete app → reinstall from Xcode → Restore → Fractions returns without payment
 
-### 📌 PINNED — TestFlight (ready to execute, ~1 day lead time)
+### 📌 TestFlight — submitted 2026-10-12, waiting on Beta App Review
 - [x] **Build 1.0 (1) uploaded to App Store Connect — 2026-10-12** (store build: Multiply + Fractions; Add/Place Value hidden; tagline "See it. Get it. Keep it."). Xcode's account login had gone stale (-501); removing and re-adding the Apple ID fixed it.
-- [ ] Processing email → TestFlight → Test Information → external group "Friends" → add build 1 → submit for Beta App Review
+- [x] Build 1 processed (no email came — status shows in ASC → TestFlight; Apple's processing emails are unreliable)
+- [x] Test Information filled (beta description, What to Test, feedback email, privacy URL, review notes; no TestFlight screenshots needed; sign-in not required)
+- [x] External group "Friends" created, build 1 added, **submitted for Beta App Review (2026-10-12)** — Apple emails the account holder on approval/rejection; status also in ASC → TestFlight → Friends
+- [ ] On approval: invite testers by email or enable the group's Public Link; give them ~1 week
+- [ ] Triage feedback → if fixes are needed, archive 1.0 (2) (store sync first), else submit build 1 for App Store review
 - [x] Build number bumped to 2 (2026-10-12) — the next archive is 1.0 (2); bump again after each upload
-All prerequisites verified 2026-08-22: encryption key in Info.plist, privacy URL live,
-Test Information values chosen (feedback email adamlaserlab@gmail.com). When ready:
-`npm run cap:sync` (store build, never the tester one) → Any iOS Device → Product → Archive → Distribute → wait for processing → TestFlight tab →
-Test Information → External group "Friends" → add build → Beta App Review (~1 day) → public link.
-First upload also replaces the placeholder icon on the ASC page.
+Re-upload recipe: `npm --prefix "<primary checkout>" run cap:sync` (store build, never the tester one; run against the primary checkout — a worktree's sync doesn't reach Xcode) → Any iOS Device → Product → Archive → Organizer → Distribute App → App Store Connect → Upload. Bump `CURRENT_PROJECT_VERSION` after each upload.
+
+### 6. Submit for App Store review
+- [ ] Section 3b complete and section 4 device pass done (at minimum: Restore round-trip, airplane mode, store screen)
+- [ ] Version page → Build → add the tested build → **Submit for Review**
 
 ### 5. Comps / free access (unchanged policy: store-native only)
 - [ ] App Store promo codes per IAP (up to 100/batch) and/or RevenueCat promotional entitlements; TestFlight for pre-launch testers
