@@ -111,7 +111,7 @@ Re-upload recipe: `npm --prefix "<primary checkout>" run cap:sync` (store build,
 1.0 ships Multiply + Fractions only; Add & Subtract stays a "Coming Soon" card in the store build and fully open on Jack's tester build. Start these after 1.0 is live.
 - [ ] Keep Jack on the tester build; note anything in Add that needs fixing before it ships
 - [x] App Store Connect → In-App Purchases: `module.add.full` created ($3.99, non-consumable) — 2026-10-13. **Not attached to 1.0.**
-- [x] IAP review screenshot: `screenshots/iap-review/add-subtract-store.png` (750 × 1624) — upload it on the IAP page so it reaches "Ready to Submit"
+- [x] IAP review screenshot: `screenshots/iap-review/add-subtract-store.png` (1206 × 2622 — Apple only accepts App Store screenshot sizes here) — upload it on the IAP page so it reaches "Ready to Submit"
 - [x] RevenueCat: `add` entitlement ← `module.add.full`; custom package `add` in the current offering — 2026-10-13
 - [x] Code (2026-10-13): removed `add` from `STAGED_MODULES` (`src/modules/moduleRegistry.js`); set `module.add.full` to `available: true` and map its entitlement in `purchaseManager.js`. Free sample = `colAdd` + `facts` (already set in `add.jsx`)
 - [x] Play-tested the store build in the preview (2026-10-13): Add in onboarding and the picker, column adding free (right and wrong answer), colSub/mental/words locked, simulated buy unlocks them, Place Value + Connections still Coming Soon, no bundle; Multiply loads
