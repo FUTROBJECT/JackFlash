@@ -196,7 +196,12 @@ IAP does **not** work in the browser or a plain simulator — use a device build
 For each new paid module (Add, Place Value, Connections):
 1. Create its store product (e.g. `module.add.full`) in **both** stores.
 2. Add a RevenueCat **entitlement** (e.g. `add`) attached to that product, and
-   add the product to the current Offering.
+   add the product to the current Offering as a **new package with a custom
+   identifier** (e.g. `add`). An offering holds one package per identifier, and
+   Fractions may already use `$rc_lifetime`; the code finds packages by product
+   id, so the package name doesn't matter.
+   In App Store Connect, attach the new IAP to the **version that ships the
+   module** (e.g. 1.1), never to an earlier version.
 3. Extend `RC_ENTITLEMENT_TO_PRODUCT` in `purchaseManager.js`
    (`add: "module.add.full"`, etc.) and flip the product's `available: true`.
 
