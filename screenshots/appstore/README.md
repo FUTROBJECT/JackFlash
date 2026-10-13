@@ -5,6 +5,7 @@ Upload these in App Store Connect → the version page → Previews and Screensh
 | Folder | Device slot | Size |
 |---|---|---|
 | `iphone-6.9/` | iPhone 6.9" | 1320 × 2868 |
+| `iphone-6.3/` | iPhone 6.3" / 6.1" "medium display" slot (resized from 6.9") | 1206 × 2622 |
 | `iphone-6.5/` | iPhone 6.5" (only if App Store Connect asks for it; resized from 6.9") | 1284 × 2778 |
 | `ipad-13/` | iPad 13" (covers 12.9" too) | 2064 × 2752 |
 
