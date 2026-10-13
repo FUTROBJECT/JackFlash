@@ -71,7 +71,7 @@ Cleanup nits (optional, non-blocking): `debugGetAllData()` export in `dataManage
 - [ ] App Review Information: same review notes + contact as TestFlight; **sign-in required: off** (no accounts)
 - [ ] In-App Purchases section: **attach Fractions Full (`module.fractions.full`) to version 1.0** — Apple reviews it with the app; easy to miss
 - [ ] App Information: category Education; age rating questionnaire (expect 4+); privacy policy URL
-- [ ] App Privacy: "Data Not Collected" (+ Purchase History, not linked / not tracking, if RevenueCat's current guidance requires it)
+- [ ] App Privacy: Purchase History only (App Functionality + Analytics; not linked; no tracking) — per RevenueCat's guidance; see the listing doc
 - [ ] Pricing and Availability: Free; territories
 - [ ] License agreement: leave as Apple's standard EULA
 

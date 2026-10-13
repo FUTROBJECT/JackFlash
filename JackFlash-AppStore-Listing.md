@@ -114,15 +114,9 @@ Rendered frames (2026-10-12, from the store build on the simulators with demo da
 
 ## Privacy Nutrition Label answers  *(App Store Connect → App Privacy)*
 
-**Answer: Data Not Collected.** ("Do you or your third-party partners collect data from this app?" → **No.**)
+**Answer (revised 2026-10-13):** Data collected → **Purchases → Purchase History** only. Purposes: **App Functionality** and **Analytics** (RevenueCat's guidance says every RevenueCat app selects both). **Not linked** to the user's identity (the app uses RevenueCat's anonymous IDs, no custom user ID). **Not used for tracking.** Nothing else is collected: no identifiers (no custom user ID, no IDFA), no usage data, no diagnostics, no contact info.
 
-This is true by architecture, not policy: the app makes zero network calls at runtime. No accounts, no analytics, no ads SDKs, no crash reporting. All profiles, progress, and settings live in on-device storage and never leave the device.
-
-- Data used to track you: **None**
-- Data linked to you: **None**
-- Data not linked to you: **None**
-
-**One item to verify before submitting:** the native build includes the RevenueCat SDK for processing the Fractions purchase. RevenueCat's own guidance is that apps using it typically declare **Purchases → Purchase History, "App Functionality," not linked to identity, not used for tracking**. Check RevenueCat's current App Privacy disclosure guidance at submission time; if disclosure is required, the label becomes "Data Not Linked to You: Purchase History" — still no tracking, no linked data, and everything else above stays true. The listing copy ("no tracking, nothing leaves the device") remains accurate either way, since purchase processing is Apple's own transaction flow.
+Why not "Data Not Collected": the RevenueCat SDK records the parent's purchase to validate it and restore it on reinstall. The child's practice, profiles and progress never leave the device — no accounts, no analytics SDK, no ads, no crash reporting — so the listing copy ("nothing your child does ever goes online") stays true. Source: RevenueCat, "Apple App Privacy" (docs/platform-resources/apple-platform-resources/apple-app-privacy).
 
 ---
 
@@ -132,5 +126,5 @@ This is true by architecture, not policy: the app makes zero network calls at ru
 - **No bundle at launch.** The bundle exists in code but stays hidden until 3+ paid modules are live, so it's an honest discount rather than a pre-sale of unbuilt content. It never appears in customer-facing copy until then. Do not create a bundle IAP product in App Store Connect / Play until the threshold is met.
 - **Pricing in metadata:** the description and promo text say $3.99 (it's the loudest pillar for the homeschool audience). Apple sets regional price tiers, so verify the USD tier matches before submission, and remember promo text is editable without an app update if it ever drifts.
 - **Mastery copy rule (revised 2026-10-06):** the selling point is "mastered means from memory," never "fast." Math isn't a race; never phrase mastery as speed, or kids as timed, tested, ranked or penalized. The Multiply & Divide time window is an invisible way to tell memory from counting — mention it only as reassurance (no timer, no "too slow"). Full rules: `docs/voice-and-messaging.md`.
-- **Category / age rating:** Education; Kids category age bands 6–8 and 9–11; rating 4+. Kids-category rules are already satisfied: no ads, no tracking, purchases behind a parental gate.
+- **Category / age rating:** Education; Made for Kids, age band **6–8** (Apple allows one band); rating 4+. Kids-category rules are already satisfied: no ads, no tracking, purchases behind a parental gate.
 - **"Smart Practice" is a branded feature name.** Always capitalized, used as a proper noun — never as a loose adjective ("smart practice"). It names the five-category adaptive engine. Keep it consistent across the app, this listing, the FAQ, the screenshots, and the landing page.
