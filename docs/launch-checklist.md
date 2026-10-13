@@ -104,3 +104,16 @@ Re-upload recipe: `npm --prefix "<primary checkout>" run cap:sync` (store build,
 
 ### 5. Comps / free access (unchanged policy: store-native only)
 - [ ] App Store promo codes per IAP (up to 100/batch) and/or RevenueCat promotional entitlements; TestFlight for pre-launch testers
+
+---
+
+## v1.1 — Add & Subtract (decided 2026-10-13: not in 1.0)
+1.0 ships Multiply + Fractions only; Add & Subtract stays a "Coming Soon" card in the store build and fully open on Jack's tester build. Start these after 1.0 is live.
+- [ ] Keep Jack on the tester build; note anything in Add that needs fixing before it ships
+- [ ] App Store Connect → In-App Purchases: create `module.add.full` ($3.99, non-consumable), with a review screenshot
+- [ ] RevenueCat: attach `module.add.full` to an `add` entitlement and add it to the current offering
+- [ ] Code: remove `add` from `STAGED_MODULES` (`src/modules/moduleRegistry.js`); set `module.add.full` to `available: true` and map its entitlement in `purchaseManager.js`. Free sample = `colAdd` + `facts` (already set in `add.jsx`)
+- [ ] Play-test the **store** build (`npm run dev`): Add preview free, the rest gated, Buy and Restore both work; regression-check Multiply and Fractions
+- [ ] Sandbox purchase on device; Restore round-trip
+- [ ] Bump the version to 1.1 (`MARKETING_VERSION`), build 1; update What's New, the description and screenshots if the module list changes
+- [ ] Archive → upload → attach `module.add.full` to the 1.1 version page → Submit for Review
