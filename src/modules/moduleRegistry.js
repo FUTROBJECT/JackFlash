@@ -12,11 +12,11 @@ const moduleRegistry = {};
 // every module is open. The store build never sets VITE_JF_TESTER.
 export const IS_TESTER_BUILD = import.meta.env.VITE_JF_TESTER === "1";
 
-// Built but not in v1: their practice screens are imported (App.jsx) but they
+// Built but not shipped yet (Add & Subtract ships in 1.1): their practice screens are imported (App.jsx) but they
 // only register in the tester build. In the store build they are absent from
 // onboarding, profile creation and the module picker, and show only as
 // "Coming Soon" in the Parent Zone store (purchaseManager PRODUCTS).
-const STAGED_MODULES = new Set(["add", "placeValue"]);
+const STAGED_MODULES = new Set(["placeValue"]);
 
 /**
  * Register a new module in the registry

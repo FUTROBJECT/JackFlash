@@ -49,15 +49,17 @@ definition carries: `id, name, groups, freeContent, skillLabels, pool` (or
 |---|---|---|
 | Multiply & Divide | `multiply` | shipped — **the free module** (all groups free) |
 | Fractions | `fractions` | shipped — $3.99, **Foundations group free** (sample to drive conversion) |
-| Add & Subtract | `add` | **staged: tester build only** (colAdd, colSub, mental, words, facts; `available: false`; `freeContent` = colAdd + facts for when it ships) — spec `docs/add-spec.md`, stories `docs/add-word-problems.md` |
+| Add & Subtract | `add` | **shipping in 1.1** — $3.99 (`module.add.full`, RevenueCat entitlement `add`), **colAdd + facts free** (groups colAdd, colSub, mental, words, facts) — spec `docs/add-spec.md`, stories `docs/add-word-problems.md` |
 | Connections (capstone word problems) | `connections` | built, **not wired** — v1.2 |
 | Place Value | `placeValue` | **staged: tester build only** (`available: false`; `freeContent` = build for when it ships) — spec `docs/place-value-spec.md` |
 
-**v1 store build = Multiply (free, all of it) + Fractions (Foundations free,
-rest $3.99).** Add & Subtract and Place Value are *staged*: their screens are
-imported, but `registerModule` skips them (`STAGED_MODULES` in
+**Store builds:** 1.0 (build 1, in review) = Multiply (free, all of it) +
+Fractions (Foundations free, rest $3.99). `main` is now **1.1** = 1.0 + Add &
+Subtract (colAdd + facts free, rest $3.99). A 1.0 fix build would need `add`
+put back in `STAGED_MODULES`. Place Value is still *staged*: its screen is
+imported, but `registerModule` skips it (`STAGED_MODULES` in
 `moduleRegistry.js`) unless `IS_TESTER_BUILD` (`VITE_JF_TESTER=1`), so in the
-store build they exist only as "Coming Soon" cards in the Parent Zone store.
+store build it exists only as a "Coming Soon" card in the Parent Zone store.
 A saved profile on an unregistered module is moved to Multiply at startup.
 The tester build (Jack's phone) registers them and makes
 `isModuleFullyUnlocked` always true. Never widen `freeContent` for testing,

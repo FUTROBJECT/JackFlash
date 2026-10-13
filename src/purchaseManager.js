@@ -40,13 +40,13 @@ export const PRODUCTS = {
   "module.add.full": {
     id: "module.add.full",
     name: "Add & Subtract",
-    description: "Column adding & subtracting to 10,000 with number discs — plus mental math and bar-model word problems",
+    description: "Column adding and the facts are free to try. Unlock column subtracting, mental math, and bar-model word problems.",
     gradeRange: "Grades 2–3",
     price: "$3.99",
     priceValue: 3.99,
     type: "module_unlock",
     moduleId: "add",
-    available: false, // flip to true when module ships (after play-test)
+    available: true, // ships in 1.1 (colAdd + facts free)
   },
   "module.fractions.full": {
     id: "module.fractions.full",
@@ -335,9 +335,9 @@ const REVENUECAT_KEYS = {
 // RevenueCat entitlement id → our internal product id (what applyEntitlement expects).
 const RC_ENTITLEMENT_TO_PRODUCT = {
   fractions: "module.fractions.full",
+  add: "module.add.full",
   all: "bundle.all",
-  // add: "module.add.full" — wire when the `add` entitlement exists in RevenueCat and the
-  // module ships (module.add.full is still `available: false`). connections: v1.2.
+  // connections: v1.2.
 };
 
 // Lazy-loaded on first use; static specifier so the bundler includes the plugin.
