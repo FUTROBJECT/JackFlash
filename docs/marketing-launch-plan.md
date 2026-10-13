@@ -33,7 +33,7 @@ actively share curriculum-aligned tools. **Secondary:** any parent searching "ti
 |---|---|---|
 | App icon set | ✅ have | `assets/` — ready for `capacitor-assets` |
 | Name / subtitle / keywords / description / promo text | 🔶 have, needs refresh | `JackFlash-AppStore-Listing.md` predates: Foundations-free tier, fluency mastery, no bundle at launch. One editing pass. |
-| Screenshots — 6 framed designs | 🔶 spec done, captures stale | Spec + captions ready; `screenshots/*.jpg` are July captures — **recapture** (new splash, concrete builders, store without bundle, Ready-to-try-unaided row). iPhone 6.9" mandatory; **decide iPad support** (kids apps live on iPad — recommend yes → also 13" iPad set). |
+| Screenshots — 6 framed designs | ✅ done 2026-10-12 | iPhone 6.9" + iPad 13" sets in `screenshots/appstore/`, recaptured from the store build (new splash, Concrete builder, no bundle, Ready-to-try-unaided row). Frame 6 is "Progress you can see" (no clock, no race). The July `screenshots/*.jpg` raw captures are superseded. |
 | App preview video (15–30 s) | ❌ gap, optional | Recommend yes, cheap: screen-record splash → concrete builder taps → mastery celebration. The animated wordmark + builder ARE the demo. |
 | Privacy nutrition label answers | ✅ trivial | "Data not collected" — true by architecture. |
 | Review notes | ❌ gap | Short: parental math gate location, how to reach the store, promo/demo instructions. |

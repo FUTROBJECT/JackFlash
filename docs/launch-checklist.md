@@ -1,6 +1,6 @@
 # JackFlash — App Store v1 Launch: Readiness Status & Punch List
 
-**Audited:** 2026-08-21 (full repo verification sweep — build, flags, offline, assets, compliance). **Updated:** 2026-10-12 (native build done; staged modules hidden in the store build; store sync run).
+**Audited:** 2026-08-21 (full repo verification sweep — build, flags, offline, assets, compliance). **Updated:** 2026-10-12 (native build done; staged modules hidden in the store build; store sync run; build 1.0 (1) uploaded; screenshots rendered).
 **Verdict: the repo is launch-ready.** Everything left is off-repo: toolchain, store accounts, and wiring.
 
 **Runbooks (the how-to lives there, not here):**
@@ -62,7 +62,10 @@ Cleanup nits (optional, non-blocking): `debugGetAllData()` export in `dataManage
 - [ ] Do **not** create bundle/other products yet (staged)
 - [x] Privacy/support URLs live (both 200, checked 2026-10-12) — they redeploy automatically whenever `main` is pushed (`.github/workflows/deploy.yml`)
 - [ ] Confirm contact email (Laser Lab Studios / adamlaserlab@gmail.com)
-- [ ] Metadata, screenshots, age rating, "data not collected", review notes (explain the parental math gate)
+- [x] **Screenshots rendered (2026-10-12):** 6 iPhone 6.9" (1320 × 2868) in `screenshots/appstore/iphone-6.9/` + 6 iPad 13" (2064 × 2752) in `screenshots/appstore/ipad-13/`, from the store build with demo profiles; captions per `docs/voice-and-messaging.md`. Regenerate with `screenshots/appstore/compose.py` (README there).
+- [ ] Upload the screenshots: App Store Connect → 1.0 version → Previews and Screenshots → drag each folder into its slot, files 01 → 06
+- [x] Review notes drafted (`JackFlash-AppStore-Listing.md` → App Review Notes; parental math gate, purchase-only network use)
+- [ ] Metadata (name, subtitle, promo, description, keywords from the listing doc), age rating 4+, "Data Not Collected" (+ purchase disclosure per RevenueCat guidance)
 
 ### 4. Device test pass (updated for 2026-08 features)
 - [ ] Onboarding → profile → practice Multiply free; Fractions Foundations free, rest gated
