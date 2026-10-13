@@ -44,7 +44,7 @@ multiplication,division,times tables,singapore,fractions,homeschool,flashcards,b
 
 ---
 
-## Description  *(limit: 4000 characters — current draft: 2,615)*
+## Description  *(limit: 4000 characters — current draft: 2,756)*
 
 The first ~3 lines show before the "more" fold — they carry the most weight.
 
