@@ -118,7 +118,12 @@ bundle card is hidden until 3+ paid modules are `available`** (ParentZone
 `BUNDLE_MIN_PAID_MODULES`) **and while it costs less than the modules the
 family still has to buy** — an honest discount, never a pre-sale. Owning the
 bundle counts as owning every module (`getProductsWithStatus`), so no $3.99
-button shows and `purchase()` returns `already_owned`. On the public web build
+button shows and `purchase()` returns `already_owned`. Three products grant
+the `all` entitlement — `bundle.all` $9.99, `bundle.rest.one` $5.99 (owns one
+module), `bundle.rest.two` $1.99 (owns two) — and `getBundleOffer()` picks the
+one that fits, so everything costs a family about $9.99 in any buying order.
+Family Sharing is on for every purchase. Pricing copy and reasoning:
+`JackFlash-AppStore-Listing.md` → "Pricing from 1.2". On the public web build
 (`canPurchaseHere()` false) the store shows "in the iPhone & iPad app" notes
 instead of buy buttons; the dev server keeps the simulated `confirm()` buy.
 

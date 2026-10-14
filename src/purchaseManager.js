@@ -81,16 +81,68 @@ export const PRODUCTS = {
     moduleId: "connections",
     available: false, // flip to true when module ships
   },
+  // "All of JackFlash" — every module, including future ones. Three store
+  // products grant the same RevenueCat entitlement `all`, priced so a family
+  // pays about $9.99 for everything whatever order they buy in: the full
+  // bundle for a family that owns no paid module, and a "rest of JackFlash"
+  // upgrade for one that already owns one ($3.99 + $5.99) or two ($7.98 +
+  // $1.99). `forOwned` = how many paid modules the family must already own
+  // for this product to be the offer (decided 2026-10-14).
   "bundle.all": {
     id: "bundle.all",
-    name: "All Modules Bundle",
-    description: "Every module, including the ones still to come — one purchase.",
+    name: "All of JackFlash",
+    description: "Every module, including the ones still to come.",
     price: "$9.99",
     priceValue: 9.99,
     type: "bundle",
+    forOwned: 0,
+    available: true,
+  },
+  "bundle.rest.one": {
+    id: "bundle.rest.one",
+    name: "The rest of JackFlash",
+    description: "Every other module, including the ones still to come.",
+    price: "$5.99",
+    priceValue: 5.99,
+    type: "bundle",
+    forOwned: 1,
+    available: true,
+  },
+  "bundle.rest.two": {
+    id: "bundle.rest.two",
+    name: "The rest of JackFlash",
+    description: "Every other module, including the ones still to come.",
+    price: "$1.99",
+    priceValue: 1.99,
+    type: "bundle",
+    forOwned: 2,
     available: true,
   },
 };
+
+// The bundle offer for this family right now, or null. Shown once at least
+// `minPaid` paid modules are on sale (so it's a real discount, never a
+// pre-sale), and only while it costs less than buying the remaining modules
+// one by one. Owners of the bundle get { owned: true }.
+export function getBundleOffer(minPaid = 3) {
+  const all = getProductsWithStatus();
+  if (all.some((p) => p.type === "bundle" && p.purchased)) return { owned: true };
+  const paidNow = all.filter((p) => p.type === "module_unlock" && p.available !== false && !p.free);
+  if (paidNow.length < minPaid) return null;
+  const owned = paidNow.filter((p) => p.purchased);
+  const remaining = paidNow.filter((p) => !p.purchased);
+  const remainingTotal = remaining.reduce((s, p) => s + (p.priceValue || 0), 0);
+  const ownedTotal = owned.reduce((s, p) => s + (p.priceValue || 0), 0);
+  const product = all.find((p) => p.type === "bundle" && p.available !== false && p.forOwned === owned.length);
+  if (!product || product.priceValue >= remainingTotal) return null;
+  return {
+    owned: false,
+    product,
+    remainingTotal,                              // what the remaining modules cost separately
+    everythingTotal: ownedTotal + product.priceValue, // what this family pays for everything
+    ownedCount: owned.length,
+  };
+}
 
 // All product ids that grant a single module unlock.
 function moduleUnlockProducts() {

@@ -120,6 +120,37 @@ Why not "Data Not Collected": the RevenueCat SDK records the parent's purchase t
 
 ---
 
+## Pricing from 1.2 — "All of JackFlash"  *(decided 2026-10-14; use this copy once 1.2 is live)*
+
+**The plan.** Every paid module is $3.99 once, with its first group free. Everything — every module, including the ones still to come — is **$9.99 once**, whatever order a family buys in:
+
+| Family already owns | Offer in the app | Product id | Everything costs them |
+|---|---|---|---|
+| no paid module | All of JackFlash — $9.99 | `bundle.all` | $9.99 |
+| one | The rest of JackFlash — $5.99 | `bundle.rest.one` | $9.98 |
+| two | The rest of JackFlash — $1.99 | `bundle.rest.two` | $9.97 |
+
+All three grant the RevenueCat entitlement `all`. The offer appears only once 3 paid modules are on sale and only while it's cheaper than what the family still has to buy. **Family Sharing is on for every purchase** (irreversible — decided 2026-10-14).
+
+**Why it's framed this way.** At 1.2 the bundle saves $1.98 (17%), which reads like a coupon, so the pitch is the one price for everything, never "best value" or "save". Early Fractions buyers get the same total as everyone else instead of being shut out. No "most you'll ever pay" vow: it binds future pricing and isn't true for a family who skips the offer.
+
+**In-app card copy (built):** "All of JackFlash — Every module, including the ones still to come. $9.99 once. ($11.97 separately today.)" / for owners: "The rest of JackFlash — Every other module, including the ones still to come. $5.99 once. With what you already own, that's everything for $9.98." Both add: "When Connections arrives, it opens once your child has mastered Multiply, Divide and Fractions."
+
+**Landing — "Pricing, plainly" rows (1.2):**
+- Multiply & Divide — free forever
+- Fractions · Add & Subtract · Place Value — $3.99 each, once · first group of each free to try
+- **All of JackFlash — $9.99 once** · every module, including the ones still to come
+- Tagline unchanged: "No subscription. No ads. Ever." Add under the badges: "Family Sharing is on: one purchase covers your family's devices."
+- "Coming soon" chips shrink to Connections.
+
+**Landing FAQ "What's free?" (1.2):** "Multiply & Divide, all of it. Every other module has its first group free to try, then $3.99 once. Or get all of JackFlash — every module, including the ones still to come — for $9.99 once. If you already own a module, the rest costs less, so everything still comes to about $9.99. Updates are always included, and Family Sharing is on."
+
+**Promotional text (1.2, 170 max):** "Singapore Math practice, never timed, never ranked. Multiply & Divide is free; every other module is $3.99 once, or all of them for $9.99. No ads. No tracking." (157 characters)
+
+**Review notes addition (1.2):** "In-app purchases: Fractions Full, Add & Subtract Full and Place Value Full ($3.99 each); All of JackFlash (`bundle.all`, $9.99). Two 'The rest of JackFlash' upgrades unlock the same content for families who already own modules: `bundle.rest.one` ($5.99) appears after one module is purchased, `bundle.rest.two` ($1.99) after two. In the sandbox: buy Fractions, then open Parent Zone → Modules to see the $5.99 offer."
+
+---
+
 ## Notes & Open Decisions
 
 - **What ships at launch:** Two modules — Multiply & Divide (entirely free, all groups) and Fractions ($3.99 one-time, Foundations group free to sample). Add & Subtract, Place Value, and Connections are visible in-app as Coming Soon teasers but are not purchasable. The description says "coming soon" without naming dates — keep it that way until each is real, to stay within Apple's rules on advertising unreleased content.

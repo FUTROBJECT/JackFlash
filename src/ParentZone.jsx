@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, MODULE_COLORS, DEFAULT_CHILD_SETTINGS, DEFAULT_MASTERY_THRESHOLD, AVATARS } from "./constants.js";
 import { getModuleList, getModule } from "./modules/moduleRegistry.js";
-import { PRODUCTS, purchaseProduct, restorePurchases, getProductsWithStatus, isContentAccessible, canPurchaseHere } from "./purchaseManager.js";
+import { PRODUCTS, purchaseProduct, restorePurchases, getProductsWithStatus, isContentAccessible, canPurchaseHere, getBundleOffer } from "./purchaseManager.js";
 import { getAllAchievementsForProfile } from "./achievementEngine.js";
 import { Dropdown } from "./shared/ui.jsx";
 import LogoLockup from "./LogoLockup.jsx";
 import { PrivacyPolicy, TermsOfService, HelpFAQ } from "./LegalPages.jsx";
+
+// The All-Modules offer appears only once this many paid modules are on sale,
+// so it is a real discount, never a pre-sale of modules that don't exist yet.
+const BUNDLE_MIN_PAID_MODULES = 3;
 
 // Helper component: Brutal button used throughout
 function BrutalButton({ onClick, children, bg = "white", color = COLORS.black, small = false, active = false, style = {} }) {
@@ -649,7 +653,7 @@ export function ParentZone({
                                 color: "#666",
                                 marginTop: "2px",
                               }}>
-                                {avatarLabel ? `${avatarLabel} · ${profile.activeModule}` : profile.activeModule}
+                                {(() => { const modName = getModule(profile.activeModule)?.name || profile.activeModule; return avatarLabel ? `${avatarLabel} · ${modName}` : modName; })()}
                               </div>
                             </div>
                           </div>
@@ -1116,26 +1120,17 @@ export function ParentZone({
               );
             })}
 
-            {/* Bundle Card */}
+            {/* Bundle Card — "All of JackFlash" (or "The rest of JackFlash" for a family
+                that already owns one or two modules). getBundleOffer() decides which,
+                and hides it until 3 paid modules are on sale and while it isn't
+                cheaper than what's left to buy. The pitch is the one price for
+                everything, not a discount badge. */}
             {(() => {
-              const bundleProduct = PRODUCTS["bundle.all"];
-              const { purchased: isPurchased } = getProductsWithStatus()
-                .find(p => p.id === "bundle.all") || {};
-              // Savings vs buying the modules this family doesn't own yet, one by one.
-              const paidNow = getProductsWithStatus().filter(p => p.type === "module_unlock" && p.available !== false && !p.free);
-              const stillToBuy = paidNow.filter(p => !p.purchased);
-              const remainingTotal = stillToBuy.reduce((s, p) => s + (p.priceValue || 0), 0);
-              const bundleSavings = remainingTotal - (bundleProduct.priceValue || 0);
-              // The bundle only appears once it's an honest discount — i.e. once
-              // enough paid modules ship that buying them individually costs more
-              // than the bundle. At launch (Fractions only) it stays hidden so we
-              // never sell "all future modules" against a single available one.
-              // Auto-surfaces when the 3rd paid module flips available:true.
-              const BUNDLE_MIN_PAID_MODULES = 3;
-              // And only while it's still a deal for THIS family: someone who already
-              // owns Fractions isn't offered $9.99 for $7.98 of modules.
-              const showBundle = isPurchased || (paidNow.length >= BUNDLE_MIN_PAID_MODULES && bundleSavings > 0);
-              if (!showBundle) return null;
+              const offer = getBundleOffer(BUNDLE_MIN_PAID_MODULES);
+              if (!offer) return null;
+              const product = offer.product || PRODUCTS["bundle.all"];
+              const connectionsListed = PRODUCTS["module.connections.full"];
+              const money = (v) => `$${v.toFixed(2)}`;
               return (
                 <div
                   style={{
@@ -1157,26 +1152,32 @@ export function ParentZone({
                       margin: 0,
                       color: COLORS.black,
                     }}>
-                      Unlock All Modules
+                      {offer.owned ? "All of JackFlash" : product.name}
                     </h3>
-                    <p style={{
-                      fontSize: "12px",
-                      color: "#333",
-                      margin: "6px 0 0 0",
-                      fontWeight: 700,
-                    }}>
-                      {bundleSavings > 0 ? `Best value — save $${bundleSavings.toFixed(2)}` : "Best value"}
-                    </p>
                     <p style={{
                       fontSize: "13px",
                       color: "#333",
                       margin: "8px 0 0 0",
                     }}>
-                      Every module, including the ones still to come, with one purchase.
+                      {offer.owned
+                        ? "Every module is yours, including the ones still to come."
+                        : `${product.description} ${product.price} once.`}
                     </p>
+                    {!offer.owned && (
+                      <p style={{ fontSize: "12px", color: "#333", margin: "6px 0 0 0", fontWeight: 700 }}>
+                        {offer.ownedCount === 0
+                          ? `(${money(offer.remainingTotal)} separately today.)`
+                          : `With what you already own, that's everything for ${money(offer.everythingTotal)}.`}
+                      </p>
+                    )}
+                    {connectionsListed && (
+                      <p style={{ fontSize: "12px", color: "#555", margin: "6px 0 0 0" }}>
+                        When Connections arrives, it opens once your child has mastered Multiply, Divide and Fractions.
+                      </p>
+                    )}
                   </div>
                   <div style={{ padding: "12px 15px" }}>
-                    {isPurchased ? (
+                    {offer.owned ? (
                       <div style={{
                         width: "100%",
                         padding: "10px",
@@ -1192,11 +1193,11 @@ export function ParentZone({
                       </div>
                     ) : !canPurchaseHere() ? (
                       <div style={{ fontSize: "12px", fontWeight: 700, color: COLORS.black, textAlign: "center" }}>
-                        All modules in the iPhone &amp; iPad app · {bundleProduct.price} once
+                        In the iPhone &amp; iPad app · {product.price} once
                       </div>
                     ) : (
                       <button
-                        onClick={() => handlePurchase("bundle.all")}
+                        onClick={() => handlePurchase(product.id)}
                         disabled={purchasePending !== null}
                         style={{
                           width: "100%",
@@ -1207,13 +1208,13 @@ export function ParentZone({
                           color: "white",
                           fontWeight: 700,
                           cursor: purchasePending !== null ? "default" : "pointer",
-                          opacity: purchasePending !== null && purchasePending !== "bundle.all" ? 0.5 : 1,
+                          opacity: purchasePending !== null && purchasePending !== product.id ? 0.5 : 1,
                           fontFamily: "'Space Grotesk', sans-serif",
                           fontSize: "13px",
                           boxShadow: BRUTAL_SHADOW_SM,
                         }}
                       >
-                        {purchasePending === "bundle.all" ? "Purchasing…" : "$9.99"}
+                        {purchasePending === product.id ? "Purchasing…" : product.price}
                       </button>
                     )}
                   </div>
