@@ -95,7 +95,7 @@ Cleanup nits (optional, non-blocking): `debugGetAllData()` export in `dataManage
 - [x] External group "Friends" created, build 1 added, **submitted for Beta App Review (2026-10-12)** — Apple emails the account holder on approval/rejection; status also in ASC → TestFlight → Friends
 - [ ] On approval: invite testers by email or enable the group's Public Link; give them ~1 week
 - [ ] Triage feedback → if fixes are needed, archive 1.0 (2) (store sync first), else submit build 1 for App Store review
-- [x] Build number bumped to 2 (2026-10-12) — used by 1.1 (2); 1.1 (3) archived; now 4 for the next upload
+- [x] Build number bumped to 2 (2026-10-12) — used by 1.1 (2); 1.1 (3) and (4) archived; now 5 for the next upload
 Re-upload recipe: `npm --prefix "<primary checkout>" run cap:sync` (store build, never the tester one; run against the primary checkout — a worktree's sync doesn't reach Xcode) → Any iOS Device → Product → Archive → Organizer → Distribute App → App Store Connect → Upload. Bump `CURRENT_PROJECT_VERSION` after each upload.
 
 ### 6. Submit for App Store review
@@ -117,7 +117,8 @@ Re-upload recipe: `npm --prefix "<primary checkout>" run cap:sync` (store build,
 - [x] Play-tested the store build in the preview (2026-10-13): Add in onboarding and the picker, column adding free (right and wrong answer), colSub/mental/words locked, simulated buy unlocks them, Place Value + Connections still Coming Soon, no bundle; Multiply loads
 - [x] 1.1 (2) archived and uploaded (2026-10-13); add-on IAP removed from the 1.0 draft submission (only Fractions rides with 1.0)
 - [x] 1.1 (2) feedback (2026-10-13): Start over did nothing on a no-regroup problem; iOS showed unstyled button text in system blue. Fixed in 1.1 (3), archived
-- [ ] TestFlight 1.1: upload 1.1 (3) → What to Test → Friends group (Beta App Review again for the first 1.1 build) → testers check Add, including a TestFlight purchase
+- [x] 1.1 (4) archived (2026-10-13): in-app Privacy/Terms/FAQ brought in line with privacy.html (RevenueCat disclosed, contact adamlaserlab@gmail.com, no bundle); web build is a preview only
+- [ ] TestFlight 1.1: upload 1.1 (4) (supersedes 3) → What to Test → Friends group (Beta App Review again for the first 1.1 build) → testers check Add, including a TestFlight purchase
 - [ ] Sandbox purchase on device; Restore round-trip
 - [x] Version set to 1.1 (`MARKETING_VERSION`; build number stays 2). Still to do at submit: update What's New, the description and screenshots if the module list changes
 - [ ] Archive → upload → attach `module.add.full` to the 1.1 version page → Submit for Review
