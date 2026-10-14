@@ -54,12 +54,13 @@ definition carries: `id, name, groups, freeContent, skillLabels, pool` (or
 | Place Value | `placeValue` | **shipping in 1.2** — $3.99 (`module.placevalue.full`, RevenueCat entitlement `placeValue`), **Build & Read free** — spec `docs/place-value-spec.md` |
 
 **Store builds:** 1.0 = Multiply (free, all of it) + Fractions (Foundations
-free, rest $3.99). 1.1 adds Add & Subtract (colAdd + facts free). `main` is
-now **1.2** = 1.1 + Place Value (Build & Read free) + the **$9.99 All-Modules
+free, rest $3.99). 1.1 (Add & Subtract) was TestFlight-only and folded into
+1.2, the first update after 1.0. `main` is **1.2** = Add & Subtract (colAdd +
+facts free) + Place Value (Build & Read free) + the **$9.99 All-Modules
 bundle** (every module, including future ones; shown only once 3 paid modules
-are on sale AND it's cheaper than what the family still has to buy). A 1.1
-fix build would need `placeValue` put back in `STAGED_MODULES` and its product
-back to `available: false`. Staging mechanism (`STAGED_MODULES` in
+are on sale AND it's cheaper than what the family still has to buy). A 1.0 fix
+build would need `add` and `placeValue` staged again and their products back
+to `available: false`. Staging mechanism (`STAGED_MODULES` in
 `moduleRegistry.js`, empty right now): a staged module's screen is imported
 but `registerModule` skips it unless `IS_TESTER_BUILD` (`VITE_JF_TESTER=1`),
 so in the store build it exists only as a "Coming Soon" card.

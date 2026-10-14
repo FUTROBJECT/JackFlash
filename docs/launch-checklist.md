@@ -107,7 +107,7 @@ Re-upload recipe: `npm --prefix "<primary checkout>" run cap:sync` (store build,
 
 ---
 
-## v1.1 — Add & Subtract (decided 2026-10-13: not in 1.0)
+## v1.1 — Add & Subtract (decided 2026-10-13: not in 1.0) — **folded into 1.2 (2026-10-14): 1.1 is never released on its own**; its unchecked items now ride with 1.2 (attach `module.add.full` to the 1.2 version page too)
 1.0 ships Multiply + Fractions only; Add & Subtract stays a "Coming Soon" card in the store build and fully open on Jack's tester build. Start these after 1.0 is live.
 - [ ] Keep Jack on the tester build; note anything in Add that needs fixing before it ships
 - [x] App Store Connect → In-App Purchases: `module.add.full` created ($3.99, non-consumable) — 2026-10-13. **Not attached to 1.0.**
@@ -125,7 +125,8 @@ Re-upload recipe: `npm --prefix "<primary checkout>" run cap:sync` (store build,
 
 ---
 
-## v1.2 — Place Value + the All-Modules bundle (decided 2026-10-13)
+## v1.2 — Add & Subtract + Place Value + "All of JackFlash" — the first update after 1.0 (decided 2026-10-14)
+- [x] **1.2 (5) archived 2026-10-14** (store build, nothing staged, all bundle products in). Build number now 6 for the next upload
 Ships after 1.1 is live. Bundle = **$9.99, every module including future ones** (Connections etc.). It appears only once 3 paid modules are on sale ($11.97 separately), so it's a real discount, never a pre-sale.
 
 **Place Value**
@@ -153,6 +154,6 @@ Ships after 1.1 is live. Bundle = **$9.99, every module including future ones** 
 - [ ] App Store screenshots: consider a Place Value frame
 
 **Ship**
-- [ ] Version 1.2 (`MARKETING_VERSION`), archive, TestFlight (Friends), then Submit for Review with `module.placevalue.full`, `bundle.all`, `bundle.rest.one` and `bundle.rest.two` attached to the 1.2 version page
+- [ ] Version 1.2 (`MARKETING_VERSION`), archive, TestFlight (Friends), then Submit for Review with `module.add.full`, `module.placevalue.full`, `bundle.all`, `bundle.rest.one` and `bundle.rest.two` attached to the 1.2 version page (five new purchases)
 - [x] Code (2026-10-14): `getBundleOffer()` picks the offer by how many paid modules the family owns; card copy per the listing doc; preview-tested none / one / two / three owned and buying "the rest" (everything unlocks, card turns "All of JackFlash ✓")
 
