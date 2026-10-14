@@ -389,6 +389,8 @@ export function ColumnPad({ onDigit, onBack, onCheck, checkEnabled, disabled = f
 //             (`getClampEl()`) changes height — but never so far that the chart
 //             (or, after typing, the grid) slides under the header. No
 //             hard-coded inset numbers: safe-area insets are measured for free.
+//   onTypedChange — optional; called with true/false as the cells go from
+//             empty to holding a digit and back (the card's Start over uses it).
 //   fill    — cells to display instead (second-miss fill / correct re-answer);
 //             disables editing. `state` colours them ("missed" yellow,
 //             "correct" green). `fillMarks` (with state "missed") replaces
@@ -398,7 +400,7 @@ export function ColumnAnswerInput({
   item, marks, marksInteractive = false, onTopTap = null, onUndoMarks = null,
   onSubmit, live = true, sticky = false, state = "input", fill = null, fillMarks = null,
   compact = false, hintRow = true, reserveHintRow = false, tradeVerb = "regroup",
-  markNotice = null, headerRef = null, getClampEl = null,
+  markNotice = null, headerRef = null, getClampEl = null, onTypedChange = null,
 }) {
   const cols = item.columns;
   const [st, setSt] = useState(() => ({ digits: Array(cols).fill(""), active: cols - 1 }));
@@ -487,6 +489,7 @@ export function ColumnAnswerInput({
 
   const typedKey = st.digits.join("|");
   const hasTyped = !/^\|*$/.test(typedKey);
+  useEffect(() => { if (onTypedChange) onTypedChange(hasTyped); }, [hasTyped, onTypedChange]);
   useEffect(() => {
     if (!sticky || !editable || !hasTyped) return;
     alignGrid(false, "smooth"); // after the first digit: the grid itself may take priority over the chart

@@ -308,7 +308,7 @@ function ModelPicker({ item, pick, onPick, onNextStep, live }) {
 
 function ScaffoldForItem({
   item, disc, showScaffold, scaffoldOpacity, mode, interactive, notice, onTrade, onTake, onStartOver,
-  jumpsDrawn, onJump, modelPick, onPickModel, onNextStep,
+  canStartOver, jumpsDrawn, onJump, modelPick, onPickModel, onNextStep,
 }) {
   if (mode === "abstract" && !showScaffold) return null;
   const opacity = showScaffold ? 1 : scaffoldOpacity;
@@ -329,10 +329,10 @@ function ScaffoldForItem({
         {mode === "concrete" && (
           <>
             <div style={{ ...PROMPT_STYLE, fontSize: 13, marginTop: 6 }}>Tap the jumps in order.</div>
-            <button disabled={!interactive} onClick={onStartOver} style={{
+            <button disabled={!interactive || jumpsDrawn === 0} onClick={onStartOver} style={{
               minHeight: 44, minWidth: 44, padding: "0 12px", marginBottom: -8, background: "none", border: "none",
-              cursor: interactive ? "pointer" : "default", fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12,
-              color: interactive ? COLORS.black : "#666", textDecoration: "underline",
+              cursor: interactive && jumpsDrawn > 0 ? "pointer" : "default", fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12,
+              color: interactive && jumpsDrawn > 0 ? COLORS.black : "#666", textDecoration: "underline",
             }}>
               Start over
             </button>
@@ -365,13 +365,14 @@ function ScaffoldForItem({
         animate={false} notice={notice} onTrade={onTrade} onTake={onTake}
       />
       {interactive && (
-        // Resets the chart AND the mirrored marks. ≥44px hit area.
-        <button onClick={onStartOver} style={{
+        // Resets the chart, the mirrored marks AND the typed answer. ≥44px hit area.
+        // Grey and inert until there is something to undo, so a tap never looks ignored.
+        <button disabled={!canStartOver} onClick={onStartOver} style={{
           // 44px hit area, but its bottom 12px overlaps the (empty) gap above the grid so
           // it costs ~32px of height, not 48 — vertical room matters under the sticky pad.
           minHeight: 44, minWidth: 44, marginTop: 0, marginBottom: -12, padding: "0 12px", background: "none", border: "none",
-          cursor: "pointer", fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12,
-          color: COLORS.black, textDecoration: "underline",
+          cursor: canStartOver ? "pointer" : "default", fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12,
+          color: canStartOver ? COLORS.black : "#666", textDecoration: "underline",
         }}>
           Start over
         </button>
@@ -551,6 +552,9 @@ export default function AddPractice({
   const [cardMarks, setCardMarks] = useState(emptyMarks());
   const [reaskMarks, setReaskMarks] = useState(emptyMarks());
   const [notice, setNotice] = useState(null);
+  // Start over has something to undo: a chart move, or answer digits typed.
+  const [chartMoved, setChartMoved] = useState(false);
+  const [answerTyped, setAnswerTyped] = useState(false);
   // Mental (Concrete): jumps tapped so far. Words (Concrete): the "pick the model"
   // step — the model is picked once; wrong picks are free (not scored, not logged).
   const [jumpsDrawn, setJumpsDrawn] = useState(0);
@@ -716,6 +720,8 @@ export default function AddPractice({
     setCardMarks(emptyMarks());
     setReaskMarks(emptyMarks());
     setDisc(selected ? initDiscState(selected) : { counts: [], counts2: null, carried: [], taken: [] });
+    setChartMoved(false);
+    setAnswerTyped(false);
 
     // Per-group default CPA mode — until the child has made an explicit
     // choice, which then sticks across groups.
@@ -911,6 +917,7 @@ export default function AddPractice({
     const next = currentItem.op === "+" ? tradeAdd(disc, idx) : tradeSub(disc, idx);
     if (next === disc) return;
     setDisc(next);
+    setChartMoved(true);
     setNotice(null);
     if (currentItem.answerType === "column") setCardMarks((m) => mirrorChartTrade(currentItem, m, idx));
   }, [currentItem, disc]);
@@ -919,6 +926,7 @@ export default function AddPractice({
     if (!currentItem || currentItem.op !== "-") return;
     const n = digitArr(currentItem.b, currentItem.columns)[idx];
     const { state, notice: refusal } = takeSub(disc, idx, n);
+    if (state !== disc) setChartMoved(true);
     setDisc(state);
     setNotice(refusal);
   }, [currentItem, disc]);
@@ -975,6 +983,10 @@ export default function AddPractice({
     setDisc(initDiscState(currentItem));
     setCardMarks(emptyMarks());
     setNotice(null);
+    setChartMoved(false);
+    // The whole attempt starts over: remounting the grid clears the typed digits.
+    setAnswerTyped(false);
+    setRetryResetKey((k) => k + 1);
   }, [currentItem]);
 
   useEffect(() => {
@@ -1499,6 +1511,7 @@ export default function AddPractice({
                         onTrade={handleChartTrade}
                         onTake={handleChartTake}
                         onStartOver={handleStartOver}
+                        canStartOver={chartMoved || answerTyped}
                         jumpsDrawn={jumpsDrawn}
                         onJump={handleJump}
                         modelPick={modelPick}
@@ -1591,6 +1604,7 @@ export default function AddPractice({
                       getClampEl={getClampEl}
                       onUndoMarks={() => setCardMarks(emptyMarks())}
                       onSubmit={handleColumnSubmit}
+                      onTypedChange={setAnswerTyped}
                       live={!feedback}
                       sticky
                       state={feedback === "correct" ? "correct" : "input"}
