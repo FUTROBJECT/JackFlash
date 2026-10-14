@@ -207,6 +207,11 @@ For each new paid module (Add, Place Value, Connections):
 
 **The bundle** (`bundle.all` / entitlement `all`): only once **3+ paid modules**
 are live (the in-app card is gated to that — see CLAUDE.md). Then create a
-`bundle.all` non-consumable in both stores, an `all` entitlement in RevenueCat
-attached to **every** module product, add it to the Offering, and the in-app
-bundle card surfaces automatically.
+`bundle.all` non-consumable in both stores ($9.99) and an `all` entitlement in
+RevenueCat with **only `bundle.all` attached** (attaching a module product to
+`all` would hand out the bundle with a single module). Add `bundle.all` to the
+current Offering as its own custom package (e.g. `all`). The app treats an
+active `all` as every module, including ones that ship later
+(`isModuleFullyUnlocked` checks `isBundlePurchased()` first), and the in-app
+bundle card surfaces automatically. Decided 2026-10-13: the bundle includes
+future modules.

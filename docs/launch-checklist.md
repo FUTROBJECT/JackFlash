@@ -122,3 +122,28 @@ Re-upload recipe: `npm --prefix "<primary checkout>" run cap:sync` (store build,
 - [ ] Sandbox purchase on device; Restore round-trip
 - [x] Version set to 1.1 (`MARKETING_VERSION`; build number stays 2). Still to do at submit: update What's New, the description and screenshots if the module list changes
 - [ ] Archive → upload → attach `module.add.full` to the 1.1 version page → Submit for Review
+
+---
+
+## v1.2 — Place Value + the All-Modules bundle (decided 2026-10-13)
+Ships after 1.1 is live. Bundle = **$9.99, every module including future ones** (Connections etc.). It appears only once 3 paid modules are on sale ($11.97 separately), so it's a real discount, never a pre-sale.
+
+**Place Value**
+- [ ] Jack uses it on the tester build (already open there); note anything to fix before it ships. Check the module against `docs/place-value-spec.md` and the QA convention in CLAUDE.md (every answerType × CPA mode, one wrong answer each)
+- [ ] App Store Connect: IAP `module.placevalue.full` ($3.99, non-consumable), review screenshot at 1206 × 2622 — **don't** click "Add for Review" on the IAP page
+- [ ] RevenueCat: entitlement `placeValue` ← `module.placevalue.full`; custom package `placeValue` in the current offering
+- [ ] Code: remove `placeValue` from `STAGED_MODULES`; `module.placevalue.full` → `available: true` with a "what's free" description (free sample = the `build` group); `placeValue: "module.placevalue.full"` in `RC_ENTITLEMENT_TO_PRODUCT`
+
+**Bundle**
+- [ ] App Store Connect: IAP `bundle.all` ($9.99, non-consumable), display name "All Modules", description that says it includes future modules; review screenshot of the store showing the bundle card
+- [ ] RevenueCat: entitlement `all` ← **only** `bundle.all`; custom package `all` in the current offering (see `LAUNCH-revenuecat-setup.md` §8)
+- [ ] Code: hide the bundle card when buying the family's *remaining* modules separately would cost less (someone who already owns Fractions shouldn't be offered $9.99 for $7.98 of modules); savings line computed against what's left to buy; bundle copy says "every module, including ones still to come"
+- [ ] Play-test the store build: bundle appears with 3 paid modules; owns-one-module case; buying the bundle unlocks all three; Restore brings it back; Multiply/Fractions/Add regression
+
+**Copy (only once 1.2 is live)**
+- [ ] Landing pricing: Place Value row + the bundle; FAQ "What's free?"; listing description, promo text, What's New, review notes (both new IAPs)
+- [ ] App Store screenshots: consider a Place Value frame
+
+**Ship**
+- [ ] Version 1.2 (`MARKETING_VERSION`), archive, TestFlight (Friends), then Submit for Review with **both** `module.placevalue.full` and `bundle.all` attached to the 1.2 version page
+
