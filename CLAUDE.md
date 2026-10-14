@@ -51,15 +51,18 @@ definition carries: `id, name, groups, freeContent, skillLabels, pool` (or
 | Fractions | `fractions` | shipped — $3.99, **Foundations group free** (sample to drive conversion) |
 | Add & Subtract | `add` | **shipping in 1.1** — $3.99 (`module.add.full`, RevenueCat entitlement `add`), **colAdd + facts free** (groups colAdd, colSub, mental, words, facts) — spec `docs/add-spec.md`, stories `docs/add-word-problems.md` |
 | Connections (capstone word problems) | `connections` | built, **not wired** — v1.2 |
-| Place Value | `placeValue` | **staged: tester build only** (`available: false`; `freeContent` = build for when it ships) — spec `docs/place-value-spec.md` |
+| Place Value | `placeValue` | **shipping in 1.2** — $3.99 (`module.placevalue.full`, RevenueCat entitlement `placeValue`), **Build & Read free** — spec `docs/place-value-spec.md` |
 
-**Store builds:** 1.0 (build 1, in review) = Multiply (free, all of it) +
-Fractions (Foundations free, rest $3.99). `main` is now **1.1** = 1.0 + Add &
-Subtract (colAdd + facts free, rest $3.99). A 1.0 fix build would need `add`
-put back in `STAGED_MODULES`. Place Value is still *staged*: its screen is
-imported, but `registerModule` skips it (`STAGED_MODULES` in
-`moduleRegistry.js`) unless `IS_TESTER_BUILD` (`VITE_JF_TESTER=1`), so in the
-store build it exists only as a "Coming Soon" card in the Parent Zone store.
+**Store builds:** 1.0 = Multiply (free, all of it) + Fractions (Foundations
+free, rest $3.99). 1.1 adds Add & Subtract (colAdd + facts free). `main` is
+now **1.2** = 1.1 + Place Value (Build & Read free) + the **$9.99 All-Modules
+bundle** (every module, including future ones; shown only once 3 paid modules
+are on sale AND it's cheaper than what the family still has to buy). A 1.1
+fix build would need `placeValue` put back in `STAGED_MODULES` and its product
+back to `available: false`. Staging mechanism (`STAGED_MODULES` in
+`moduleRegistry.js`, empty right now): a staged module's screen is imported
+but `registerModule` skips it unless `IS_TESTER_BUILD` (`VITE_JF_TESTER=1`),
+so in the store build it exists only as a "Coming Soon" card.
 A saved profile on an unregistered module is moved to Multiply at startup.
 The tester build (Jack's phone) registers them and makes
 `isModuleFullyUnlocked` always true. Never widen `freeContent` for testing,
@@ -112,8 +115,12 @@ Gating helpers: `isContentAccessible(moduleId, groupId)` and
 `isModuleLocked(moduleId)` (no `freeContent` + not purchased = locked
 everywhere: onboarding, profile creation, home ModulePicker). The **All-Modules
 bundle card is hidden until 3+ paid modules are `available`** (ParentZone
-`BUNDLE_MIN_PAID_MODULES`) so it's an honest discount, not a pre-sale — it
-auto-surfaces later; don't re-enable it earlier.
+`BUNDLE_MIN_PAID_MODULES`) **and while it costs less than the modules the
+family still has to buy** — an honest discount, never a pre-sale. Owning the
+bundle counts as owning every module (`getProductsWithStatus`), so no $3.99
+button shows and `purchase()` returns `already_owned`. On the public web build
+(`canPurchaseHere()` false) the store shows "in the iPhone & iPad app" notes
+instead of buy buttons; the dev server keeps the simulated `confirm()` buy.
 
 ## Launch (App Store / Play)
 

@@ -156,28 +156,14 @@ function buildDigitDistractors(correctDigit, digits, columns) {
   return out;
 }
 
-// V2 (what is it worth): face value (digit alone, no place multiplier — the
-// headline P3 misconception) and off-by-one-place (×10 too big / too small),
-// then a bounded numeric-jitter fallback for places where those collide.
-function buildValueDistractors(correctValue, digit, placeValue) {
-  const raw = [digit, digit * placeValue * 10];
-  if (placeValue > 1 && Number.isInteger((digit * placeValue) / 10)) {
-    raw.push((digit * placeValue) / 10);
-  }
-  const out = [];
-  const seen = new Set([correctValue]);
-  for (const v of raw) {
-    if (seen.has(v) || v < 0) continue;
-    seen.add(v);
-    out.push(v);
-    if (out.length === 3) break;
-  }
-  for (let delta = 1; out.length < 3 && delta <= 200; delta += 10) {
-    for (const v of [correctValue + delta, correctValue - delta]) {
-      if (out.length < 3 && v >= 0 && !seen.has(v)) { seen.add(v); out.push(v); }
-    }
-  }
-  return out;
+// V2 (what is it worth): the same digit at the other three places — face
+// value (the digit alone, the headline P3 misconception) and the
+// wrong-place values (×10 too big or too small). Always exactly three, all
+// within 10,000 (no ten-thousands: P4), and never a numeric jitter that no
+// child would actually think (an earlier version offered "51" for the 5 in
+// 3,452).
+function buildValueDistractors(correctValue, digit) {
+  return [1, 10, 100, 1000].map((pv) => digit * pv).filter((v) => v !== correctValue);
 }
 
 // V3 (which place): the other three place names — always exactly 3, no
@@ -194,8 +180,8 @@ function expansionString(terms) {
   return terms.map((t) => formatNumber(t)).join(" + ");
 }
 
-// Distractors: zero collapse (omit the zero term — "complete" but hides the
-// placeholder), digit-sum (raw digits, no place value, no commas),
+// Distractors: zero collapse (the zero place dropped, so 3,052 is read as 352
+// and expanded as 300 + 50 + 2), digit-sum (raw digits, no place value, no commas),
 // off-by-one-place (a term borrows the neighbouring place's weight),
 // transposed (two terms' values swapped between columns). Bounded fallback
 // (a small deterministic jitter) pads the rare case where two builders
@@ -206,8 +192,12 @@ function buildExpansionDistractors(value, digits) {
   const raw = [];
 
   if (hasZeroDigit(value)) {
-    const collapsed = terms.filter((t) => t !== 0);
-    if (collapsed.length < terms.length) raw.push(expansionString(collapsed));
+    // Not "3,000 + 50 + 2": that IS 3,052 (X2 teaches exactly that form), so
+    // offering it as wrong would mark a true answer wrong. The misconception is
+    // the number itself collapsing: 3,052 → 352 → 300 + 50 + 2.
+    const kept = PLACE_CODES.map((p) => digits[p]).filter((d) => d !== 0);
+    const collapsed = kept.map((d, i) => d * 10 ** (kept.length - 1 - i)).filter((t) => t !== 0);
+    raw.push(expansionString(collapsed));
   }
 
   raw.push(PLACE_CODES.map((p) => digits[p]).join(" + "));
@@ -229,10 +219,12 @@ function buildExpansionDistractors(value, digits) {
     raw.push(expansionString(swapped));
   }
 
+  // A distractor must never add up to the number: it would be a right answer.
+  const sumOf = (str) => str.split("+").reduce((a, t) => a + Number(t.replace(/[^0-9]/g, "")), 0);
   const out = [];
   const seen = new Set([correct]);
   for (const cand of raw) {
-    if (seen.has(cand)) continue;
+    if (seen.has(cand) || sumOf(cand) === value) continue;
     seen.add(cand);
     out.push(cand);
     if (out.length === 3) break;
@@ -241,7 +233,7 @@ function buildExpansionDistractors(value, digits) {
     const jittered = [...terms];
     jittered[3] = ((digits.o + filler) % 10) * PLACE_VALUES.o;
     const cand = expansionString(jittered);
-    if (!seen.has(cand)) { seen.add(cand); out.push(cand); }
+    if (!seen.has(cand) && sumOf(cand) !== value) { seen.add(cand); out.push(cand); }
   }
   return out;
 }
@@ -542,7 +534,7 @@ function buildPlaceValuePool() {
         answerType: "choice4",
         value, columns, digits, place, hasZero: hasZeroDigit(value),
         correctAnswer: correctValue,
-        distractors: buildValueDistractors(correctValue, digit, placeValue),
+        distractors: buildValueDistractors(correctValue, digit),
         display: `${formatNumber(value)} · ${place}`,
       });
     });

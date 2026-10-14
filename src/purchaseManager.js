@@ -62,13 +62,13 @@ export const PRODUCTS = {
   "module.placevalue.full": {
     id: "module.placevalue.full",
     name: "Place Value",
-    description: "Composing/decomposing numbers, place value discs",
-    gradeRange: "Grades 1–3",
+    description: "Build & Read is free to try. Unlock digit values, expanded form, and comparing, ordering & number patterns.",
+    gradeRange: "Grades 2–3",
     price: "$3.99",
     priceValue: 3.99,
     type: "module_unlock",
     moduleId: "placeValue",
-    available: false,
+    available: true, // ships in 1.2 (Build & Read free)
   },
   "module.connections.full": {
     id: "module.connections.full",
@@ -84,7 +84,7 @@ export const PRODUCTS = {
   "bundle.all": {
     id: "bundle.all",
     name: "All Modules Bundle",
-    description: "Unlock everything — all current and future modules",
+    description: "Every module, including the ones still to come — one purchase.",
     price: "$9.99",
     priceValue: 9.99,
     type: "bundle",
@@ -212,9 +212,12 @@ export function getProductsWithStatus() {
   const bundlePurchased = isBundlePurchased();
   return Object.values(PRODUCTS).map((product) => ({
     ...product,
+    // The bundle covers every module, including ones that ship later: a
+    // module the family owns through the bundle is owned (no $3.99 button,
+    // and purchase() refuses to charge for it again).
     purchased: product.type === "bundle"
       ? bundlePurchased
-      : purchases.includes(product.id),
+      : purchases.includes(product.id) || (bundlePurchased && product.type === "module_unlock"),
   }));
 }
 
@@ -339,6 +342,7 @@ const REVENUECAT_KEYS = {
 const RC_ENTITLEMENT_TO_PRODUCT = {
   fractions: "module.fractions.full",
   add: "module.add.full",
+  placeValue: "module.placevalue.full",
   all: "bundle.all",
   // connections: v1.2.
 };

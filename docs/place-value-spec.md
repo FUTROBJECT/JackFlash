@@ -697,3 +697,33 @@ the whole locked group instead of an empty draw; toggling from that state
 starts over from the locked set. Multiply's Practice Sets card carries the
 same "🔒 Locked to … by a parent" line. Verified in the preview at 375 and
 320 across all three modules.
+
+## Pre-release pass for 1.2 (2026-10-14)
+
+Static check of all 282 items (unique keys, numeric answer types, choice sets
+of 4 distinct with the answer included, number words round-trip) plus a
+preview drive in the store shape and the tester shape. Fixed:
+- **X3 marked true answers wrong.** For the five zero-place numbers the
+  "zero collapse" distractor was the expansion without the zero term
+  (3,000 + 50 + 2), which IS 3,052 — and X2 teaches exactly that form. The
+  distractor is now the number collapsing (3,052 → 352 → 300 + 50 + 2), and
+  any candidate that adds up to the number is rejected. The §4 table's
+  "expansion 3,000 + 50 + 2 offered as complete" is superseded.
+- **V2 distractors** were partly numeric jitter ("51" for the 5 in 3,452;
+  "3" and "1" for the ones digit) and offered 30,000-type values (P4). They
+  are now the same digit at the other three places (5 / 500 / 5,000 against
+  50): always three, always within 10,000.
+- Number words keep hyphenated pairs together on cards and prompts
+  ("seventy-six" no longer breaks after the hyphen).
+- Store: `module.placevalue.full` available with a "what's free" line, grade
+  range 2–3; entitlement `placeValue`; bundle shown only when it beats what's
+  left to buy; bundle ownership marks every module owned.
+
+Verified: B1 (concrete, wrong → reveal → right), B2 (pictorial, wrong →
+strips reveal, second miss → auto-fill), B3 (concrete words, wrong → reveal
+→ right), V2 (new choices), C1 (concrete, reveal → right), C2 (abstract,
+wrong order → one-tap "Tap the smallest"), C3 (pictorial), X1 (abstract),
+B2 over-fill chip at 320; store build: Build & Read free, other groups
+"Ask a parent to unlock", bundle "save $1.98", hidden when Fractions owned,
+bundle owner sees no buy buttons and "Coming soon · included" on Connections.
+

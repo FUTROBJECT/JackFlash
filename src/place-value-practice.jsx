@@ -141,6 +141,11 @@ function HighlightedNumeral({ digits, place = null, color = COLORS.blue, fontSiz
 // clamp(13px,3.8vw,16px), §8.5) | "number" (V1/V2 — Shrikhand, centered).
 // `reveal` (opt-in): { wrong, fill } — same contract as fractions' grid.
 // ---------------------------------------------------------------------------
+// Display-only: number words keep each hyphenated pair on one line
+// ("seventy-six", never "seventy-" / "six") — U+2011 is a non-breaking hyphen.
+// Never applied to correctAnswer or anything compared.
+const keepHyphens = (text) => (typeof text === "string" ? text.replace(/-/g, "\u2011") : text);
+
 function PVChoiceGrid({ choices, onPick, picked, correct, variant = "number", reveal = null }) {
   return (
     <div style={{
@@ -187,7 +192,7 @@ function PVChoiceGrid({ choices, onPick, picked, correct, variant = "number", re
                 fontSize: "clamp(13px, 3.8vw, 16px)", color: COLORS.black,
                 textAlign: "center", overflowWrap: "anywhere",
               }}>
-                {c}
+                {keepHyphens(c)}
               </span>
             ) : (
               <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: 30, color: COLORS.black }}>
@@ -721,7 +726,7 @@ function QuestionDisplay({ item }) {
           fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
           fontSize: "clamp(22px, 7vw, 30px)", color: COLORS.black,
         }}>
-          {numberToWords(item.value)}
+          {keepHyphens(numberToWords(item.value))}
         </span>
       </div>
     );
@@ -860,7 +865,7 @@ function buildProblem(item) {
     return <span style={{ fontSize: "0.55em" }}>What number is this?</span>;
   }
   if (item.skill === "B4") {
-    return <span style={{ fontSize: "0.55em" }}>{numberToWords(item.value)}</span>;
+    return <span style={{ fontSize: "0.55em" }}>{keepHyphens(numberToWords(item.value))}</span>;
   }
   if (item.skill === "V2" || item.skill === "V3") {
     return <HighlightedNumeral digits={item.digits} place={item.place} color={COLORS.blue} fontSize={30} />;

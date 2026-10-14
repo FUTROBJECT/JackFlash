@@ -940,9 +940,12 @@ export function ParentZone({
               .sort((a, b) => a._rank - b._rank)
               .map((product) => {
               const moduleColor = MODULE_COLORS[product.moduleId] || COLORS.blue;
-              const isPurchased = product.purchased;
               const isAvailable = product.available !== false;
               const isFree = product.free === true;
+              // `purchased` is also true for every module once the bundle is owned —
+              // including the free one and ones not out yet, which keep their own labels.
+              const isPurchased = product.purchased && !isFree && isAvailable;
+              const ownedViaBundle = product.purchased && !isAvailable;
               // The Connections capstone gets emphasis treatment (rainbow band, cyan
               // accents, "unlocks after mastering" footer) — but only once it ships.
               // While available:false it renders as a plain grayed "coming soon" card
@@ -1042,7 +1045,7 @@ export function ParentZone({
                           textTransform: "uppercase",
                           letterSpacing: "0.5px",
                         }}>
-                          Coming Soon
+                          {ownedViaBundle ? "Coming soon · included" : "Coming Soon"}
                         </div>
                       ) : null}
                     </div>
@@ -1118,18 +1121,20 @@ export function ParentZone({
               const bundleProduct = PRODUCTS["bundle.all"];
               const { purchased: isPurchased } = getProductsWithStatus()
                 .find(p => p.id === "bundle.all") || {};
-              // Savings vs buying the currently-available paid modules individually.
-              // Shown only when positive, so we never overstate the deal at launch.
-              const paidNow = getProductsWithStatus().filter(p => p.type === "module_unlock" && p.available !== false);
-              const indivTotal = paidNow.reduce((s, p) => s + (p.priceValue || 0), 0);
-              const bundleSavings = indivTotal - (bundleProduct.priceValue || 0);
+              // Savings vs buying the modules this family doesn't own yet, one by one.
+              const paidNow = getProductsWithStatus().filter(p => p.type === "module_unlock" && p.available !== false && !p.free);
+              const stillToBuy = paidNow.filter(p => !p.purchased);
+              const remainingTotal = stillToBuy.reduce((s, p) => s + (p.priceValue || 0), 0);
+              const bundleSavings = remainingTotal - (bundleProduct.priceValue || 0);
               // The bundle only appears once it's an honest discount — i.e. once
               // enough paid modules ship that buying them individually costs more
               // than the bundle. At launch (Fractions only) it stays hidden so we
               // never sell "all future modules" against a single available one.
               // Auto-surfaces when the 3rd paid module flips available:true.
               const BUNDLE_MIN_PAID_MODULES = 3;
-              const showBundle = isPurchased || paidNow.length >= BUNDLE_MIN_PAID_MODULES;
+              // And only while it's still a deal for THIS family: someone who already
+              // owns Fractions isn't offered $9.99 for $7.98 of modules.
+              const showBundle = isPurchased || (paidNow.length >= BUNDLE_MIN_PAID_MODULES && bundleSavings > 0);
               if (!showBundle) return null;
               return (
                 <div
@@ -1167,7 +1172,7 @@ export function ParentZone({
                       color: "#333",
                       margin: "8px 0 0 0",
                     }}>
-                      Get all current and future modules with one purchase.
+                      Every module, including the ones still to come, with one purchase.
                     </p>
                   </div>
                   <div style={{ padding: "12px 15px" }}>
@@ -1184,6 +1189,10 @@ export function ParentZone({
                         textAlign: "center",
                       }}>
                         ✓ All Unlocked
+                      </div>
+                    ) : !canPurchaseHere() ? (
+                      <div style={{ fontSize: "12px", fontWeight: 700, color: COLORS.black, textAlign: "center" }}>
+                        All modules in the iPhone &amp; iPad app · {bundleProduct.price} once
                       </div>
                     ) : (
                       <button
