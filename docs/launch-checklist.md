@@ -131,7 +131,7 @@ Ships after 1.1 is live. Bundle = **$9.99, every module including future ones** 
 **Place Value**
 - [ ] Jack uses it on the tester build (already open there); note anything to fix before it ships. Check the module against `docs/place-value-spec.md` and the QA convention in CLAUDE.md (every answerType × CPA mode, one wrong answer each)
 - [ ] App Store Connect: IAP `module.placevalue.full` ($3.99, non-consumable), review screenshot at 1206 × 2622 — **don't** click "Add for Review" on the IAP page
-- [ ] RevenueCat: entitlement `placeValue` ← `module.placevalue.full`; custom package `placeValue` in the current offering
+- [x] RevenueCat (2026-10-14): entitlement `placeValue` ← `module.placevalue.full`; custom package `placeValue` in the current offering
 - [x] Code (2026-10-14): `placeValue` unstaged; `module.placevalue.full` available with a "what's free" description (Build & Read free); `placeValue` entitlement mapped. Pre-release pass fixed X3 (true answers marked wrong) and V2 (nonsense / >10,000 choices) — see the spec's last section
 
 **Family Sharing (decided 2026-10-14 — do now, it's irreversible)**
@@ -142,7 +142,8 @@ Ships after 1.1 is live. Bundle = **$9.99, every module including future ones** 
   - `bundle.all` — $9.99 — display name "All of JackFlash" — "Every module, including the ones still to come."
   - `bundle.rest.one` — $5.99 — "The rest of JackFlash" — "Every other module, including ones to come."
   - `bundle.rest.two` — $1.99 — "The rest of JackFlash" — same description
-- [ ] RevenueCat: entitlement `all` ← **all three bundle products and nothing else**; a custom package for each in the current offering (`all`, `rest1`, `rest2`) (see `LAUNCH-revenuecat-setup.md` §8)
+- [x] RevenueCat (2026-10-14): entitlement `all` ← the three bundle products only; packages `all`, `rest1`, `rest2` in the current offering
+- [x] IAP review screenshots (1206 × 2622) in `screenshots/iap-review/`: `place-value-and-all-of-jackflash.png` (Place Value + bundle.all), `rest-of-jackflash-owns-one.png`, `rest-of-jackflash-owns-two.png`
 - [x] Code (2026-10-14): bundle hidden when what's left to buy costs less; savings vs what's left; "Every module, including the ones still to come"; owning the bundle marks every module owned (no $3.99 buttons, no double charge); web build shows an in-app note
 - [x] Preview play-test of the store build (2026-10-14): bundle appears (save $1.98); hidden when Fractions owned; bundle buy unlocks all, no buy buttons left, Connections "Coming soon · included"
 - [ ] On device (sandbox) after the IAPs exist: buy Place Value, buy the bundle on a fresh install, Restore both
