@@ -127,6 +127,8 @@ Re-upload recipe: `npm --prefix "<primary checkout>" run cap:sync` (store build,
 
 ## v1.2 — Add & Subtract + Place Value + "All of JackFlash" — the first update after 1.0 (decided 2026-10-14)
 - [x] **1.2 (5) archived 2026-10-14** (store build, nothing staged, all bundle products in). Build number now 6 for the next upload
+- [x] 1.2 (5) uploaded to App Store Connect (2026-10-14)
+- [ ] TestFlight: What to Test pasted, 1.2 (5) added to Friends (1.1 builds removed), submitted for Beta App Review
 Ships after 1.1 is live. Bundle = **$9.99, every module including future ones** (Connections etc.). It appears only once 3 paid modules are on sale ($11.97 separately), so it's a real discount, never a pre-sale.
 
 **Place Value**
