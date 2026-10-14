@@ -145,7 +145,7 @@ All three grant the RevenueCat entitlement `all`. The offer appears only once 3 
 
 **Landing FAQ "What's free?" (1.2):** "Multiply & Divide, all of it. Every other module has its first group free to try, then $3.99 once. Or get all of JackFlash — every module, including the ones still to come — for $9.99 once. If you already own a module, the rest costs less, so everything still comes to about $9.99. Updates are always included, and Family Sharing is on."
 
-**Promotional text (1.2, 170 max):** "Singapore Math practice, never timed, never ranked. Multiply & Divide is free; every other module is $3.99 once, or all of them for $9.99. No ads. No tracking." (157 characters)
+**Promotional text (1.2, 170 max):** "Singapore Math practice, never timed, never ranked. Multiply & Divide is free; every other module is $3.99 once, or all of them for $9.99. No ads. No tracking." (159 characters)
 
 **Review notes addition (1.2):** "In-app purchases: Fractions Full, Add & Subtract Full and Place Value Full ($3.99 each); All of JackFlash (`bundle.all`, $9.99). Two 'The rest of JackFlash' upgrades unlock the same content for families who already own modules: `bundle.rest.one` ($5.99) appears after one module is purchased, `bundle.rest.two` ($1.99) after two. In the sandbox: buy Fractions, then open Parent Zone → Modules to see the $5.99 offer."
 
