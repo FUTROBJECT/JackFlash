@@ -77,7 +77,7 @@ Subject: JackFlash — Singapore Math practice app, one-time $3.99, COPPA-clean 
 
 > Hi [name],
 >
-> I'm Adam Murray, a solo developer (Laser Lab Studio). I built JackFlash for my son Jack: Singapore
+> I'm Adam Murray, a solo developer (Laser Lab Studio LLC). I built JackFlash for my son Jack: Singapore
 > Math practice using the real CPA method — kids physically build arrays in concrete mode, work bar
 > models in pictorial, and only then practise abstract facts. Mastery means from memory and unaided, never fast.
 >

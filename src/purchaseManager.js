@@ -281,6 +281,9 @@ const simulatedProvider = {
     if (isProductOwned(productId)) {
       return { status: "already_owned", productId };
     }
+    if (!canPurchaseHere()) {
+      return { status: "error", productId, error: "Purchases are in the iPhone and iPad app." };
+    }
 
     const approved = typeof window !== "undefined" && typeof window.confirm === "function"
       ? window.confirm(`Buy ${product.name} for ${product.price}?\n\n(Simulated purchase — no real charge.)`)
@@ -425,6 +428,14 @@ function isNativePlatform() {
     && !!window.Capacitor
     && typeof window.Capacitor.isNativePlatform === "function"
     && window.Capacitor.isNativePlatform();
+}
+
+// Real purchases happen only in the native app. The public web build is a free
+// preview: free groups work, paid groups stay locked, and the store card says
+// where to buy. The dev server keeps the simulated confirm() so purchase flows
+// stay testable in the preview.
+export function canPurchaseHere() {
+  return isNativePlatform() || !!import.meta.env.DEV;
 }
 
 let _provider = null;

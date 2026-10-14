@@ -61,7 +61,7 @@ Cleanup nits (optional, non-blocking): `debugGetAllData()` export in `dataManage
 - [x] RevenueCat: `fractions` entitlement → that product; `default` Offering current; iOS public key wired (commit faf184a)
 - [ ] Do **not** create bundle/other products yet (staged)
 - [x] Privacy/support URLs live (both 200, checked 2026-10-12) — they redeploy automatically whenever `main` is pushed (`.github/workflows/deploy.yml`)
-- [ ] Confirm contact email (Laser Lab Studios / adamlaserlab@gmail.com)
+- [x] Legal name confirmed 2026-10-13: **Laser Lab Studio LLC** (site, privacy, support, in-app Terms all match). Contact adamlaserlab@gmail.com
 - [x] **Screenshots rendered (2026-10-12):** 6 frames per slot in `screenshots/appstore/` — `iphone-6.3/` (1206 × 2622, the **required** 6.1"/6.3" slot), `iphone-6.9/` (1320 × 2868), `iphone-6.5/` (1284 × 2778), `ipad-13/` (2064 × 2752); from the store build with demo profiles; captions per `docs/voice-and-messaging.md`. Regenerate with `screenshots/appstore/compose.py` (README there). "File dimensions are invalid" = files dropped in the wrong slot.
 - [x] **Screenshots uploaded** to the 1.0 version page (2026-10-12)
 - [x] Review notes drafted (`JackFlash-AppStore-Listing.md` → App Review Notes; parental math gate, purchase-only network use)

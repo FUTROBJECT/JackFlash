@@ -140,7 +140,7 @@ submission). Read it before any store-facing work. Key state:
   key is `…__TODO`. Still needed: `module.fractions.full` in both stores
   attached to the RevenueCat `fractions` entitlement, then a sandbox test.
 - **Store URLs:** `public/privacy.html` + `public/support.html` → live at the
-  GitHub Pages URLs, published automatically when `main` is pushed. Contact = Laser Lab Studios /
+  GitHub Pages URLs, published automatically when `main` is pushed. Contact = Laser Lab Studio LLC /
   adamlaserlab@gmail.com (confirm before submitting).
 - **Icons/splash:** generated into `ios/App/App/Assets.xcassets` from the
   sources in `assets/` (`npx capacitor-assets generate`; re-run after

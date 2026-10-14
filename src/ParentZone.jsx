@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, MODULE_COLORS, DEFAULT_CHILD_SETTINGS, DEFAULT_MASTERY_THRESHOLD, AVATARS } from "./constants.js";
 import { getModuleList, getModule } from "./modules/moduleRegistry.js";
-import { PRODUCTS, purchaseProduct, restorePurchases, getProductsWithStatus, isContentAccessible } from "./purchaseManager.js";
+import { PRODUCTS, purchaseProduct, restorePurchases, getProductsWithStatus, isContentAccessible, canPurchaseHere } from "./purchaseManager.js";
 import { getAllAchievementsForProfile } from "./achievementEngine.js";
 import { Dropdown } from "./shared/ui.jsx";
 import LogoLockup from "./LogoLockup.jsx";
@@ -1061,7 +1061,16 @@ export function ParentZone({
                       {product.description}
                     </p>
                   </div>
-                  {!isPurchased && isAvailable && (
+                  {!isPurchased && isAvailable && !canPurchaseHere() && (
+                    // Web preview: nothing to buy here — say where the full module lives.
+                    <div style={{
+                      padding: "11px 15px", borderTop: BRUTAL_BORDER_SM, backgroundColor: COLORS.cream,
+                      fontSize: "12px", fontWeight: 700, color: COLORS.black, textAlign: "center",
+                    }}>
+                      Full module in the iPhone &amp; iPad app · {product.price} once
+                    </div>
+                  )}
+                  {!isPurchased && isAvailable && canPurchaseHere() && (
                     <div style={{ padding: "12px 15px" }}>
                       <button
                         onClick={() => handlePurchase(product.id)}
@@ -1203,8 +1212,8 @@ export function ParentZone({
               );
             })()}
 
-            {/* Restore Purchases link */}
-            <div style={{
+            {/* Restore Purchases link (native/dev only: the web preview has nothing to restore) */}
+            {canPurchaseHere() && <div style={{
               marginTop: "12px",
               textAlign: "center",
             }}>
@@ -1225,7 +1234,7 @@ export function ParentZone({
               >
                 {purchasePending === "restore" ? "Restoring…" : "Restore Purchases"}
               </button>
-            </div>
+            </div>}
           </div>
         )}
 
