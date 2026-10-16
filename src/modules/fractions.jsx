@@ -318,6 +318,17 @@ function buildFractionPool() {
     }
   });
 
+  // Which side the greater fraction sits on, per item (1 = right). A fixed,
+  // balanced, irregular pattern (Thue–Morse): half each side, no simple
+  // alternation, deterministic. Tester feedback 2026-10-16: F4 always put the
+  // greater fraction on the right (and F3 always on the left), so the side
+  // could be learned instead of the math. Display only: itemKeys and
+  // correctAnswer (a value, not a side) are unchanged, so saved mastery holds.
+  const SIDE_PATTERN = [0,1,1,0,1,0,0,1,1,0,0,1,0,1,1,0];
+  const placeGreater = (greater, lesser, i) => (SIDE_PATTERN[i % SIDE_PATTERN.length]
+    ? { left: lesser, right: greater }
+    : { left: greater, right: lesser });
+
   // F3: Compare unit fractions (tap-one-of-two)
   const f3Pairs = [];
   const f3Denoms = [2,3,4,5,6,8,9,10,12];
@@ -329,12 +340,11 @@ function buildFractionPool() {
     }
   }
   // Curate to ~16 pairs (smallest denominators first)
-  f3Pairs.slice(0, 16).forEach(({ a, b }) => {
+  f3Pairs.slice(0, 16).forEach(({ a, b }, i) => {
     items.push({
       itemKey: `ucmp:1/${a},1/${b}`, skill: "F3", group: "foundations",
       answerType: "tapTwo",
-      left: { n: 1, d: a },
-      right: { n: 1, d: b },
+      ...placeGreater({ n: 1, d: a }, { n: 1, d: b }, i),
       correctAnswer: `1/${a}`, // larger value (smaller denominator)
       questionText: "Which is greater?",
     });
@@ -351,12 +361,11 @@ function buildFractionPool() {
     }
   });
   // Curate ~16
-  f4Items.slice(0, 16).forEach(({ d, n1, n2 }) => {
+  f4Items.slice(0, 16).forEach(({ d, n1, n2 }, i) => {
     items.push({
       itemKey: `lcmp:${n1}/${d},${n2}/${d}`, skill: "F4", group: "foundations",
       answerType: "tapTwo",
-      left: { n: n1, d },
-      right: { n: n2, d },
+      ...placeGreater({ n: n2, d }, { n: n1, d }, i),
       correctAnswer: `${n2}/${d}`, // larger numerator = larger value
       questionText: "Which is greater?",
     });

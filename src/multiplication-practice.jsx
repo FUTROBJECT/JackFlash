@@ -223,6 +223,11 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   const [showSkipCount, setShowSkipCount] = useState(false);
   const [sessionStats, setSessionStats] = useState({ correct: 0, total: 0 });
   const [view, setView] = useState(initialView);
+  // Read by pickNewFact's deferred scroll: a new fact is also drawn when a
+  // practice set is toggled on the progress screen, and that must not yank
+  // the parent back to the top (tester feedback 2026-10-16).
+  const viewRef = useRef(view);
+  viewRef.current = view;
   const [streak, setStreak] = useState(0);
   // controls removed from practice view — settings managed via Parent Zone
   const [showArrayButton, setShowArrayButton] = useState(true);
@@ -432,11 +437,21 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       // preventScroll + scroll home: iOS keyboard-avoidance scrolls the page on
       // focus even when the input is already visible, which shoves the sticky
       // header's safe-area zone up behind the Dynamic Island on every new fact.
+      if (viewRef.current !== "practice") return;
       inputRef.current?.focus({ preventScroll: true });
       window.scrollTo(0, 0);
       factShownAtRef.current = Date.now();
     }, 100);
   }, [facts, getMasteryData, currentFact, mode, lockedMode, operation]);
+
+  // Arriving on the practice screen (e.g. "Practice 2s, 3s…" from far down the
+  // progress screen) starts at the top, now that toggling sets no longer does.
+  useEffect(() => {
+    if (view === "practice") {
+      window.scrollTo(0, 0);
+      factShownAtRef.current = Date.now();
+    }
+  }, [view]);
 
   // Trigger pickNewFact when enabled tables, focus number, operation, or facts change
   useEffect(() => {
