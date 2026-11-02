@@ -129,7 +129,9 @@ Re-upload recipe: `npm --prefix "<primary checkout>" run cap:sync` (store build,
 - [x] **1.2 (5) archived 2026-10-14** (store build, nothing staged, all bundle products in). Build number now 6 for the next upload
 - [x] 1.2 (5) uploaded to App Store Connect (2026-10-14)
 - [ ] TestFlight: What to Test pasted, 1.2 (5) added to Friends (1.1 builds removed), submitted for Beta App Review
-- [x] Tester feedback on 1.2 (5), fixed 2026-10-16 (goes out in the next build): Fractions F3/F4 always put the greater fraction on the same side (F3 left, F4 right) — now 8/8 on a fixed irregular pattern, keys unchanged; Multiply's practice-set toggles jumped the progress screen to the top — now it stays put, and practice opens at the top
+- [x] **1.2 (6) archived and uploaded 2026-11-02** on Xcode 27.2, from the CLI (`xcodebuild -exportArchive` with `method: app-store-connect`, `destination: upload`, `manageAppVersionAndBuildNumber: false`). Build number now 7 for the next upload
+- [ ] TestFlight: What to Test for 1.2 (6), add to Friends, remove 1.2 (5)
+- [x] Tester feedback on 1.2 (5), fixed 2026-10-16 (in 1.2 (6)): Fractions F3/F4 always put the greater fraction on the same side (F3 left, F4 right) — now 8/8 on a fixed irregular pattern, keys unchanged; Multiply's practice-set toggles jumped the progress screen to the top — now it stays put, and practice opens at the top
 Ships after 1.1 is live. Bundle = **$9.99, every module including future ones** (Connections etc.). It appears only once 3 paid modules are on sale ($11.97 separately), so it's a real discount, never a pre-sale.
 
 **Place Value**
