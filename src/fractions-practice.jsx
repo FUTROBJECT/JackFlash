@@ -506,10 +506,12 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
   }
 
   if (skill === "F2") {
-    // In non-concrete mode, show the pre-shaded bar as a hint
+    // The pre-shaded bar IS the answer, so before the child answers the
+    // picture is the question only: the bar cut into its d parts, none
+    // shaded (also behind "Show me"). The shading appears after `feedback`.
     return (
       <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-        <FractionBar n={item.n} d={item.d} color={COLORS.purple} opacity={opacity} animate={showScaffold} />
+        <FractionBar n={feedback ? item.n : 0} d={item.d} color={COLORS.purple} opacity={opacity} animate={showScaffold} />
       </div>
     );
   }
@@ -520,8 +522,8 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
     return (
       <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
         <TwoStackedBars
-          top={{ ...left, label: <FractionDisplay n={left.n} d={left.d} size="small" /> }}
-          bottom={{ ...right, label: <FractionDisplay n={right.n} d={right.d} size="small" />, color: COLORS.blue }}
+          top={{ ...left, label: <FractionDisplay n={left.n} d={left.d} size="normal" /> }}
+          bottom={{ ...right, label: <FractionDisplay n={right.n} d={right.d} size="normal" />, color: COLORS.blue }}
           opacity={opacity} animate={showScaffold}
         />
       </div>
@@ -532,6 +534,8 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
   // were ever drawn — the third fraction never appeared. Draw all three, in
   // tile order, same component shape as F3/F4/C1.
   if (skill === "C2") {
+    // Three labelled bars: small labels here (the one exception to the 18px card
+    // labels) so the order tiles stay on screen at 375×667.
     const fracs = item.fracs || [{ n: 1, d: 2 }, { n: 1, d: 3 }, { n: 1, d: 4 }];
     const [f0, f1, f2] = fracs;
     return (
@@ -553,13 +557,23 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
   if (skill === "E1") {
     const base = item.base || { n: item.n, d: item.d };
     const target = item.target || { n: item.sn, d: item.sd };
+    const baseBar = { n: base.n, d: base.d, label: <FractionDisplay n={base.n} d={base.d} size="normal" /> };
+    // Pre-answer: only the base bar (the target bar's parts and shading
+    // identify the right choice); the target appears once `feedback` is set.
+    if (!feedback) {
+      return (
+        <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
+          <FractionBar n={baseBar.n} d={baseBar.d} label={baseBar.label} color={COLORS.purple} opacity={opacity} animate={showScaffold} />
+        </div>
+      );
+    }
     return (
       <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
         <TwoStackedBars
-          top={{ n: base.n, d: base.d, label: <FractionDisplay n={base.n} d={base.d} size="small" /> }}
+          top={baseBar}
           bottom={{
             n: target.n, d: target.d,
-            label: feedback ? <FractionDisplay n={target.n} d={target.d} size="small" /> : null,
+            label: <FractionDisplay n={target.n} d={target.d} size="normal" />,
             color: COLORS.blue,
           }}
           opacity={opacity} animate={showScaffold}
@@ -568,22 +582,21 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
     );
   }
 
-  // E2/E3 (leak fix, spec Part 1 item 8): the bottom bar's shaded length is
-  // the concept being taught (keep it), but its LABEL used to print the
-  // missing number (E2) / the simplified answer (E3) before the child had
-  // answered — drop the label until `feedback` is set.
+  // E2/E3: pre-answer the bottom bar is only the question — E2 numerator
+  // blank = the given denominator's parts, unshaded; E2 denominator blank and
+  // E3 = one unsplit whole (the part count is the answer). Unshaded, no
+  // label. After `feedback` it becomes the target picture.
   if (skill === "E2" || skill === "E3") {
     const base = item.base || { n: item.n, d: item.d };
     const target = item.target || { n: item.sn, d: item.sd };
+    const emptyD = skill === "E2" && item.blankIs === "numerator" ? target.d : 1;
     return (
       <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
         <TwoStackedBars
-          top={{ n: base.n, d: base.d, label: <FractionDisplay n={base.n} d={base.d} size="small" /> }}
-          bottom={{
-            n: target.n, d: target.d,
-            label: feedback ? <FractionDisplay n={target.n} d={target.d} size="small" /> : null,
-            color: COLORS.blue,
-          }}
+          top={{ n: base.n, d: base.d, label: <FractionDisplay n={base.n} d={base.d} size="normal" /> }}
+          bottom={feedback
+            ? { n: target.n, d: target.d, label: <FractionDisplay n={target.n} d={target.d} size="normal" />, color: COLORS.blue }
+            : { n: 0, d: emptyD, label: null, color: COLORS.blue }}
           opacity={opacity} animate={showScaffold}
         />
       </div>
@@ -606,6 +619,10 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
     return (
       <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
         <AddBarsScaffold
+          // compact (24px bars): three bars above the answer must leave the
+          // fraction input and Check on screen at 393×759.
+          compact
+          labelSize="normal"
           a={item.a} b={item.b}
           result={{ n: rn, d: rd }}
           isSubtract={item.isSubtract}
@@ -2257,134 +2274,18 @@ export default function FractionsPractice({
                   transition: "box-shadow 0.3s ease",
                 }}>
                   {/* Mastery dots */}
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
                     <MasteryDots level={Math.min(getMasteryLevel(currentItem.itemKey), DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
                   </div>
 
-                  {/* Skill label chip */}
-                  <div style={{ marginBottom: 12 }}>
-                    <span style={{
-                      fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
-                      backgroundColor: fractionsModule.groups.find(g => g.id === currentItem.group)?.color || COLORS.purple,
-                      color: COLORS.black, padding: "3px 10px", borderRadius: 20, border: BRUTAL_BORDER_SM,
-                    }}>
-                      {fractionsModule.skillLabels[currentItem.skill] || currentItem.skill}
-                    </span>
-                    {focusSkill && (
-                      <div style={{ marginTop: 8 }}>
-                        <button onClick={() => setFocusSkill(null)} style={{
-                          minHeight: 44, padding: "8px 14px", borderRadius: 8, border: BRUTAL_BORDER_SM,
-                          backgroundColor: COLORS.cream, boxShadow: BRUTAL_SHADOW_SM, cursor: "pointer",
-                          fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: COLORS.black,
-                        }}>
-                          Only this skill · ✕ practise everything
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  {/* No focus chip on the card (Adam, 2026-11-04). A focused skill ends when
+                      the child leaves practice: focusSkill isn't saved. */}
 
                   {/* Question */}
                   <QuestionDisplay item={currentItem} feedback={feedback} />
 
-                  {/* Answer input */}
-                  {!feedback && currentItem.answerType === "buildBar" && mode === "concrete" ? (
-                    // Keyed by retryResetKey too (docs/confidence-pass-spec.md
-                    // C2): BuildBarInput's shaded count is LOCAL state this
-                    // component doesn't control — a converted "not sure" must
-                    // remount it to clear the shading, without picking a new item.
-                    <BuildBarInput key={`${currentItem.itemKey}:${retryResetKey}`} item={currentItem} onSubmit={handleBuildBarSubmit} disabled={false} />
-                  ) : (
-                    <div onKeyDown={handleKeyDown}>
-                      {currentItem.answerType === "choice4" ? (
-                        <Choice4Grid
-                          choices={shuffledChoices}
-                          onPick={handleTapChoice}
-                          picked={pickedChoice}
-                          correct={currentItem.correctAnswer}
-                        />
-                      ) : currentItem.answerType === "tapTwo" || currentItem.answerType === "tapTwoOrEqual" ? (
-                        <TapTwoCards
-                          left={currentItem.left} right={currentItem.right}
-                          onPick={handleTapChoice}
-                          picked={pickedChoice}
-                          correct={currentItem.correctAnswer === `${currentItem.left?.n}/${currentItem.left?.d}` ? "left"
-                            : currentItem.correctAnswer === `${currentItem.right?.n}/${currentItem.right?.d}` ? "right" : "equal"}
-                          showEqual={currentItem.answerType === "tapTwoOrEqual"}
-                        />
-                      ) : currentItem.answerType === "orderThree" ? (
-                        // Keyed by retryResetKey too (docs/confidence-pass-spec.md
-                        // C2): tapOrder is LOCAL state — a converted "not sure"
-                        // remounts to clear the taps without a new item.
-                        <OrderThreeTiles
-                          key={`${currentItem.itemKey}:${retryResetKey}`}
-                          fracs={currentItem.fracs}
-                          direction={currentItem.direction}
-                          onSubmitOrder={handleOrderSubmit}
-                          submitted={orderSubmitted}
-                          correctOrder={currentItem.order}
-                        />
-                      ) : currentItem.answerType === "fractionInput" ? (
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 20, gap: 12 }}>
-                          <FractionInputFields
-                            numVal={userNum} denVal={userDen}
-                            onNumChange={setUserNum} onDenChange={setUserDen}
-                            onSubmit={handleSubmit} disabled={!!feedback}
-                          />
-                          {!feedback && (
-                            <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
-                          )}
-                        </div>
-                      ) : currentItem.answerType === "singleNumber" ? (
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 20, gap: 12 }}>
-                          <input
-                            ref={inputRef}
-                            type="number"
-                            inputMode="numeric"
-                            value={userAnswer}
-                            placeholder="?"
-                            disabled={!!feedback}
-                            onChange={e => setUserAnswer(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            style={{
-                              width: 120, fontSize: 52, fontFamily: "'Shrikhand', cursive",
-                              fontWeight: 400, textAlign: "center",
-                              border: "none", borderBottom: `4px solid ${COLORS.black}`,
-                              backgroundColor: "transparent", color: COLORS.black, outline: "none",
-                              padding: "4px 0", MozAppearance: "textfield", WebkitAppearance: "none",
-                            }}
-                          />
-                          {!feedback && (
-                            <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
-                          )}
-                        </div>
-                      ) : currentItem.answerType === "buildBar" ? (
-                        // Non-concrete mode buildBar
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 16, gap: 10 }}>
-                          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, opacity: 0.6 }}>
-                            How many parts are shaded?
-                          </div>
-                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-                            {shuffledChoices.map(c => (
-                              <button key={c} onClick={() => !pickedChoice && handleTapChoice(String(c))}
-                                style={{
-                                  width: 64, height: 64, borderRadius: 10, border: BRUTAL_BORDER_SM,
-                                  backgroundColor: pickedChoice === String(c)
-                                    ? (parseInt(c) === currentItem.correctAnswer ? COLORS.green : COLORS.red) : "white",
-                                  fontFamily: "'Shrikhand', cursive", fontSize: 32, fontWeight: 700,
-                                  cursor: pickedChoice ? "default" : "pointer",
-                                  boxShadow: BRUTAL_SHADOW_SM,
-                                }}>
-                                {c}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-                  )}
-
                   {/* "Not sure" nudge (docs/confidence-pass-spec.md C2) — under
-                      the problem/input, above the scaffold. Stays until the
+                      the question, above the scaffold. Stays until the
                       next submit or item. */}
                   {nudge === "notSure" && (
                     <div style={{
@@ -2439,17 +2340,116 @@ export default function FractionsPractice({
                     (mode === "abstract" && !showScaffold) ||
                     (mode === "pictorial" && !showScaffold && (userHidScaffold || scaffoldOpacity < 1))
                   ) && (
-                    <div style={{ marginTop: 12, textAlign: "center" }}>
+                    <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
                       {/* Pulses after two consecutive misses in Abstract (see missRun). */}
                       <span className={mode === "abstract" && missRun >= 2 ? "showMePulse" : undefined}>
                         <BrutalButton
                           small
                           onClick={() => { setShowScaffold(true); setPictureRequested(true); }}
                           bg={COLORS.cream}
+                          style={{ minHeight: 44 }}
                         >
                           Show me
                         </BrutalButton>
                       </span>
+                    </div>
+                  )}
+
+                  {/* Answer input */}
+                  {!feedback && currentItem.answerType === "buildBar" && mode === "concrete" ? (
+                    // Keyed by retryResetKey too (docs/confidence-pass-spec.md
+                    // C2): BuildBarInput's shaded count is LOCAL state this
+                    // component doesn't control — a converted "not sure" must
+                    // remount it to clear the shading, without picking a new item.
+                    <BuildBarInput key={`${currentItem.itemKey}:${retryResetKey}`} item={currentItem} onSubmit={handleBuildBarSubmit} disabled={false} />
+                  ) : (
+                    <div onKeyDown={handleKeyDown}>
+                      {currentItem.answerType === "choice4" ? (
+                        <Choice4Grid
+                          choices={shuffledChoices}
+                          onPick={handleTapChoice}
+                          picked={pickedChoice}
+                          correct={currentItem.correctAnswer}
+                        />
+                      ) : currentItem.answerType === "tapTwo" || currentItem.answerType === "tapTwoOrEqual" ? (
+                        <TapTwoCards
+                          left={currentItem.left} right={currentItem.right}
+                          onPick={handleTapChoice}
+                          picked={pickedChoice}
+                          correct={currentItem.correctAnswer === `${currentItem.left?.n}/${currentItem.left?.d}` ? "left"
+                            : currentItem.correctAnswer === `${currentItem.right?.n}/${currentItem.right?.d}` ? "right" : "equal"}
+                          showEqual={currentItem.answerType === "tapTwoOrEqual"}
+                        />
+                      ) : currentItem.answerType === "orderThree" ? (
+                        // Keyed by retryResetKey too (docs/confidence-pass-spec.md
+                        // C2): tapOrder is LOCAL state — a converted "not sure"
+                        // remounts to clear the taps without a new item.
+                        <OrderThreeTiles
+                          key={`${currentItem.itemKey}:${retryResetKey}`}
+                          fracs={currentItem.fracs}
+                          direction={currentItem.direction}
+                          onSubmitOrder={handleOrderSubmit}
+                          submitted={orderSubmitted}
+                          correctOrder={currentItem.order}
+                        />
+                      ) : currentItem.answerType === "fractionInput" ? (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 16, gap: 12 }}>
+                          <FractionInputFields
+                            numVal={userNum} denVal={userDen}
+                            onNumChange={setUserNum} onDenChange={setUserDen}
+                            onSubmit={handleSubmit} disabled={!!feedback}
+                          />
+                          {!feedback && (
+                            <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
+                          )}
+                        </div>
+                      ) : currentItem.answerType === "singleNumber" ? (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 16, gap: 12 }}>
+                          <input
+                            ref={inputRef}
+                            type="number"
+                            inputMode="numeric"
+                            value={userAnswer}
+                            placeholder="?"
+                            disabled={!!feedback}
+                            onChange={e => setUserAnswer(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            style={{
+                              width: 120, fontSize: 52, fontFamily: "'Shrikhand', cursive",
+                              fontWeight: 400, textAlign: "center",
+                              border: "none", borderBottom: `4px solid ${COLORS.black}`,
+                              backgroundColor: "transparent", color: COLORS.black, outline: "none",
+                              padding: "4px 0", MozAppearance: "textfield", WebkitAppearance: "none",
+                            }}
+                          />
+                          {!feedback && (
+                            <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
+                          )}
+                        </div>
+                      ) : currentItem.answerType === "buildBar" ? (
+                        // Non-concrete mode buildBar
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 16, gap: 10 }}>
+                          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, opacity: 0.6 }}>
+                            {/* The bar above is drawn unshaded now (the shading is the answer). */}
+                            How many parts will you shade?
+                          </div>
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+                            {shuffledChoices.map(c => (
+                              <button key={c} onClick={() => !pickedChoice && handleTapChoice(String(c))}
+                                style={{
+                                  width: 64, height: 64, borderRadius: 10, border: BRUTAL_BORDER_SM,
+                                  backgroundColor: pickedChoice === String(c)
+                                    ? (parseInt(c) === currentItem.correctAnswer ? COLORS.green : COLORS.red) : "white",
+                                  fontFamily: "'Shrikhand', cursive", fontSize: 32, fontWeight: 700,
+                                  cursor: pickedChoice ? "default" : "pointer",
+                                  boxShadow: BRUTAL_SHADOW_SM,
+                                }}>
+                                {c}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   )}
 
@@ -2652,7 +2652,10 @@ export default function FractionsPractice({
                 const shadedCount = retry.phase === "ask" ? retry.value : currentItem.correctAnswer;
                 return (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, width: "100%" }}>
+                    {/* width: 100% — without it this wrapper shrinks to its content inside the
+                        centred column and the bar (width: 100%) collapsed to a few pixels. */}
                     <div style={{
+                      width: "100%", boxSizing: "border-box",
                       border: retry.phase === "missed" ? `3px solid ${COLORS.yellow}` : "none",
                       borderRadius: 8, padding: retry.phase === "missed" ? 4 : 0,
                     }}>

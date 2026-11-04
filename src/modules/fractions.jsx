@@ -36,6 +36,7 @@ export { FractionDisplay, FractionBar, TwoStackedBars };
 export function AddBarsScaffold({
   a, b, result, isSubtract = false, opacity = 1, animate = false,
   compact = false, counts = false, resultLabel = "value", groupEvery = null,
+  labelSize = "small", // the practice card passes "normal" (18px); the reveal keeps 13px
 }) {
   // For related fractions: find a common denominator
   const lcd = (a.d * b.d) / gcd(a.d, b.d);
@@ -49,21 +50,21 @@ export function AddBarsScaffold({
 
   const convLabel = (orig, conv) => (
     orig.d === conv.d
-      ? <FractionDisplay n={orig.n} d={orig.d} size="small" />
+      ? <FractionDisplay n={orig.n} d={orig.d} size={labelSize} />
       : (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-          <FractionDisplay n={orig.n} d={orig.d} size="small" />
+          <FractionDisplay n={orig.n} d={orig.d} size={labelSize} />
           <span>→</span>
-          <FractionDisplay n={conv.n} d={conv.d} size="small" />
+          <FractionDisplay n={conv.n} d={conv.d} size={labelSize} />
         </span>
       )
   );
-  const aLabel = isRelated ? convLabel(a, aConv) : <FractionDisplay n={a.n} d={a.d} size="small" />;
-  const bLabel = isRelated ? convLabel(b, bConv) : <FractionDisplay n={b.n} d={b.d} size="small" />;
+  const aLabel = isRelated ? convLabel(a, aConv) : <FractionDisplay n={a.n} d={a.d} size={labelSize} />;
+  const bLabel = isRelated ? convLabel(b, bConv) : <FractionDisplay n={b.n} d={b.d} size={labelSize} />;
 
   const resultShaded = resultLabel === "question" ? 0 : result.n;
   const resultCaption = resultLabel === "value"
-    ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>= <FractionDisplay n={result.n} d={result.d} size="small" /></span>
+    ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>= <FractionDisplay n={result.n} d={result.d} size={labelSize} /></span>
     : resultLabel === "question"
       ? "?"
       : null;
