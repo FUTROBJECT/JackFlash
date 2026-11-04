@@ -140,6 +140,7 @@ export function ColumnGrid({
   reserveHintRow = false, // keep the row's 30px even when marks aren't interactive (no layout jump)
   tradeVerb = "regroup", // D1: the module's kid verb (modules/add.jsx REGROUP.verb)
   markNotice = null, // brief cream chip over the grid ("Nothing to regroup here")
+  cueActiveHead = false, // opt-in: the place heading over the cursor column is a yellow chip
 }) {
   const cols = item.columns;
   const heads = HEADS[cols] || HEADS[4];
@@ -196,7 +197,16 @@ export function ColumnGrid({
       <div style={{ display: "flex" }}>
         <div style={{ width: GUTTER_W }} />
         {heads.map((h, j) => (
-          <div key={j} style={{ ...HEAD_STYLE, width: CELL_W }}>{h}</div>
+          <div key={j} style={cueActiveHead
+            ? { ...HEAD_STYLE, width: CELL_W, height: 14, display: "flex", alignItems: "center", justifyContent: "center" }
+            : { ...HEAD_STYLE, width: CELL_W }}>
+            {cueActiveHead && cursorOn && active === j ? (
+              <span style={{
+                backgroundColor: COLORS.yellow, color: COLORS.black, border: BRUTAL_BORDER_SM, borderRadius: 4,
+                padding: "0 6px", lineHeight: "9px", fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 11,
+              }}>{h}</span>
+            ) : h}
+          </div>
         ))}
       </div>
 
@@ -328,7 +338,10 @@ const KEY_STYLE = {
   fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 22,
 };
 
-export function ColumnPad({ onDigit, onBack, onCheck, checkEnabled, disabled = false, compact = false }) {
+export function ColumnPad({
+  onDigit, onBack, onCheck, checkEnabled, disabled = false, compact = false,
+  onStartOver = null, startOverEnabled = false, // opt-in: ⌫ 1 + Start over 2 + Check 2
+}) {
   const keyH = compact ? 44 : 48;
   const dim = disabled ? { opacity: 0.4, cursor: "default" } : null;
   const digitKey = (d) => (
@@ -343,6 +356,7 @@ export function ColumnPad({ onDigit, onBack, onCheck, checkEnabled, disabled = f
     </PressButton>
   );
   const checkOff = disabled || !checkEnabled;
+  const startOffOn = disabled || !startOverEnabled;
   return (
     <div data-jf-pad style={{
       display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: compact ? 4 : 6,
@@ -353,16 +367,30 @@ export function ColumnPad({ onDigit, onBack, onCheck, checkEnabled, disabled = f
         disabled={disabled}
         onClick={onBack}
         aria-label="Backspace"
-        style={{ ...KEY_STYLE, gridColumn: "span 2", minHeight: keyH, ...dim }}
+        style={{ ...KEY_STYLE, gridColumn: onStartOver ? "span 1" : "span 2", minHeight: keyH, ...dim }}
       >
         ⌫
       </PressButton>
+      {onStartOver && (
+        <PressButton
+          disabled={startOffOn}
+          onClick={onStartOver}
+          aria-label="Start over"
+          style={{
+            ...KEY_STYLE, gridColumn: "span 2", minHeight: keyH, fontSize: 12, whiteSpace: "nowrap",
+            backgroundColor: COLORS.cream, // secondary to Check, which stays the yellow primary
+            opacity: startOffOn ? 0.45 : 1, cursor: startOffOn ? "default" : "pointer",
+          }}
+        >
+          Start over
+        </PressButton>
+      )}
       <PressButton
         disabled={checkOff}
         onClick={onCheck}
         aria-label="Check"
         style={{
-          ...KEY_STYLE, gridColumn: "span 3", minHeight: keyH, backgroundColor: COLORS.yellow,
+          ...KEY_STYLE, gridColumn: onStartOver ? "span 2" : "span 3", minHeight: keyH, backgroundColor: COLORS.yellow,
           fontSize: 18, opacity: checkOff ? 0.45 : 1, cursor: checkOff ? "default" : "pointer",
         }}
       >
@@ -401,6 +429,7 @@ export function ColumnAnswerInput({
   onSubmit, live = true, sticky = false, state = "input", fill = null, fillMarks = null,
   compact = false, hintRow = true, reserveHintRow = false, tradeVerb = "regroup",
   markNotice = null, headerRef = null, getClampEl = null, onTypedChange = null,
+  cueActiveHead = false, onStartOver = null, startOverEnabled = false,
 }) {
   const cols = item.columns;
   const [st, setSt] = useState(() => ({ digits: Array(cols).fill(""), active: cols - 1 }));
@@ -460,6 +489,7 @@ export function ColumnAnswerInput({
       else if (e.key === "Enter") {
         const btn = t && t.closest ? t.closest("button") : null;
         if (btn && !btn.closest("[data-jf-pad]")) return;
+        if (btn && btn.getAttribute("aria-label") === "Start over") return; // Enter activates it, never Check
         e.preventDefault();
         h.pressCheck();
       }
@@ -540,6 +570,7 @@ export function ColumnAnswerInput({
           reserveHintRow={reserveHintRow}
           tradeVerb={tradeVerb}
           markNotice={markNotice}
+          cueActiveHead={cueActiveHead}
         />
       </div>
       <div ref={padWrapRef} style={padWrapStyle}>
@@ -550,6 +581,8 @@ export function ColumnAnswerInput({
           checkEnabled={checkEnabled}
           disabled={!editable}
           compact={compact}
+          onStartOver={onStartOver}
+          startOverEnabled={startOverEnabled}
         />
       </div>
     </>

@@ -56,7 +56,7 @@ import {
   PlaceValueChart, PressButton, OpenNumberLine, PartWholeBar, ComparisonBar,
 } from "./shared/barComponents.jsx";
 import {
-  ColumnAnswerInput, emptyMarks, applyTopTap, mirrorChartTrade, subMarksView,
+  ColumnAnswerInput, emptyMarks, marksPresent, applyTopTap, mirrorChartTrade, subMarksView,
 } from "./shared/ColumnMethod.jsx";
 
 // Register the Add & Subtract module
@@ -308,7 +308,7 @@ function ModelPicker({ item, pick, onPick, onNextStep, live }) {
 
 function ScaffoldForItem({
   item, disc, showScaffold, scaffoldOpacity, mode, interactive, notice, onTrade, onTake, onStartOver,
-  canStartOver, jumpsDrawn, onJump, modelPick, onPickModel, onNextStep,
+  jumpsDrawn, onJump, modelPick, onPickModel, onNextStep,
 }) {
   if (mode === "abstract" && !showScaffold) return null;
   const opacity = showScaffold ? 1 : scaffoldOpacity;
@@ -364,19 +364,6 @@ function ScaffoldForItem({
         item={item} disc={disc} interactive={interactive} opacity={opacity}
         animate={false} notice={notice} onTrade={onTrade} onTake={onTake}
       />
-      {interactive && (
-        // Resets the chart, the mirrored marks AND the typed answer. ≥44px hit area.
-        // Grey and inert until there is something to undo, so a tap never looks ignored.
-        <button disabled={!canStartOver} onClick={onStartOver} style={{
-          // 44px hit area, but its bottom 12px overlaps the (empty) gap above the grid so
-          // it costs ~32px of height, not 48 — vertical room matters under the sticky pad.
-          minHeight: 44, minWidth: 44, marginTop: 0, marginBottom: -12, padding: "0 12px", background: "none", border: "none",
-          cursor: canStartOver ? "pointer" : "default", fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12,
-          color: canStartOver ? COLORS.black : "#666", textDecoration: "underline",
-        }}>
-          Start over
-        </button>
-      )}
     </div>
   );
 }
@@ -387,17 +374,8 @@ function ScaffoldForItem({
 const PROMPT_STYLE = { fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#666" };
 
 function QuestionDisplay({ item }) {
-  if (item.answerType === "column") {
-    // Commas live HERE (the problem line), never inside the grid (§5.1).
-    return (
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 18, color: COLORS.black }}>
-          {formatNumber(item.a)} <span style={{ color: MODULE_COLORS.add }}>{item.op === "+" ? "+" : MINUS}</span> {formatNumber(item.b)}
-        </div>
-        <div style={{ ...PROMPT_STYLE, fontSize: 14, marginTop: 2 }}>Start with the ones.</div>
-      </div>
-    );
-  }
+  // Column items show no restated problem: the grid already holds both operands (§5.1).
+  if (item.answerType === "column") return null;
   if (item.group === "words") {
     // The story is 2–3 short sentences, Space Grotesk 17px; the question is bold.
     return (
@@ -1441,7 +1419,7 @@ export default function AddPractice({
                     : feedback === "incorrect"
                       ? `4px 4px 0px ${COLORS.red}`
                       : `4px 4px 0px ${COLORS.black}`,
-                  textAlign: "center",
+                  textAlign: "center", position: "relative",
                   animation: feedback === "correct"
                     ? "correctPulse 0.4s ease"
                     : feedback === "incorrect"
@@ -1449,12 +1427,23 @@ export default function AddPractice({
                       : "none",
                   transition: "box-shadow 0.3s ease",
                 }}>
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-                    <MasteryDots level={Math.min(getMasteryLevel(currentItem.itemKey), DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
-                  </div>
+                  {/* Mastery sits quietly in the card's top-right corner. */}
+                  {(() => {
+                    const dots = Math.min(getMasteryLevel(currentItem.itemKey), DEFAULT_MASTERY_THRESHOLD);
+                    return (
+                      <div role="img" aria-label={`Mastery: ${dots} of ${DEFAULT_MASTERY_THRESHOLD}`}
+                        style={{ position: "absolute", top: 12, right: 12 }}>
+                        <MasteryDots level={dots} max={DEFAULT_MASTERY_THRESHOLD} />
+                      </div>
+                    );
+                  })()}
 
-                  <div style={{ marginBottom: 12 }}>
-                    <span style={{
+                  {(!isColumn || focusSkill) && (
+                  // On a column item the focus chip is the first row and nearly card-wide,
+                  // so it starts below the corner dots instead of running under them.
+                  <div style={{ marginBottom: 12, marginTop: isColumn ? 16 : 0 }}>
+                    {/* Column items drop the skill pill: the header pill already names the group. */}
+                    {!isColumn && <span style={{
                       fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
                       backgroundColor: addModule.groups.find((g) => g.id === currentItem.group)?.color || COLORS.purple,
                       color: COLORS.black, padding: "3px 10px", borderRadius: 20, border: BRUTAL_BORDER_SM,
@@ -1464,9 +1453,9 @@ export default function AddPractice({
                       {currentItem.skill === "W1" || currentItem.skill === "W2"
                         ? "Word problem"
                         : (addModule.skillLabels[currentItem.skill] || currentItem.skill)}
-                    </span>
+                    </span>}
                     {focusSkill && (
-                      <div style={{ marginTop: 8 }}>
+                      <div style={{ marginTop: isColumn ? 0 : 8 }}>
                         <button onClick={() => setFocusSkill(null)} style={{
                           minHeight: 44, padding: "8px 14px", borderRadius: 8, border: BRUTAL_BORDER_SM,
                           backgroundColor: COLORS.cream, boxShadow: BRUTAL_SHADOW_SM, cursor: "pointer",
@@ -1477,6 +1466,7 @@ export default function AddPractice({
                       </div>
                     )}
                   </div>
+                  )}
 
                   <div ref={questionRef}><QuestionDisplay item={currentItem} /></div>
 
@@ -1511,7 +1501,6 @@ export default function AddPractice({
                         onTrade={handleChartTrade}
                         onTake={handleChartTake}
                         onStartOver={handleStartOver}
-                        canStartOver={chartMoved || answerTyped}
                         jumpsDrawn={jumpsDrawn}
                         onJump={handleJump}
                         modelPick={modelPick}
@@ -1607,6 +1596,9 @@ export default function AddPractice({
                       onTypedChange={setAnswerTyped}
                       live={!feedback}
                       sticky
+                      cueActiveHead
+                      onStartOver={handleStartOver}
+                      startOverEnabled={chartMoved || answerTyped || marksPresent(cardMarks)}
                       state={feedback === "correct" ? "correct" : "input"}
                       tradeVerb={REGROUP.verb}
                     />

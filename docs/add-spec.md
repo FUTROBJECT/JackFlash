@@ -241,6 +241,7 @@ Two answerTypes only: **`column`** (new) for A1–A3 and S1–S3, and **`singleN
   - **Answer row:** cells 52 × 52px, Shrikhand 28–32px, 4px ink underline.
 - **Width.** Cell width 52px plus a 28px operator gutter: 4 columns = 236px, which fits 320px (~262px usable).
 - **No commas inside the grid.** Digits sit in headed place cells, and the grid is not a numeral display. The horizontal problem line above the grid ("4,503 − 1,268", Space Grotesk 700, 18px) uses `formatNumber` commas, per Place Value §8.4.
+  - **Update (2026-11-04):** column cards no longer show a restated problem line (see `docs/add-column-card-ui.md`), so 4-digit operands carry no thousands comma anywhere on the card.
 
 ### 5.2 Digit entry: in-app `ColumnPad`, not the iOS keyboard
 
