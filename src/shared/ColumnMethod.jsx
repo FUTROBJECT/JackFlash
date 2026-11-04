@@ -152,7 +152,7 @@ export function ColumnGrid({
   const hasMarks = marksPresent(marks);
   const topH = compact ? 36 : 44;
   const botH = compact ? 32 : 40;
-  const answerH = compact ? 44 : 52;
+  const answerH = compact ? 44 : 48;
   const operandFont = compact ? 24 : 26;
   const width = GUTTER_W + cols * CELL_W;
   // The cursor only exists while the child is typing (never on a done/missed fill).
@@ -197,13 +197,17 @@ export function ColumnGrid({
       <div style={{ display: "flex" }}>
         <div style={{ width: GUTTER_W }} />
         {heads.map((h, j) => (
+          // The practice card's headings (cueActiveHead) are larger and darker so the
+          // place names read at a glance (Adam, 2026-11-04: 11px grey was easy to
+          // miss); the reveal's compact grid keeps HEAD_STYLE so it still fits.
+          // Slot 20px; the cue chip is 15px line + 2 × 2.5px border = 20px.
           <div key={j} style={cueActiveHead
-            ? { ...HEAD_STYLE, width: CELL_W, height: 14, display: "flex", alignItems: "center", justifyContent: "center" }
+            ? { ...HEAD_STYLE, fontSize: 15, color: "#444", lineHeight: "20px", width: CELL_W, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }
             : { ...HEAD_STYLE, width: CELL_W }}>
             {cueActiveHead && cursorOn && active === j ? (
               <span style={{
                 backgroundColor: COLORS.yellow, color: COLORS.black, border: BRUTAL_BORDER_SM, borderRadius: 4,
-                padding: "0 6px", lineHeight: "9px", fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 11,
+                padding: "0 7px", lineHeight: "15px", fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 15,
               }}>{h}</span>
             ) : h}
           </div>
@@ -342,7 +346,7 @@ export function ColumnPad({
   onDigit, onBack, onCheck, checkEnabled, disabled = false, compact = false,
   onStartOver = null, startOverEnabled = false, // opt-in: ⌫ 1 + Start over 2 + Check 2
 }) {
-  const keyH = compact ? 44 : 48;
+  const keyH = 44; // Apple's minimum tap size; 48 cost the card a row of height on a 393×759 phone
   const dim = disabled ? { opacity: 0.4, cursor: "default" } : null;
   const digitKey = (d) => (
     <PressButton
@@ -545,7 +549,7 @@ export function ColumnAnswerInput({
 
   const shownMarks = state === "missed" && fillMarks ? fillMarks : marks;
   const padWrapStyle = sticky ? {
-    position: "sticky", bottom: 0, zIndex: 40, marginTop: 12, backgroundColor: "white",
+    position: "sticky", bottom: 0, zIndex: 40, marginTop: 8, backgroundColor: "white",
     borderTop: BRUTAL_BORDER, paddingTop: 8,
     paddingBottom: "calc(8px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))",
   } : { marginTop: compact ? 6 : 12 };

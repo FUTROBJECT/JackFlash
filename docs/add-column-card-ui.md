@@ -99,3 +99,22 @@ reveal → right), Pictorial 4-digit subtract at 320×568 (grid scrolls up
 after the first digit, no wrap, no overflow), mental keeps its pill and
 question; no console errors.
 
+## Revision 2 (2026-11-04, Adam's notes on the built card)
+
+- **Dots back to centre** in their own row (every module centres them; the
+  corner spot collided with the focus chip).
+- **Block rhythm 16px** (dots · pill/chip · chart · grid) — was 10–12px.
+  20px was tried first, but on a 393×759 phone (iPhone 16) the card then ran
+  ~30px past the screen and the sticky-pad scroll pushed the dots under the
+  header; 16px is the most that keeps dots → keypad on one screen.
+- **Place headings** (Th/H/T/O) on the practice card: 15px, #444, 20px slot,
+  cue chip 15px line + 2.5px borders (the reveal's compact grid keeps 11px).
+- **Room found for the above:** pad keys 44px tall (was 48; 44 is Apple's
+  minimum), answer row 48px (was 52), pad top margin 8px (was 12).
+- Verified at 393×759: 3-digit add (no scroll needed), 3-digit subtract,
+  4-digit add — dots visible below the header, answer row above the pad.
+- Not changed, noted for later: the disc chart reserves an empty band below
+  the count chips (room for up to 9 + 9 discs and the Take buttons); it is the
+  largest remaining block of empty space, but it lives in the shared
+  `PlaceValueChart` (Place Value too) and stops the layout jumping.
+

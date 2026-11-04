@@ -358,8 +358,11 @@ function ScaffoldForItem({
     );
   }
 
+  // Column chart: first block after the dots (no question line above it), so no
+  // top margin; 16px below (it collapses with the grid's 12px top margin) keeps
+  // the card's 16px block rhythm.
   return (
-    <div style={{ marginTop: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <div style={{ marginTop: 0, marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
       <QuestionChart
         item={item} disc={disc} interactive={interactive} opacity={opacity}
         animate={false} notice={notice} onTrade={onTrade} onTake={onTake}
@@ -1428,20 +1431,22 @@ export default function AddPractice({
                   transition: "box-shadow 0.3s ease",
                 }}>
                   {/* Mastery sits quietly in the card's top-right corner. */}
+                  {/* Mastery dots: centred like every module (Adam, 2026-11-04 — the
+                      corner spot collided with the focus chip). Card rhythm: 16px
+                      between major blocks (dots · pill/chip · chart · grid), the
+                      most that keeps dots-to-keypad on one 393×759 screen. */}
                   {(() => {
                     const dots = Math.min(getMasteryLevel(currentItem.itemKey), DEFAULT_MASTERY_THRESHOLD);
                     return (
                       <div role="img" aria-label={`Mastery: ${dots} of ${DEFAULT_MASTERY_THRESHOLD}`}
-                        style={{ position: "absolute", top: 12, right: 12 }}>
+                        style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
                         <MasteryDots level={dots} max={DEFAULT_MASTERY_THRESHOLD} />
                       </div>
                     );
                   })()}
 
                   {(!isColumn || focusSkill) && (
-                  // On a column item the focus chip is the first row and nearly card-wide,
-                  // so it starts below the corner dots instead of running under them.
-                  <div style={{ marginBottom: 12, marginTop: isColumn ? 16 : 0 }}>
+                  <div style={{ marginBottom: isColumn ? 16 : 12 }}>
                     {/* Column items drop the skill pill: the header pill already names the group. */}
                     {!isColumn && <span style={{
                       fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
