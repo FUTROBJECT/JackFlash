@@ -1445,8 +1445,9 @@ export default function AddPractice({
                     );
                   })()}
 
-                  {(!isColumn || focusSkill) && (
-                  <div style={{ marginBottom: isColumn ? 16 : 12 }}>
+                  {/* No focus chip (Adam, 2026-11-04): a focused skill ends on leaving practice. */}
+                  {!isColumn && (
+                  <div style={{ marginBottom: 12 }}>
                     {/* Column items drop the skill pill: the header pill already names the group. */}
                     {!isColumn && <span style={{
                       fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
@@ -1459,17 +1460,6 @@ export default function AddPractice({
                         ? "Word problem"
                         : (addModule.skillLabels[currentItem.skill] || currentItem.skill)}
                     </span>}
-                    {focusSkill && (
-                      <div style={{ marginTop: isColumn ? 0 : 8 }}>
-                        <button onClick={() => setFocusSkill(null)} style={{
-                          minHeight: 44, padding: "8px 14px", borderRadius: 8, border: BRUTAL_BORDER_SM,
-                          backgroundColor: COLORS.cream, boxShadow: BRUTAL_SHADOW_SM, cursor: "pointer",
-                          fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: COLORS.black,
-                        }}>
-                          Only this skill · ✕ practise everything
-                        </button>
-                      </div>
-                    )}
                   </div>
                   )}
 

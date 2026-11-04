@@ -2084,17 +2084,7 @@ export default function PlaceValuePractice({
                     }}>
                       {placeValueModule.skillLabels[currentItem.skill] || currentItem.skill}
                     </span>
-                    {focusSkill && (
-                      <div style={{ marginTop: 8 }}>
-                        <button onClick={() => setFocusSkill(null)} style={{
-                          minHeight: 44, padding: "8px 14px", borderRadius: 8, border: BRUTAL_BORDER_SM,
-                          backgroundColor: COLORS.cream, boxShadow: BRUTAL_SHADOW_SM, cursor: "pointer",
-                          fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: COLORS.black,
-                        }}>
-                          Only this skill · ✕ practise everything
-                        </button>
-                      </div>
-                    )}
+                    {/* No focus chip (Adam, 2026-11-04): a focused skill ends on leaving practice. */}
                   </div>
 
                   <QuestionDisplay item={currentItem} />
