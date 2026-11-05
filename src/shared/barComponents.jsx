@@ -761,6 +761,7 @@ export function PlaceValueChart({
   highlightCol = null,  // column index to highlight (shows trade) — mode="digits" only
   mode = "digits",
   ticks, onTapColumn,   // tap-to-count (discs mode only)
+  largeLabels = false,  // bigger column headings + "tap to count" (Place Value's practice card only)
   counts = null,
   countTokens = null,
   columns = null,
@@ -793,7 +794,7 @@ export function PlaceValueChart({
         phrases={phrases} compact={compact}
         interactive={interactive} onChange={onChange}
         emptyMarker={emptyMarker} opacity={opacity} animate={animate}
-        ticks={ticks} onTapColumn={onTapColumn}
+        ticks={ticks} onTapColumn={onTapColumn} largeLabels={largeLabels}
         plain={plain} layers={layers} carried={carried} taken={taken}
         takeLabels={takeLabels} onTake={onTake}
         tradeable={tradeable} tradeLabels={tradeLabels} tradeText={tradeText} onTrade={onTrade}
@@ -873,6 +874,7 @@ function PlaceValueColumnBox({
   interactive = false, onDec, onInc,
   phraseOnly = false, phraseText = null,
   columnDelay = 0, // ms offset so multi-column auto-fills animate left column first
+  largeLabels = false, // practice card: bigger heading + "tap to count" (opt-in)
   stamp = null,    // unit value printed on each disc ("1000" … "1"); null = plain disc
   ticked = 0,      // tap-to-count (B1 Concrete): discs 1..ticked are counted off
   onTapFrame = null, // tapping the disc frame counts off the next disc (whole column = the target)
@@ -891,7 +893,8 @@ function PlaceValueColumnBox({
   return (
     <div style={{
       flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center",
-      padding: compact ? "4px 2px" : "6px 4px", borderRadius: 8,
+      // largeLabels trims the side padding to 2px so the larger headings get +4px.
+      padding: compact ? "4px 2px" : largeLabels ? "6px 2px" : "6px 4px", borderRadius: 8,
       border: highlighted ? `3px solid ${COLORS.orange}` : `2px solid ${COLORS.black}`,
       backgroundColor: highlighted ? "#FFF4E5" : "transparent",
       transition: "border-color 0.2s ease, background-color 0.2s ease",
@@ -899,7 +902,11 @@ function PlaceValueColumnBox({
       <div style={{
         fontFamily: "'Space Mono', monospace", fontWeight: 700,
         // Scales with the viewport so "Thousands" fits a 4-column chart at 320px.
-        fontSize: compact ? 9 : "clamp(9px, 2.8vw, 11px)", color: COLORS.black, marginBottom: 4, textAlign: "center",
+        // largeLabels: "Thousands" in Space Mono 700 only fits a 4-column chart's
+        // column at 12px on a 393pt phone and at 9px on a 320pt one (measured), so
+        // 4 columns scale steeply between those (9px at 320 → 12px from ~375);
+        // without a Thousands column the headings can grow to 14px.
+        fontSize: compact ? 9 : largeLabels === 4 ? "clamp(9px, calc(5.5vw - 8.6px), 12px)" : largeLabels ? "clamp(11px, 3.6vw, 14px)" : "clamp(9px, 2.8vw, 11px)", color: COLORS.black, marginBottom: 4, textAlign: "center",
         lineHeight: 1.2, whiteSpace: "nowrap", maxWidth: "100%", overflow: "hidden",
       }}>
         {label}
@@ -991,8 +998,11 @@ function PlaceValueColumnBox({
         // Running count of what HE has counted off — his own work, not the
         // answer (the digit chip below stays blank until he answers).
         <div style={{
-          marginTop: 2, minHeight: 16, fontFamily: "'Space Mono', monospace", fontWeight: 700,
-          fontSize: 11, color: ticked > 0 ? COLORS.black : "#AAA",
+          // largeLabels: room for "tap to count" on two lines, so the chart (and the
+          // answer below it) doesn't jump up when the first tap turns it into "✓ n".
+          marginTop: 2, minHeight: largeLabels ? 30 : 16, lineHeight: largeLabels ? 1.2 : undefined,
+          textAlign: "center", fontFamily: "'Space Mono', monospace", fontWeight: 700,
+          fontSize: largeLabels ? 12 : 11, color: ticked > 0 ? COLORS.black : (largeLabels ? "#666" : "#AAA"),
         }}>
           {ticked > 0 ? `✓ ${ticked}` : "tap to count"}
         </div>
@@ -1026,6 +1036,7 @@ function PlaceValueDiscChart({
   counts, countTokens, columns, highlightPlace, valueCaption, phrases,
   compact, interactive, onChange, emptyMarker, opacity, animate,
   ticks = null, onTapColumn = null, // tap-to-count (B1 Concrete)
+  largeLabels = false,
   plain = false, layers = null, carried = null, taken = null,
   takeLabels = null, onTake = null, tradeable = null, tradeLabels = null,
   tradeText = "Regroup →", onTrade = null, notice = null,
@@ -1088,6 +1099,7 @@ function PlaceValueDiscChart({
               compact={compact}
               stamp={compact ? null : PV_UNIT_STAMP[place]}
               ticked={ticks ? ticks[idx] || 0 : 0}
+              largeLabels={largeLabels ? places.length : false}
               onTapFrame={onTapColumn ? () => onTapColumn(idx) : null}
               animate={animate}
               columnDelay={idx * 150}
@@ -1361,7 +1373,7 @@ function PlaceValueArithChart({
 // Over-filling a column past 9 is allowed for a beat (no auto-trade) — the
 // cream chip names it (docs/place-value-spec.md §3).
 // ---------------------------------------------------------------------------
-export function BuildNumberInput({ columns, counts, onChange, onSubmit, disabled = false }) {
+export function BuildNumberInput({ columns, counts, onChange, onSubmit, disabled = false, largeLabels = false }) {
   const overfill = (counts || []).some((c) => c > 9);
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: "100%" }}>
@@ -1369,7 +1381,7 @@ export function BuildNumberInput({ columns, counts, onChange, onSubmit, disabled
         mode="discs" columns={columns} counts={counts}
         countTokens={(counts || []).map(() => "numeral")}
         interactive={!disabled} onChange={onChange}
-        emptyMarker
+        emptyMarker largeLabels={largeLabels}
       />
       {overfill && (
         <div style={{

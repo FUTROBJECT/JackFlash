@@ -520,7 +520,7 @@ function B1TapCountChart({ item, counts, opacity, animate }) {
   };
   return (
     <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-      <PlaceValueChart mode="discs" columns={item.columns} counts={counts}
+      <PlaceValueChart mode="discs" largeLabels columns={item.columns} counts={counts}
         countTokens={counts.map(() => "blank")} emptyMarker opacity={opacity} animate={animate}
         ticks={ticks} onTapColumn={onTapColumn} />
     </div>
@@ -545,7 +545,7 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
     }
     return (
       <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-        <PlaceValueChart mode="discs" columns={item.columns} counts={counts}
+        <PlaceValueChart mode="discs" largeLabels columns={item.columns} counts={counts}
           countTokens={counts.map(() => "blank")} emptyMarker opacity={opacity} animate={animate} />
       </div>
     );
@@ -557,7 +557,7 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
     const counts = fullCounts(item);
     return (
       <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-        <PlaceValueChart mode="discs" columns={4} counts={counts}
+        <PlaceValueChart mode="discs" largeLabels columns={4} counts={counts}
           countTokens={counts.map(() => "numeral")} emptyMarker opacity={opacity} animate={animate} />
       </div>
     );
@@ -566,7 +566,7 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
   if (item.skill === "B4") {
     return (
       <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-        <PlaceValueChart mode="discs" columns={4} phrases={buildB4Phrases(item)}
+        <PlaceValueChart mode="discs" largeLabels columns={4} phrases={buildB4Phrases(item)}
           opacity={opacity} animate={animate} />
       </div>
     );
@@ -577,7 +577,7 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
     const targetIdx = PLACE_CODES.indexOf(item.place);
     return (
       <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-        <PlaceValueChart mode="discs" columns={4} counts={counts}
+        <PlaceValueChart mode="discs" largeLabels columns={4} counts={counts}
           countTokens={counts.map((_, i) => (i === targetIdx ? "blank" : "numeral"))}
           highlightPlace={item.place} emptyMarker opacity={opacity} animate={animate} />
       </div>
@@ -589,7 +589,7 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
     const targetIdx = PLACE_CODES.indexOf(item.place);
     return (
       <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-        <PlaceValueChart mode="discs" columns={4} counts={counts}
+        <PlaceValueChart mode="discs" largeLabels columns={4} counts={counts}
           countTokens={counts.map(() => "numeral")}
           highlightPlace={item.place}
           valueCaption={counts.map((_, i) => (i === targetIdx ? pvValueCaption(item, "blank") : null))}
@@ -603,7 +603,7 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
     const counts = fullCounts(item);
     return (
       <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-        <PlaceValueChart mode="discs" columns={4} counts={counts}
+        <PlaceValueChart mode="discs" largeLabels columns={4} counts={counts}
           countTokens={counts.map(() => "numeral")} emptyMarker opacity={opacity} animate={animate} />
       </div>
     );
@@ -619,7 +619,7 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
     const blankIdx = PLACE_CODES.indexOf(item.place);
     return (
       <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
-        <PlaceValueChart mode="discs" columns={4} counts={counts}
+        <PlaceValueChart mode="discs" largeLabels columns={4} counts={counts}
           countTokens={counts.map(() => "numeral")} emptyMarker opacity={opacity} animate={animate} />
         <PlaceValueStrips values={terms} split interactive blankIndex={blankIdx} blankToken="blank" opacity={opacity} />
       </div>
@@ -648,7 +648,7 @@ function ScaffoldForItem({ item, showScaffold, scaffoldOpacity, mode, feedback }
     const counts = fullCounts(item);
     return (
       <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-        <PlaceValueChart mode="discs" columns={4} counts={counts}
+        <PlaceValueChart mode="discs" largeLabels columns={4} counts={counts}
           countTokens={counts.map(() => "numeral")} emptyMarker opacity={opacity} animate={animate} />
       </div>
     );
@@ -702,7 +702,7 @@ function QuestionDisplay({ item }) {
         <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#666", marginBottom: 8 }}>
           Build
         </div>
-        <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: 44 }}>{formatNumber(item.value)}</span>
+        <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: 44, display: "inline-block", lineHeight: 1.1 }}>{formatNumber(item.value)}</span>
       </div>
     );
   }
@@ -712,7 +712,7 @@ function QuestionDisplay({ item }) {
         <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#666", marginBottom: 8 }}>
           What is this number in words?
         </div>
-        <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: 44 }}>{formatNumber(item.value)}</span>
+        <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: 44, display: "inline-block", lineHeight: 1.1 }}>{formatNumber(item.value)}</span>
       </div>
     );
   }
@@ -725,6 +725,7 @@ function QuestionDisplay({ item }) {
         <span style={{
           fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
           fontSize: "clamp(22px, 7vw, 30px)", color: COLORS.black,
+          display: "inline-block", lineHeight: 1.2,
         }}>
           {keepHyphens(numberToWords(item.value))}
         </span>
@@ -808,7 +809,7 @@ function QuestionDisplay({ item }) {
         <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#666", marginBottom: 8 }}>
           Which is the expanded form?
         </div>
-        <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: 44 }}>{formatNumber(item.value)}</span>
+        <span style={{ fontFamily: "'Shrikhand', cursive", fontSize: 44, display: "inline-block", lineHeight: 1.1 }}>{formatNumber(item.value)}</span>
       </div>
     );
   }
@@ -2072,92 +2073,26 @@ export default function PlaceValuePractice({
                       : "none",
                   transition: "box-shadow 0.3s ease",
                 }}>
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
                     <MasteryDots level={Math.min(getMasteryLevel(currentItem.itemKey), DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
-                  </div>
-
-                  <div style={{ marginBottom: 12 }}>
-                    <span style={{
-                      fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
-                      backgroundColor: placeValueModule.groups.find((g) => g.id === currentItem.group)?.color || COLORS.purple,
-                      color: COLORS.black, padding: "3px 10px", borderRadius: 20, border: BRUTAL_BORDER_SM,
-                    }}>
-                      {placeValueModule.skillLabels[currentItem.skill] || currentItem.skill}
-                    </span>
-                    {/* No focus chip (Adam, 2026-11-04): a focused skill ends on leaving practice. */}
                   </div>
 
                   <QuestionDisplay item={currentItem} />
 
-                  {!feedback && currentItem.answerType === "buildNumber" ? (
-                    <div style={{ marginTop: 20 }}>
-                      <BuildNumberInput
-                        columns={currentItem.columns} counts={userCounts}
-                        onChange={setUserCounts} onSubmit={handleBuildNumberSubmit} disabled={false}
-                      />
-                    </div>
-                  ) : (
-                    <div onKeyDown={handleKeyDown}>
-                      {currentItem.answerType === "choice4" ? (
-                        <PVChoiceGrid
-                          choices={shuffledChoices}
-                          onPick={handleTapChoice}
-                          picked={pickedChoice}
-                          correct={currentItem.correctAnswer}
-                          variant={choiceVariant(currentItem.skill)}
-                        />
-                      ) : currentItem.answerType === "tapTwo" ? (
-                        <PVCompareCards
-                          leftValue={currentItem.leftValue} rightValue={currentItem.rightValue}
-                          onPick={handleTapChoice}
-                          picked={pickedChoice}
-                          correct={currentItem.correctSide}
-                        />
-                      ) : currentItem.answerType === "orderThree" ? (
-                        // Keyed by retryResetKey too (docs/confidence-pass-spec.md
-                        // C2): tapOrder is LOCAL state — a converted "not sure"
-                        // remounts to clear the taps without a new item.
-                        <PVOrderTiles
-                          key={`${currentItem.itemKey}:${retryResetKey}`}
-                          values={currentItem.values}
-                          onSubmitOrder={handleOrderSubmit}
-                          submitted={orderSubmitted}
-                          correctOrder={currentItem.order}
-                        />
-                      ) : currentItem.answerType === "singleNumber" ? (
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 20, gap: 12 }}>
-                          <input
-                            ref={inputRef}
-                            type="number" inputMode="numeric"
-                            value={userAnswer} placeholder="?"
-                            disabled={!!feedback}
-                            onChange={(e) => setUserAnswer(e.target.value.replace(/\D/g, ""))}
-                            onKeyDown={handleKeyDown}
-                            style={{
-                              width: 160, fontSize: 48, fontFamily: "'Shrikhand', cursive",
-                              fontWeight: 400, textAlign: "center",
-                              border: "none", borderBottom: `4px solid ${COLORS.black}`,
-                              backgroundColor: "transparent", color: COLORS.black, outline: "none",
-                              padding: "4px 0", MozAppearance: "textfield", WebkitAppearance: "none",
-                            }}
-                          />
-                          {!feedback && (
-                            <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
-                          )}
-                        </div>
-                      ) : null}
-                    </div>
-                  )}
-
+                  {/* Picture straight after the question (B1's chart IS the question), then
+                      the answer; B2 has no scaffold — its chart is the input below. The "not
+                      sure" nudge (docs/confidence-pass-spec.md C2) sits above the picture
+                      until the next submit or item. */}
                   {nudge === "notSure" && (
-                    <div style={{
-                      marginTop: 16, display: "inline-block",
-                      fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
-                      fontSize: "clamp(14px, 4vw, 16px)", color: COLORS.black,
-                      backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM,
-                      borderRadius: 8, padding: "6px 12px",
-                    }}>
-                      Not sure? Count the picture.
+                    <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
+                      <div style={{
+                        fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
+                        fontSize: "clamp(14px, 4vw, 16px)", color: COLORS.black,
+                        backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM,
+                        borderRadius: 8, padding: "6px 12px",
+                      }}>
+                        Not sure? Count the picture.
+                      </div>
                     </div>
                   )}
 
@@ -2191,16 +2126,78 @@ export default function PlaceValuePractice({
                     (mode === "abstract" && !showScaffold) ||
                     (mode === "pictorial" && !showScaffold && (userHidScaffold || scaffoldOpacity < 1))
                   ) && (
-                    <div style={{ marginTop: 12, textAlign: "center" }}>
+                    <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
                       <span className={mode === "abstract" && missRun >= 2 ? "showMePulse" : undefined}>
                         <BrutalButton
                           small
                           onClick={() => { setShowScaffold(true); setPictureRequested(true); }}
                           bg={COLORS.cream}
+                          style={{ minHeight: 44 }}
                         >
                           Show me
                         </BrutalButton>
                       </span>
+                    </div>
+                  )}
+
+                  {!feedback && currentItem.answerType === "buildNumber" ? (
+                    <div style={{ marginTop: 16 }}>
+                      <BuildNumberInput
+                        columns={currentItem.columns} counts={userCounts}
+                        onChange={setUserCounts} onSubmit={handleBuildNumberSubmit} disabled={false}
+                        largeLabels
+                      />
+                    </div>
+                  ) : (
+                    <div onKeyDown={handleKeyDown}>
+                      {currentItem.answerType === "choice4" ? (
+                        <PVChoiceGrid
+                          choices={shuffledChoices}
+                          onPick={handleTapChoice}
+                          picked={pickedChoice}
+                          correct={currentItem.correctAnswer}
+                          variant={choiceVariant(currentItem.skill)}
+                        />
+                      ) : currentItem.answerType === "tapTwo" ? (
+                        <PVCompareCards
+                          leftValue={currentItem.leftValue} rightValue={currentItem.rightValue}
+                          onPick={handleTapChoice}
+                          picked={pickedChoice}
+                          correct={currentItem.correctSide}
+                        />
+                      ) : currentItem.answerType === "orderThree" ? (
+                        // Keyed by retryResetKey too (docs/confidence-pass-spec.md
+                        // C2): tapOrder is LOCAL state — a converted "not sure"
+                        // remounts to clear the taps without a new item.
+                        <PVOrderTiles
+                          key={`${currentItem.itemKey}:${retryResetKey}`}
+                          values={currentItem.values}
+                          onSubmitOrder={handleOrderSubmit}
+                          submitted={orderSubmitted}
+                          correctOrder={currentItem.order}
+                        />
+                      ) : currentItem.answerType === "singleNumber" ? (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 16, gap: 12 }}>
+                          <input
+                            ref={inputRef}
+                            type="number" inputMode="numeric"
+                            value={userAnswer} placeholder="?"
+                            disabled={!!feedback}
+                            onChange={(e) => setUserAnswer(e.target.value.replace(/\D/g, ""))}
+                            onKeyDown={handleKeyDown}
+                            style={{
+                              width: 160, fontSize: 48, fontFamily: "'Shrikhand', cursive",
+                              fontWeight: 400, textAlign: "center",
+                              border: "none", borderBottom: `4px solid ${COLORS.black}`,
+                              backgroundColor: "transparent", color: COLORS.black, outline: "none",
+                              padding: "4px 0", MozAppearance: "textfield", WebkitAppearance: "none",
+                            }}
+                          />
+                          {!feedback && (
+                            <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                   )}
 
