@@ -129,6 +129,8 @@ Re-upload recipe: `npm --prefix "<primary checkout>" run cap:sync` (store build,
 - [x] **1.2 (5) archived 2026-10-14** (store build, nothing staged, all bundle products in). Build number now 6 for the next upload
 - [x] 1.2 (5) uploaded to App Store Connect (2026-10-14)
 - [ ] TestFlight: What to Test pasted, 1.2 (5) added to Friends (1.1 builds removed), submitted for Beta App Review
+- [x] **1.2 (7) archived and uploaded 2026-11-05** (store build) — the card layout pass on all three modules (Add & Subtract, Fractions, Place Value: picture before answer, 16px rhythm, no pills/focus chip, bigger labels; Add's Start over in the keypad; question-only Fractions pictures; F2 reveal bar fix). Same build (tester flavour) installed on Jack's phone. Build number now 8
+- [ ] TestFlight: What to Test for 1.2 (7), add to Friends, remove 1.2 (6)
 - [x] **1.2 (6) archived and uploaded 2026-11-02** on Xcode 27.2, from the CLI (`xcodebuild -exportArchive` with `method: app-store-connect`, `destination: upload`, `manageAppVersionAndBuildNumber: false`). Build number now 7 for the next upload
 - [ ] TestFlight: What to Test for 1.2 (6), add to Friends, remove 1.2 (5)
 - [x] Tester feedback on 1.2 (5), fixed 2026-10-16 (in 1.2 (6)): Fractions F3/F4 always put the greater fraction on the same side (F3 left, F4 right) — now 8/8 on a fixed irregular pattern, keys unchanged; Multiply's practice-set toggles jumped the progress screen to the top — now it stays put, and practice opens at the top
