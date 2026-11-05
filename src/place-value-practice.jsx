@@ -25,7 +25,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM,
-  DEFAULT_MASTERY_THRESHOLD, AVATARS, GUESS_MS,
+  DEFAULT_MASTERY_THRESHOLD, GUESS_MS,
 } from "./constants.js";
 // Place Value is a conceptual module (docs/place-value-spec.md §5) — no
 // speed gate, no responseMs passed to updateMastery, so FLUENCY_MS_* is not
@@ -44,7 +44,7 @@ import {
 import { checkAfterAnswer, checkAfterSession, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
-import LogoLockup from "./LogoLockup.jsx";
+import PracticeHeader from "./shared/PracticeHeader.jsx";
 import WrongAnswerReveal from "./shared/WrongAnswerReveal.jsx";
 import DerivationLine from "./shared/DerivationLine.jsx";
 import DerivationToken from "./shared/DerivationToken.jsx";
@@ -1724,125 +1724,45 @@ export default function PlaceValuePractice({
       `}</style>
 
       {/* ========= HEADER ========= */}
-      <div ref={headerRef} style={{
-        background: COLORS.yellow,
-        padding: "calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 14px) clamp(12px,4vw,20px) 10px",
-        borderBottom: `4px solid ${COLORS.black}`,
-        position: "sticky", top: 0, zIndex: 50,
-      }}>
-        <div style={{ maxWidth: 540, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-            {onBack && (
-              <button onClick={onBack} style={{
-                padding: "6px 8px", borderRadius: 6, border: BRUTAL_BORDER_SM,
-                backgroundColor: "white", color: COLORS.black, boxShadow: BRUTAL_SHADOW_SM,
-                cursor: "pointer", transition: "all 0.1s ease", flexShrink: 0,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 9.5L12 3L21 9.5V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9.5Z"
-                    stroke={COLORS.black} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M9 22V12H15V22" stroke={COLORS.black} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            )}
-            <LogoLockup size="medium" boltVariant="rev" style={{ flex: 1 }} />
-            {profileAvatar && (
-              <div style={{
-                width: 44, height: 44, borderRadius: "50%", border: BRUTAL_BORDER_SM,
-                backgroundColor: "white", display: "flex", alignItems: "center",
-                justifyContent: "center", fontSize: 24, boxShadow: BRUTAL_SHADOW_SM, flexShrink: 0,
-              }}>
-                {AVATARS.find((a) => a.id === profileAvatar)?.emoji || profileAvatar}
-              </div>
-            )}
-          </div>
-
-          {(() => {
-            const masteryData = getMasteryData();
-            const totalItems = PLACE_VALUE_POOL.filter((i) => isContentAccessible(moduleId, i.group)).length;
-            const masteredItems = PLACE_VALUE_POOL.filter((i) =>
-              isContentAccessible(moduleId, i.group) &&
-              (masteryData[i.itemKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD
-            ).length;
-            const masteryPct = totalItems > 0 ? Math.round((masteredItems / totalItems) * 100) : 0;
-            // C4 "working group" rule (docs/confidence-pass-spec.md, "As
-            // built" 2026-09-14): first accessible group (module order) not
-            // yet fully mastered; all done -> the last such group.
-            const groupStats = mod.groups
-              .filter((g) => isContentAccessible(moduleId, g.id))
-              .filter((g) => !lockedGroupId || g.id === lockedGroupId)
-              .map((g) => {
-                const items = PLACE_VALUE_POOL.filter((i) => i.group === g.id);
-                const total = items.length;
-                const done = items.filter((i) => (masteryData[i.itemKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length;
-                return { group: g, total, done };
-              })
-              .filter((gs) => gs.total > 0);
-            const working = groupStats.find((gs) => gs.done < gs.total) || groupStats[groupStats.length - 1] || null;
-            let pillValue = `${masteredItems}/${totalItems}`;
-            let pillLabel = "Mastered";
-            if (working) {
-              pillValue = `${working.done}/${working.total}`;
-              pillLabel = working.group.label;
-            }
-            return (
-              <div style={{ display: "flex", gap: 6, alignItems: "stretch", marginBottom: 8, minHeight: 56 }}>
-                <div style={{
-                  flex: 1.5, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Space Mono', monospace", fontWeight: 700,
-                  backgroundColor: masteryPct === 100 ? COLORS.green : "white",
-                  color: masteryPct === 100 ? "white" : COLORS.black,
-                  border: BRUTAL_BORDER_SM, borderRadius: 8, padding: "8px 12px",
-                  boxShadow: BRUTAL_SHADOW_SM, gap: 3,
-                }}>
-                  <span style={{ fontSize: "clamp(14px, 5vw, 20px)", lineHeight: 1, whiteSpace: "nowrap" }}>⭐ {pillValue}</span>
-                  <span style={{ fontSize: 9, opacity: 0.6, textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "center", lineHeight: 1.15 }}>{pillLabel}</span>
-                </div>
-                <div style={{
-                  flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Space Mono', monospace", fontWeight: 700,
-                  backgroundColor: "white", border: BRUTAL_BORDER_SM, borderRadius: 8,
-                  padding: "8px 4px", boxShadow: BRUTAL_SHADOW_SM, gap: 3,
-                }}>
-                  <span style={{ fontSize: "clamp(14px, 5vw, 20px)", lineHeight: 1, whiteSpace: "nowrap" }}>{sessionStats.correct}/{sessionStats.total}</span>
-                  <span style={{ fontSize: 10, opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Session</span>
-                </div>
-                <div style={{
-                  flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Space Mono', monospace", fontWeight: 700,
-                  backgroundColor: streak >= 3 ? COLORS.orange : "white",
-                  color: streak >= 3 ? "white" : COLORS.black,
-                  border: BRUTAL_BORDER_SM, borderRadius: 8,
-                  padding: "8px 4px", boxShadow: BRUTAL_SHADOW_SM, gap: 3,
-                }}>
-                  <span style={{ fontSize: "clamp(14px, 5vw, 20px)", lineHeight: 1, whiteSpace: "nowrap" }}>🔥 {streak}</span>
-                  <span style={{ fontSize: 10, opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Streak</span>
-                </div>
-                {dailyStreak && dailyStreak.current > 0 && (
-                  <div style={{
-                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    padding: "10px 10px",
-                    background: dailyStreak.current >= 7 ? COLORS.orange : COLORS.cream,
-                    border: BRUTAL_BORDER_SM, borderRadius: 8,
-                    fontFamily: "'Space Mono', monospace", fontWeight: 700,
-                    color: dailyStreak.current >= 7 ? "white" : COLORS.black,
-                    boxShadow: BRUTAL_SHADOW_SM, gap: 3,
-                  }}>
-                    <span style={{ fontSize: 20, lineHeight: 1 }}>
-                      {dailyStreak.current >= 30 ? "👑" : "📅"} {dailyStreak.current}
-                    </span>
-                    <span style={{ fontSize: 10, opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Days</span>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-        </div>
-      </div>
+      {(() => {
+        const masteryData = getMasteryData();
+        const totalItems = PLACE_VALUE_POOL.filter((i) => isContentAccessible(moduleId, i.group)).length;
+        const masteredItems = PLACE_VALUE_POOL.filter((i) =>
+          isContentAccessible(moduleId, i.group) &&
+          (masteryData[i.itemKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD
+        ).length;
+        const masteryPct = totalItems > 0 ? Math.round((masteredItems / totalItems) * 100) : 0;
+        // C4 "working group" rule (docs/confidence-pass-spec.md, "As
+        // built" 2026-09-14): first accessible group (module order) not
+        // yet fully mastered; all done -> the last such group.
+        const groupStats = mod.groups
+          .filter((g) => isContentAccessible(moduleId, g.id))
+          .filter((g) => !lockedGroupId || g.id === lockedGroupId)
+          .map((g) => {
+            const items = PLACE_VALUE_POOL.filter((i) => i.group === g.id);
+            const total = items.length;
+            const done = items.filter((i) => (masteryData[i.itemKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length;
+            return { group: g, total, done };
+          })
+          .filter((gs) => gs.total > 0);
+        const working = groupStats.find((gs) => gs.done < gs.total) || groupStats[groupStats.length - 1] || null;
+        let pillValue = `${masteredItems}/${totalItems}`;
+        let pillLabel = "Mastered";
+        if (working) {
+          pillValue = `${working.done}/${working.total}`;
+          pillLabel = working.group.label;
+        }
+        return (
+          <PracticeHeader
+            headerRef={headerRef} onBack={onBack} avatar={profileAvatar}
+            pill={{ value: pillValue, label: pillLabel, done: masteryPct === 100 }}
+            session={sessionStats} streak={streak} dailyStreak={dailyStreak}
+          />
+        );
+      })()}
 
       {/* ========= BODY ========= */}
-      <div style={{ padding: "clamp(24px,6vw,40px) clamp(12px,4vw,20px) 40px" }}>
+      <div style={{ padding: "clamp(12px, 3vw, 20px) clamp(12px,4vw,20px) 40px" }}>
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
 
           {/* ===== PROGRESS VIEW ===== */}

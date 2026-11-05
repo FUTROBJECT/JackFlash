@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, DEFAULT_MASTERY_THRESHOLD, AVATARS, GUESS_MS, fluencyLimitMs as computeFluencyLimitMs } from "./constants.js";
+import { COLORS, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, BRUTAL_BORDER, BRUTAL_BORDER_SM, DEFAULT_MASTERY_THRESHOLD, GUESS_MS, fluencyLimitMs as computeFluencyLimitMs } from "./constants.js";
 import multiplyModule from "./modules/multiply.jsx";
 import { registerModule, getModule } from "./modules/moduleRegistry.js";
 import { initData, getMastery, updateMastery, updateStreak, checkStreakOnLaunch, recordAnswerInSession, recordAssistedInSession, recordPeekInSession, finalizeLiveSession, getProfile, updateChildSettings, getPreferredMode, setPreferredMode } from "./dataManager.js";
 import { checkAfterAnswer, checkAfterSession, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
-import LogoLockup from "./LogoLockup.jsx";
+import PracticeHeader from "./shared/PracticeHeader.jsx";
 import { computeSelection, tickErrorWindow, markErrorPriority, clearErrorPriority, dedupeFacts } from "./factSelectionPolicy.js";
 import WrongAnswerReveal from "./shared/WrongAnswerReveal.jsx";
 import DerivationToken from "./shared/DerivationToken.jsx";
@@ -755,149 +755,52 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       `}</style>
 
       {/* Header */}
-      <div ref={headerRef} style={{
-        background: COLORS.yellow,
-        padding: "calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 14px) clamp(12px, 4vw, 20px) 10px",
-        borderBottom: `4px solid ${COLORS.black}`,
-        position: "sticky", top: 0, zIndex: 50,
-      }}>
-        <div style={{ maxWidth: 540, margin: "0 auto" }}>
-          {/* Back button, logo lockup, and player avatar */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
-            {onBack && (
-              <button onClick={onBack} style={{
-                padding: "6px 8px", borderRadius: "6px", border: BRUTAL_BORDER_SM,
-                backgroundColor: "white", color: COLORS.black,
-                boxShadow: BRUTAL_SHADOW_SM, cursor: "pointer",
-                transition: "all 0.1s ease", flexShrink: 0,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M3 9.5L12 3L21 9.5V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9.5Z" stroke={COLORS.black} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M9 22V12H15V22" stroke={COLORS.black} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            )}
-            <LogoLockup size="medium" boltVariant="rev" style={{ flex: 1 }} />
-            {profileAvatar && (
-              <div style={{
-                width: "44px", height: "44px",
-                borderRadius: "50%",
-                border: BRUTAL_BORDER_SM,
-                backgroundColor: "white",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "24px",
-                boxShadow: BRUTAL_SHADOW_SM,
-                flexShrink: 0,
-              }}>
-                {AVATARS.find(a => a.id === profileAvatar)?.emoji || profileAvatar}
-              </div>
-            )}
-          </div>
-          {/* Stats row — always visible, shows cumulative + session progress */}
-          {(() => {
-            const masteryData = getMasteryData();
-            // Count DISTINCT facts — generateFacts emits symmetric division facts
-            // twice (e.g. "4÷2"), which inflated this stat's numerator and
-            // denominator (the group grids below already dedupe).
-            const distinctFacts = dedupeFacts(facts);
-            const totalFacts = distinctFacts.length;
-            const masteredFacts = totalFacts > 0 ? distinctFacts.filter(f => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length : 0;
-            const masteryPct = totalFacts > 0 ? Math.round((masteredFacts / totalFacts) * 100) : 0;
-            // C4 (docs/confidence-pass-spec.md, "As built" 2026-09-14): the
-            // MASTERED pill is framed against the WORKING group — the first
-            // group (module order) with an enabled table that isn't fully
-            // mastered yet — and stays there until that group is done. It is
-            // NOT the current fact's group (that flickered between groups as
-            // facts drew from different tables). Counts run over the group's
-            // enabled tables only, so "only 2s on" reads 0/19, not 0/81. All
-            // enabled groups mastered -> the last one (100%, green).
-            const enabledSet = new Set(currentTables);
-            const groupStats = mod.groups
-              .map((g) => {
-                const tables = g.tables.filter((t) => enabledSet.has(t));
-                if (tables.length === 0) return null;
-                const groupFacts = dedupeFacts(mod.generateFacts({ tables, operation }));
-                const total = groupFacts.length;
-                const done = groupFacts.filter((f) => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length;
-                return { group: g, total, done };
-              })
-              .filter(Boolean);
-            const working = groupStats.find((gs) => gs.done < gs.total) || groupStats[groupStats.length - 1] || null;
-            let pillValue = `${masteredFacts}/${totalFacts}`;
-            let pillLabel = "Mastered";
-            if (working) {
-              pillValue = `${working.done}/${working.total}`;
-              pillLabel = working.group.label;
-            }
-            return (
-              <div style={{ display: "flex", gap: "6px", alignItems: "stretch", marginBottom: "8px", minHeight: "56px" }}>
-                {/* Mastery progress — cumulative, persisted */}
-                <div style={{
-                  flex: 1.5, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Space Mono', monospace", fontWeight: 700,
-                  backgroundColor: masteryPct === 100 ? COLORS.green : "white",
-                  color: masteryPct === 100 ? "white" : COLORS.black,
-                  border: BRUTAL_BORDER_SM, borderRadius: "8px",
-                  padding: "8px 12px", boxShadow: BRUTAL_SHADOW_SM,
-                  transition: "all 0.3s ease",
-                  gap: "3px",
-                }}>
-                  <span style={{ fontSize: "clamp(14px, 5vw, 20px)", lineHeight: 1, whiteSpace: "nowrap" }}>⭐ {pillValue}</span>
-                  <span style={{ fontSize: "9px", opacity: 0.6, textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "center", lineHeight: 1.15 }}>{pillLabel}</span>
-                </div>
-                {/* Session score */}
-                <div style={{
-                  flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Space Mono', monospace", fontWeight: 700,
-                  backgroundColor: "white", border: BRUTAL_BORDER_SM, borderRadius: "8px",
-                  padding: "8px 4px", boxShadow: BRUTAL_SHADOW_SM,
-                  gap: "3px",
-                }}>
-                  <span style={{ fontSize: "clamp(14px, 5vw, 20px)", lineHeight: 1, whiteSpace: "nowrap" }}>{sessionStats.correct}/{sessionStats.total}</span>
-                  <span style={{ fontSize: "10px", opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Session</span>
-                </div>
-                {/* Streak */}
-                <div style={{
-                  flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Space Mono', monospace", fontWeight: 700,
-                  backgroundColor: streak >= 3 ? COLORS.orange : "white",
-                  color: streak >= 3 ? "white" : COLORS.black,
-                  border: BRUTAL_BORDER_SM, borderRadius: "8px",
-                  padding: "8px 4px", boxShadow: BRUTAL_SHADOW_SM,
-                  transition: "all 0.2s ease",
-                  gap: "3px",
-                }}>
-                  <span style={{ fontSize: "clamp(14px, 5vw, 20px)", lineHeight: 1, whiteSpace: "nowrap" }}>{"🔥"} {streak}</span>
-                  <span style={{ fontSize: "10px", opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Streak</span>
-                </div>
-                {/* Daily streak */}
-                {dailyStreak && dailyStreak.current > 0 && (
-                  <div style={{
-                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    padding: "10px 10px",
-                    background: dailyStreak.current >= 7 ? COLORS.orange : COLORS.cream,
-                    border: BRUTAL_BORDER_SM, borderRadius: "8px",
-                    fontFamily: "'Space Mono', monospace", fontWeight: 700,
-                    color: dailyStreak.current >= 7 ? "white" : COLORS.black,
-                    boxShadow: BRUTAL_SHADOW_SM,
-                    gap: "3px",
-                  }}>
-                    <span style={{ fontSize: "20px", lineHeight: 1 }}>
-                      {dailyStreak.current >= 30 ? "👑" : "📅"} {dailyStreak.current}
-                    </span>
-                    <span style={{ fontSize: "10px", opacity: 0.6, textTransform: "uppercase", letterSpacing: "1px" }}>Days</span>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-          {/* Progress button removed — progress accessed from home screen */}
-        </div>
-      </div>
+      {(() => {
+        const masteryData = getMasteryData();
+        // Count DISTINCT facts — generateFacts emits symmetric division facts
+        // twice (e.g. "4÷2"), which inflated this stat's numerator and
+        // denominator (the group grids below already dedupe).
+        const distinctFacts = dedupeFacts(facts);
+        const totalFacts = distinctFacts.length;
+        const masteredFacts = totalFacts > 0 ? distinctFacts.filter(f => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length : 0;
+        const masteryPct = totalFacts > 0 ? Math.round((masteredFacts / totalFacts) * 100) : 0;
+        // C4 (docs/confidence-pass-spec.md, "As built" 2026-09-14): the
+        // MASTERED pill is framed against the WORKING group — the first
+        // group (module order) with an enabled table that isn't fully
+        // mastered yet — and stays there until that group is done. It is
+        // NOT the current fact's group (that flickered between groups as
+        // facts drew from different tables). Counts run over the group's
+        // enabled tables only, so "only 2s on" reads 0/19, not 0/81. All
+        // enabled groups mastered -> the last one (100%, green).
+        const enabledSet = new Set(currentTables);
+        const groupStats = mod.groups
+          .map((g) => {
+            const tables = g.tables.filter((t) => enabledSet.has(t));
+            if (tables.length === 0) return null;
+            const groupFacts = dedupeFacts(mod.generateFacts({ tables, operation }));
+            const total = groupFacts.length;
+            const done = groupFacts.filter((f) => (masteryData[f.factKey]?.correct || 0) >= DEFAULT_MASTERY_THRESHOLD).length;
+            return { group: g, total, done };
+          })
+          .filter(Boolean);
+        const working = groupStats.find((gs) => gs.done < gs.total) || groupStats[groupStats.length - 1] || null;
+        let pillValue = `${masteredFacts}/${totalFacts}`;
+        let pillLabel = "Mastered";
+        if (working) {
+          pillValue = `${working.done}/${working.total}`;
+          pillLabel = working.group.label;
+        }
+        return (
+          <PracticeHeader
+            headerRef={headerRef} onBack={onBack} avatar={profileAvatar}
+            pill={{ value: pillValue, label: pillLabel, done: masteryPct === 100 }}
+            session={sessionStats} streak={streak} dailyStreak={dailyStreak}
+          />
+        );
+      })()}
 
 
-      <div style={{ padding: "clamp(24px, 6vw, 40px) clamp(12px, 4vw, 20px) 40px" }}>
+      <div style={{ padding: "clamp(12px, 3vw, 20px) clamp(12px, 4vw, 20px) 40px" }}>
       <div style={{ maxWidth: 540, margin: "0 auto" }}>
         {/* Controls removed — settings managed via Parent Zone */}
 
