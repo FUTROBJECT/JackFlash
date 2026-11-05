@@ -38,6 +38,7 @@ import { isContentAccessible } from "./purchaseManager.js";
 import LogoLockup from "./LogoLockup.jsx";
 import WrongAnswerReveal from "./shared/WrongAnswerReveal.jsx";
 import DerivationLine from "./shared/DerivationLine.jsx";
+import { NumberAnswer, FractionAnswer } from "./shared/NumberPad.jsx";
 
 // Register the fractions module
 registerModule(fractionsModule);
@@ -120,7 +121,6 @@ const PICTURE_MAX_BY_TYPE = {
   singleNumber: "min(150px, 24dvh)",
   fractionInput: "min(120px, 19dvh)",
 };
-const TYPED_ANSWER_TYPES = new Set(["singleNumber", "fractionInput"]);
 
 // ---------------------------------------------------------------------------
 // Small reusable components (local copies matching multiply-practice style)
@@ -162,51 +162,6 @@ function BrutalButton({ onClick, children, bg = "white", color = COLORS.black, s
 // ---------------------------------------------------------------------------
 // Answer input renderers
 // ---------------------------------------------------------------------------
-
-/**
- * FractionInputFields – two stacked number fields (numerator/denominator)
- * separated by a thick vinculum.  Used for E3, A1–A4.
- */
-// `fieldWidth`/`fieldFontSize`/`bg` (Phase 2 — Fractions, opt-in/default off):
-// the reveal's typed re-ask reuses this component at a smaller size (32px /
-// 90px, spec "Governing rulings" budget table) with a fill colour for the
-// filled/disabled second-miss state. Defaults reproduce the original 110/42
-// card sizing byte-for-byte when the new props aren't passed.
-function FractionInputFields({ numVal, denVal, onNumChange, onDenChange, onSubmit, disabled, fieldWidth = 110, fieldFontSize = 42, bg = "transparent", dense = false }) {
-  // `dense` (wrong-answer reveal): no vertical padding and a tight gap, so
-  // the two stacked boxes + vinculum fit the keyboard-up budget (R2).
-  const fieldStyle = {
-    width: fieldWidth, fontSize: fieldFontSize, fontFamily: "'Shrikhand', cursive",
-    fontWeight: 400, textAlign: "center", border: "none",
-    backgroundColor: bg, color: COLORS.black,
-    outline: "none", padding: dense ? "0" : "4px 0", lineHeight: dense ? 1.15 : undefined,
-    caretColor: COLORS.black,
-    MozAppearance: "textfield",
-    WebkitAppearance: "none",
-  };
-  return (
-    <div style={{
-      display: "inline-flex", flexDirection: "column", alignItems: "center",
-      gap: dense ? 0 : 2,
-    }}>
-      <input
-        type="number" inputMode="numeric" value={numVal} placeholder="?"
-        disabled={disabled}
-        onChange={e => onNumChange(e.target.value)}
-        onKeyDown={e => { if (e.key === "Enter") onSubmit(); }}
-        style={fieldStyle}
-      />
-      <div style={{ width: fieldWidth * 0.87, height: 4, backgroundColor: COLORS.black, borderRadius: 2 }} />
-      <input
-        type="number" inputMode="numeric" value={denVal} placeholder="?"
-        disabled={disabled}
-        onChange={e => onDenChange(e.target.value)}
-        onKeyDown={e => { if (e.key === "Enter") onSubmit(); }}
-        style={fieldStyle}
-      />
-    </div>
-  );
-}
 
 /**
  * Choice4Grid – renders 4 tappable fraction chips in a 2×2 grid.
@@ -1326,7 +1281,9 @@ export default function FractionsPractice({
   // 0 = picture only, 1 = derivation line shown (numeral), 2 = blank chip +
   // live re-ask input/taps. Driven by timers keyed off retry.phase === "ask".
   const [revealStage, setRevealStage] = useState(0);
-  const inputRef = useRef(null);
+  const headerRef = useRef(null);   // the sticky header — measured by the pad's scroll-into-view
+  const questionRef = useRef(null); // the question — the pad's scroll never pushes it under the header
+  const getClampEl = useCallback(() => questionRef.current, []);
   // Fluency timing: when the current item became answerable. Fractions is a
   // conceptual module with no speed gate, but timing is still collected for
   // QA / fast-follow analysis (see handleAnswer's DEV console.debug).
@@ -1513,9 +1470,8 @@ export default function FractionsPractice({
     }
 
     setTimeout(() => {
-      // preventScroll + scroll home: keeps iOS keyboard-avoidance from shoving
-      // the sticky header behind the Dynamic Island on every new item.
-      inputRef.current?.focus({ preventScroll: true });
+      // Scroll home on every new item. (No input to focus: typed answers use the
+      // in-app pad, so iOS never raises its keyboard over the card.)
       window.scrollTo(0, 0);
       factShownAtRef.current = Date.now();
     }, 100);
@@ -1754,12 +1710,6 @@ export default function FractionsPractice({
     handleAnswer({ type: "orderThree", value: tapOrder });
   }, [handleAnswer]);
 
-  // The reveal owns Enter while open — this card's own input is hidden
-  // behind it whenever feedback === "incorrect" (see handleKeyDown below).
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleSubmit();
-  };
-
   // Timed reveal choreography (spec "Timing"): picture builds 0–400ms →
   // derivation line at 400ms (stage 1, numeral) → re-ask opens ~900ms
   // (stage 2, blank chip + live input/taps). Keyed on the retry phase
@@ -1875,21 +1825,6 @@ export default function FractionsPractice({
     finishRetry(evaluateAnswer(currentItem, evalPayload), rawValue);
   }, [currentItem, retry, evaluateAnswer, finishRetry]);
 
-  // Enter: submits the typed re-answer in "ask", advances immediately in
-  // "missed". Tap-based re-asks don't attach this (no keyboard, no Enter).
-  const handleRetryKeyDown = (e) => {
-    if (e.key !== "Enter") return;
-    if (retry.phase === "ask") {
-      handleRetrySubmit();
-    } else if (retry.phase === "missed") {
-      if (advanceTimeoutRef.current) {
-        clearTimeout(advanceTimeoutRef.current);
-        advanceTimeoutRef.current = null;
-      }
-      pickNewItem();
-    }
-  };
-
   // Group progress
   const getGroupProgress = useCallback((groupId) => {
     const groupItems = FRACTION_POOL.filter(i => i.group === groupId);
@@ -1927,7 +1862,7 @@ export default function FractionsPractice({
       `}</style>
 
       {/* ========= HEADER ========= */}
-      <div style={{
+      <div ref={headerRef} style={{
         background: COLORS.yellow,
         padding: "calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 14px) clamp(12px,4vw,20px) 10px",
         borderBottom: `4px solid ${COLORS.black}`,
@@ -2282,7 +2217,7 @@ export default function FractionsPractice({
                       the child leaves practice: focusSkill isn't saved. */}
 
                   {/* Question */}
-                  <QuestionDisplay item={currentItem} feedback={feedback} />
+                  <div ref={questionRef}><QuestionDisplay item={currentItem} feedback={feedback} /></div>
 
                   {/* "Not sure" nudge (docs/confidence-pass-spec.md C2) — under
                       the question, above the scaffold. Stays until the
@@ -2363,7 +2298,7 @@ export default function FractionsPractice({
                     // remount it to clear the shading, without picking a new item.
                     <BuildBarInput key={`${currentItem.itemKey}:${retryResetKey}`} item={currentItem} onSubmit={handleBuildBarSubmit} disabled={false} />
                   ) : (
-                    <div onKeyDown={handleKeyDown}>
+                    <div>
                       {currentItem.answerType === "choice4" ? (
                         <Choice4Grid
                           choices={shuffledChoices}
@@ -2392,40 +2327,6 @@ export default function FractionsPractice({
                           submitted={orderSubmitted}
                           correctOrder={currentItem.order}
                         />
-                      ) : currentItem.answerType === "fractionInput" ? (
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 16, gap: 12 }}>
-                          <FractionInputFields
-                            numVal={userNum} denVal={userDen}
-                            onNumChange={setUserNum} onDenChange={setUserDen}
-                            onSubmit={handleSubmit} disabled={!!feedback}
-                          />
-                          {!feedback && (
-                            <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
-                          )}
-                        </div>
-                      ) : currentItem.answerType === "singleNumber" ? (
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 16, gap: 12 }}>
-                          <input
-                            ref={inputRef}
-                            type="number"
-                            inputMode="numeric"
-                            value={userAnswer}
-                            placeholder="?"
-                            disabled={!!feedback}
-                            onChange={e => setUserAnswer(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            style={{
-                              width: 120, fontSize: 52, fontFamily: "'Shrikhand', cursive",
-                              fontWeight: 400, textAlign: "center",
-                              border: "none", borderBottom: `4px solid ${COLORS.black}`,
-                              backgroundColor: "transparent", color: COLORS.black, outline: "none",
-                              padding: "4px 0", MozAppearance: "textfield", WebkitAppearance: "none",
-                            }}
-                          />
-                          {!feedback && (
-                            <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
-                          )}
-                        </div>
                       ) : currentItem.answerType === "buildBar" ? (
                         // Non-concrete mode buildBar
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 16, gap: 10 }}>
@@ -2468,6 +2369,29 @@ export default function FractionsPractice({
                     }}>
                       {["NICE!", "GOT IT!", "YES!", "CORRECT!", "BOOM!"][sessionStats.total % 5]}
                     </div>
+                  )}
+
+                  {/* Typed answers (E3, A1–A4 fractionInput; E2 singleNumber) — the in-app
+                      number pad, no <input>, no iOS keyboard; its Check is the only Check.
+                      MUST stay the card's LAST child: the pad is position: sticky to the
+                      viewport bottom inside the card. */}
+                  {currentItem.answerType === "fractionInput" && (
+                    <FractionAnswer
+                      key={`${currentItem.itemKey}:${retryResetKey}`}
+                      numVal={userNum} denVal={userDen}
+                      onNumChange={setUserNum} onDenChange={setUserDen}
+                      onSubmit={handleSubmit} live={!feedback}
+                      sticky headerRef={headerRef} getClampEl={getClampEl}
+                      state={feedback === "correct" ? "correct" : "input"}
+                    />
+                  )}
+                  {currentItem.answerType === "singleNumber" && (
+                    <NumberAnswer
+                      value={userAnswer} onChange={setUserAnswer} onSubmit={handleSubmit}
+                      live={!feedback} sticky headerRef={headerRef} getClampEl={getClampEl}
+                      state={feedback === "correct" ? "correct" : "input"}
+                      displayStyle={{ width: 120, fontSize: 52 }}
+                    />
                   )}
                 </div>
 
@@ -2539,7 +2463,7 @@ export default function FractionsPractice({
             focusDelayMs={1000}
             pictureMax={PICTURE_MAX_BY_TYPE[currentItem.answerType] || undefined}
             fit="width"
-            autoFocus={TYPED_ANSWER_TYPES.has(currentItem.answerType)}
+            autoFocus={false} // no <input> in the reveal any more: the pad is the answer surface
             header={HEADER_TAILS[hashString(currentItem.itemKey) % HEADER_TAILS.length]}
             problem={buildProblem(currentItem)}
             picture={pictureFor(currentItem, { finalToken: tokenState, animate: mode === "abstract" })}
@@ -2599,51 +2523,39 @@ export default function FractionsPractice({
 
               if (answerType === "fractionInput") {
                 return (
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, width: "100%" }}>
-                    <FractionInputFields
+                  <div style={{ width: "100%" }}>
+                    <FractionAnswer
+                      key={`${currentItem.itemKey}:reask`}
                       numVal={retry.value?.n ?? ""} denVal={retry.value?.d ?? ""}
                       onNumChange={(v) => setRetry(r => ({ ...r, value: { ...r.value, n: v } }))}
                       onDenChange={(v) => setRetry(r => ({ ...r, value: { ...r.value, d: v } }))}
                       onSubmit={handleRetrySubmit}
-                      disabled={retry.phase !== "ask" || revealStage < 2}
-                      fieldWidth={90} fieldFontSize={28} dense
-                      bg={retry.phase === "missed" ? COLORS.yellow : retry.phase === "done" ? COLORS.green : "transparent"}
+                      live={retry.phase === "ask" && revealStage >= 2}
+                      state={retry.phase === "missed" ? "missed" : retry.phase === "done" ? "correct" : "input"}
+                      fieldWidth={90} fieldFontSize={28} dense compact top={0}
                     />
-                    {retry.phase === "ask" && revealStage >= 2 && (
-                      <BrutalButton onClick={handleRetrySubmit} bg={COLORS.yellow} style={{ minHeight: 48, fontSize: 18, flex: 1 }}>Check</BrutalButton>
-                    )}
                   </div>
                 );
               }
 
               if (answerType === "singleNumber") {
-                // Input and Check share one row (R2: the E2 derivation line
-                // wraps to two lines, so a stacked Check landed under the
-                // iOS number pad at 375×667).
+                // Compact pad under the display (R2: the E2 derivation line wraps
+                // to two lines, so the pad's Check replaces the old side-by-side one).
                 return (
-                  <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, width: "100%" }}>
-                    <input
-                      type="number" inputMode="numeric"
+                  <div style={{ width: "100%" }}>
+                    <NumberAnswer
                       value={retry.value ?? ""}
-                      placeholder="?"
-                      disabled={retry.phase !== "ask" || revealStage < 2}
-                      onChange={(e) => setRetry(r => ({ ...r, value: e.target.value }))}
-                      onKeyDown={handleRetryKeyDown}
-                      style={{
-                        width: "clamp(110px, 36vw, 160px)", height: "64px", boxSizing: "border-box",
-                        fontSize: "clamp(32px, 9vw, 44px)", fontFamily: "'Shrikhand', cursive",
-                        fontWeight: 400, textAlign: "center", border: "none",
-                        borderBottom: `4px solid ${COLORS.black}`,
-                        backgroundColor: retry.phase === "missed" ? COLORS.yellow : retry.phase === "done" ? COLORS.green : COLORS.cream, // cream, not pink: no red in the reveal (wrong-answer-reveal-spec R4)
-                        color: COLORS.black, outline: "none", padding: "2px 0",
-                        WebkitAppearance: "none", MozAppearance: "textfield",
-                        animation: retry.phase === "done" ? "correctPulse 0.4s ease" : "none",
-                        transition: "background-color 0.3s ease",
+                      onChange={(v) => setRetry(r => ({ ...r, value: v }))}
+                      onSubmit={handleRetrySubmit}
+                      live={retry.phase === "ask" && revealStage >= 2}
+                      state={retry.phase === "missed" ? "missed" : retry.phase === "done" ? "correct" : "input"}
+                      compact top={0}
+                      displayStyle={{
+                        width: "clamp(110px, 36vw, 160px)", minHeight: 56,
+                        fontSize: "clamp(32px, 9vw, 44px)", padding: "2px 0",
+                        backgroundColor: COLORS.cream, // cream, not pink: no red in the reveal (wrong-answer-reveal-spec R4)
                       }}
                     />
-                    {retry.phase === "ask" && revealStage >= 2 && (
-                      <BrutalButton onClick={handleRetrySubmit} bg={COLORS.yellow} style={{ minHeight: 48, fontSize: 18, flex: 1 }}>Check</BrutalButton>
-                    )}
                   </div>
                 );
               }

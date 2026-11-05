@@ -58,6 +58,7 @@ import {
 import {
   ColumnAnswerInput, emptyMarks, marksPresent, applyTopTap, mirrorChartTrade, subMarksView,
 } from "./shared/ColumnMethod.jsx";
+import { NumberAnswer } from "./shared/NumberPad.jsx";
 
 // Register the Add & Subtract module
 registerModule(addModule);
@@ -82,9 +83,6 @@ const HEADER_TAILS = [
 // At 320×568 the column re-ask (grid + pad) does not fit under the longer
 // headers; the tight layout uses this one-liner and drops the prompt text.
 const TIGHT_HEADER = "Not yet — use the picture.";
-
-// Only `singleNumber` (facts, mental, words) opens a keyboard; `column` is the in-app pad.
-const TYPED_ANSWER_TYPES = new Set(["singleNumber"]);
 
 function revealPictureMax(item, tight) {
   if (item.answerType === "column") return tight ? "min(84px, 15dvh)" : "min(110px, 18dvh)";
@@ -543,7 +541,6 @@ export default function AddPractice({
   const [firstSubmit, setFirstSubmit] = useState(null); // the first-submit value (drives the bug line)
   const [markNotice, setMarkNotice] = useState(null); // "Nothing to regroup here" chip on the grid
   const markNoticeTimerRef = useRef(null);
-  const inputRef = useRef(null);
   const headerRef = useRef(null);   // the sticky header — measured by the grid's scroll-into-view
   const chartWrapRef = useRef(null); // the chart wrapper (null when no chart is shown)
   const questionRef = useRef(null);  // fallback clamp target when there is no chart (Abstract)
@@ -723,8 +720,6 @@ export default function AddPractice({
     }
 
     setTimeout(() => {
-      // Facts in Concrete: chart first — don't pop the keyboard over it.
-      if (effMode !== "concrete") inputRef.current?.focus({ preventScroll: true });
       window.scrollTo(0, 0);
       factShownAtRef.current = Date.now();
     }, 100);
@@ -883,8 +878,6 @@ export default function AddPractice({
     handleAnswer({ type: "column", value: digits });
   }, [currentItem, feedback, handleAnswer]);
 
-  const handleKeyDown = (e) => { if (e.key === "Enter") handleSubmit(); };
-
   // ---- Concrete chart actions (§4.1). The app moves discs ONLY on a tap and
   // never prints the resulting counts. Every trade mirrors into the grid's marks.
   const handleChartTrade = useCallback((idx) => {
@@ -1024,16 +1017,6 @@ export default function AddPractice({
     if (!currentItem || retry.phase !== "ask") return;
     finishRetry(evaluateAnswer(currentItem, { type: "column", value: digits }), digits);
   }, [currentItem, retry, evaluateAnswer, finishRetry]);
-
-  const handleRetryKeyDown = (e) => {
-    if (e.key !== "Enter") return;
-    if (retry.phase === "ask") {
-      handleRetrySubmit();
-    } else if (retry.phase === "missed") {
-      if (advanceTimeoutRef.current) { clearTimeout(advanceTimeoutRef.current); advanceTimeoutRef.current = null; }
-      pickNewItem();
-    }
-  };
 
   const getGroupProgress = useCallback((groupId) => {
     const groupItems = ADD_POOL.filter((i) => i.group === groupId);
@@ -1433,7 +1416,7 @@ export default function AddPractice({
                   {/* Mastery sits quietly in the card's top-right corner. */}
                   {/* Mastery dots: centred like every module (Adam, 2026-11-04 — the
                       corner spot collided with the focus chip). Card rhythm: 16px
-                      between major blocks (dots · pill/chip · chart · grid), the
+                      between major blocks (dots · question · chart · grid/pad), the
                       most that keeps dots-to-keypad on one 393×759 screen. */}
                   {(() => {
                     const dots = Math.min(getMasteryLevel(currentItem.itemKey), DEFAULT_MASTERY_THRESHOLD);
@@ -1445,24 +1428,7 @@ export default function AddPractice({
                     );
                   })()}
 
-                  {/* No focus chip (Adam, 2026-11-04): a focused skill ends on leaving practice. */}
-                  {!isColumn && (
-                  <div style={{ marginBottom: 12 }}>
-                    {/* Column items drop the skill pill: the header pill already names the group. */}
-                    {!isColumn && <span style={{
-                      fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700,
-                      backgroundColor: addModule.groups.find((g) => g.id === currentItem.group)?.color || COLORS.purple,
-                      color: COLORS.black, padding: "3px 10px", borderRadius: 20, border: BRUTAL_BORDER_SM,
-                    }}>
-                      {/* W1/W2 labels ("Part and whole", "More or fewer") name the model the child
-                          is about to pick in Concrete, so the card says "Word problem" instead. */}
-                      {currentItem.skill === "W1" || currentItem.skill === "W2"
-                        ? "Word problem"
-                        : (addModule.skillLabels[currentItem.skill] || currentItem.skill)}
-                    </span>}
-                  </div>
-                  )}
-
+                  {/* No skill pill on any card (Adam, 2026-11-05): dots, then the question. */}
                   <div ref={questionRef}><QuestionDisplay item={currentItem} /></div>
 
                   {nudge === "notSure" && (
@@ -1546,30 +1512,21 @@ export default function AddPractice({
                     </div>
                   )}
 
-                  {/* singleNumber (facts) — typed answer + mandatory Check */}
+                  {/* singleNumber (mental, words, facts) — typed on the in-app pad (no
+                      <input>, no iOS keyboard); the pad's Check is the only Check. Like the
+                      column card, it MUST stay the card's LAST child (sticky pad). */}
                   {currentItem.answerType === "singleNumber" && (
-                    <div onKeyDown={handleKeyDown}>
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 20, gap: 12 }}>
-                        <input
-                          ref={inputRef}
-                          type="number" inputMode="numeric"
-                          value={userAnswer} placeholder="?"
-                          disabled={!!feedback}
-                          onChange={(e) => setUserAnswer(e.target.value.replace(/\D/g, ""))}
-                          onKeyDown={handleKeyDown}
-                          style={{
-                            width: 160, fontSize: 48, fontFamily: "'Shrikhand', cursive",
-                            fontWeight: 400, textAlign: "center",
-                            border: "none", borderBottom: `4px solid ${COLORS.black}`,
-                            backgroundColor: "transparent", color: COLORS.black, outline: "none",
-                            padding: "4px 0", MozAppearance: "textfield", WebkitAppearance: "none",
-                          }}
-                        />
-                        {/* Held (hidden) rather than unmounted once answered, so the card keeps its height. */}
-                        <BrutalButton onClick={feedback ? undefined : handleSubmit} bg={COLORS.yellow}
-                          style={feedback ? { visibility: "hidden" } : undefined}>Check!</BrutalButton>
-                      </div>
-                    </div>
+                    <NumberAnswer
+                      value={userAnswer}
+                      onChange={setUserAnswer}
+                      onSubmit={handleSubmit}
+                      live={!feedback}
+                      state={feedback === "correct" ? "correct" : "input"}
+                      sticky
+                      headerRef={headerRef}
+                      getClampEl={getClampEl}
+                      top={20}
+                    />
                   )}
 
                   {/* column — the grid + the in-app pad. MUST stay the LAST child of
@@ -1653,7 +1610,7 @@ export default function AddPractice({
             focusDelayMs={1000}
             pictureMax={revealPictureMax(currentItem, tight)}
             fit="width"
-            autoFocus={TYPED_ANSWER_TYPES.has(currentItem.answerType)}
+            autoFocus={false} // no <input> in the reveal any more: the pad is the answer surface
             header={header}
             problem={buildProblem(currentItem)}
             picture={revealPicture(currentItem, tokenState, mode === "abstract", firstSubmit)}
@@ -1692,29 +1649,20 @@ export default function AddPractice({
 
               if (answerType === "singleNumber") {
                 return (
-                  <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, width: "100%" }}>
-                    <input
-                      type="number" inputMode="numeric"
+                  <div style={{ width: "100%" }}>
+                    <NumberAnswer
                       value={retry.phase === "missed" ? String(currentItem.correctAnswer) : (retry.value ?? "")}
-                      placeholder="?"
-                      disabled={retry.phase !== "ask" || revealStage < 2}
-                      onChange={(e) => setRetry((r) => ({ ...r, value: e.target.value.replace(/\D/g, "") }))}
-                      onKeyDown={handleRetryKeyDown}
-                      style={{
-                        width: "clamp(110px, 36vw, 160px)", height: "64px", boxSizing: "border-box",
-                        fontSize: "clamp(32px, 9vw, 44px)", fontFamily: "'Shrikhand', cursive",
-                        fontWeight: 400, textAlign: "center", border: "none",
-                        borderBottom: `4px solid ${COLORS.black}`,
-                        backgroundColor: retry.phase === "missed" ? COLORS.yellow : retry.phase === "done" ? COLORS.green : COLORS.cream,
-                        color: COLORS.black, outline: "none", padding: "2px 0",
-                        WebkitAppearance: "none", MozAppearance: "textfield",
-                        animation: retry.phase === "done" ? "correctPulse 0.4s ease" : "none",
-                        transition: "background-color 0.3s ease",
+                      onChange={(v) => setRetry((r) => ({ ...r, value: v }))}
+                      onSubmit={handleRetrySubmit}
+                      live={retry.phase === "ask" && revealStage >= 2}
+                      state={retry.phase === "missed" ? "missed" : retry.phase === "done" ? "correct" : "input"}
+                      compact
+                      top={0}
+                      displayStyle={{
+                        width: "clamp(110px, 36vw, 160px)", minHeight: 56,
+                        fontSize: "clamp(32px, 9vw, 44px)", backgroundColor: COLORS.cream, padding: "2px 0",
                       }}
                     />
-                    {retry.phase === "ask" && revealStage >= 2 && (
-                      <BrutalButton onClick={handleRetrySubmit} bg={COLORS.yellow} style={{ minHeight: 48, fontSize: 18, flex: 1 }}>Check</BrutalButton>
-                    )}
                   </div>
                 );
               }

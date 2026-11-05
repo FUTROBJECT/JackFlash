@@ -48,6 +48,7 @@ import LogoLockup from "./LogoLockup.jsx";
 import WrongAnswerReveal from "./shared/WrongAnswerReveal.jsx";
 import DerivationLine from "./shared/DerivationLine.jsx";
 import DerivationToken from "./shared/DerivationToken.jsx";
+import { NumberAnswer } from "./shared/NumberPad.jsx";
 import { PlaceValueChart, BuildNumberInput, PlaceValueStrips } from "./shared/barComponents.jsx";
 
 // Register the Place Value module
@@ -76,9 +77,6 @@ const PICTURE_MAX_BY_TYPE = {
   singleNumber: "min(150px, 24dvh)",
   buildNumber: "min(140px, 22dvh)",
 };
-// Only singleNumber opens a keyboard — choice4/tapTwo/orderThree are tap,
-// buildNumber is steppers + Check (mirrors fractions' TYPED_ANSWER_TYPES).
-const TYPED_ANSWER_TYPES = new Set(["singleNumber"]);
 
 // ---------------------------------------------------------------------------
 // Small reusable components (local copies matching fractions-practice.jsx style)
@@ -1271,7 +1269,9 @@ export default function PlaceValuePractice({
   const [nudge, setNudge] = useState(null);
   const [missRun, setMissRun] = useState(0);
   const [revealStage, setRevealStage] = useState(0);
-  const inputRef = useRef(null);
+  const headerRef = useRef(null);   // the sticky header — measured by the pad's scroll-into-view
+  const questionRef = useRef(null); // the question — the pad's scroll never pushes it under the header
+  const getClampEl = useCallback(() => questionRef.current, []);
   const factShownAtRef = useRef(0);
   const comebackQueueRef = useRef([]);
   const advanceTimeoutRef = useRef(null);
@@ -1427,7 +1427,7 @@ export default function PlaceValuePractice({
     }
 
     setTimeout(() => {
-      inputRef.current?.focus({ preventScroll: true });
+      // No input to focus: typed answers use the in-app pad (no iOS keyboard).
       window.scrollTo(0, 0);
       factShownAtRef.current = Date.now();
     }, 100);
@@ -1617,8 +1617,6 @@ export default function PlaceValuePractice({
     handleAnswer({ type: "orderThree", value: tapOrder });
   }, [handleAnswer]);
 
-  const handleKeyDown = (e) => { if (e.key === "Enter") handleSubmit(); };
-
   useEffect(() => {
     if (retry.phase !== "ask") return undefined;
     setRevealStage(0);
@@ -1693,16 +1691,6 @@ export default function PlaceValuePractice({
     }
   }, [currentItem, retry, evaluateAnswer, finishRetry]);
 
-  const handleRetryKeyDown = (e) => {
-    if (e.key !== "Enter") return;
-    if (retry.phase === "ask") {
-      handleRetrySubmit();
-    } else if (retry.phase === "missed") {
-      if (advanceTimeoutRef.current) { clearTimeout(advanceTimeoutRef.current); advanceTimeoutRef.current = null; }
-      pickNewItem();
-    }
-  };
-
   const getGroupProgress = useCallback((groupId) => {
     const groupItems = PLACE_VALUE_POOL.filter((i) => i.group === groupId);
     const mastered = groupItems.filter((i) => getMasteryLevel(i.itemKey) >= DEFAULT_MASTERY_THRESHOLD).length;
@@ -1736,7 +1724,7 @@ export default function PlaceValuePractice({
       `}</style>
 
       {/* ========= HEADER ========= */}
-      <div style={{
+      <div ref={headerRef} style={{
         background: COLORS.yellow,
         padding: "calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 14px) clamp(12px,4vw,20px) 10px",
         borderBottom: `4px solid ${COLORS.black}`,
@@ -2077,7 +2065,7 @@ export default function PlaceValuePractice({
                     <MasteryDots level={Math.min(getMasteryLevel(currentItem.itemKey), DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
                   </div>
 
-                  <QuestionDisplay item={currentItem} />
+                  <div ref={questionRef}><QuestionDisplay item={currentItem} /></div>
 
                   {/* Picture straight after the question (B1's chart IS the question), then
                       the answer; B2 has no scaffold — its chart is the input below. The "not
@@ -2149,7 +2137,7 @@ export default function PlaceValuePractice({
                       />
                     </div>
                   ) : (
-                    <div onKeyDown={handleKeyDown}>
+                    <div>
                       {currentItem.answerType === "choice4" ? (
                         <PVChoiceGrid
                           choices={shuffledChoices}
@@ -2176,27 +2164,6 @@ export default function PlaceValuePractice({
                           submitted={orderSubmitted}
                           correctOrder={currentItem.order}
                         />
-                      ) : currentItem.answerType === "singleNumber" ? (
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 16, gap: 12 }}>
-                          <input
-                            ref={inputRef}
-                            type="number" inputMode="numeric"
-                            value={userAnswer} placeholder="?"
-                            disabled={!!feedback}
-                            onChange={(e) => setUserAnswer(e.target.value.replace(/\D/g, ""))}
-                            onKeyDown={handleKeyDown}
-                            style={{
-                              width: 160, fontSize: 48, fontFamily: "'Shrikhand', cursive",
-                              fontWeight: 400, textAlign: "center",
-                              border: "none", borderBottom: `4px solid ${COLORS.black}`,
-                              backgroundColor: "transparent", color: COLORS.black, outline: "none",
-                              padding: "4px 0", MozAppearance: "textfield", WebkitAppearance: "none",
-                            }}
-                          />
-                          {!feedback && (
-                            <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
-                          )}
-                        </div>
                       ) : null}
                     </div>
                   )}
@@ -2210,6 +2177,17 @@ export default function PlaceValuePractice({
                     }}>
                       {["NICE!", "GOT IT!", "YES!", "CORRECT!", "BOOM!"][sessionStats.total % 5]}
                     </div>
+                  )}
+
+                  {/* singleNumber (B1, B4, X1, X2, C3) — the in-app number pad, no <input>, no
+                      iOS keyboard; its Check is the only Check. MUST stay the card's LAST
+                      child: the pad is position: sticky to the viewport bottom inside it. */}
+                  {currentItem.answerType === "singleNumber" && (
+                    <NumberAnswer
+                      value={userAnswer} onChange={setUserAnswer} onSubmit={handleSubmit}
+                      live={!feedback} sticky headerRef={headerRef} getClampEl={getClampEl}
+                      state={feedback === "correct" ? "correct" : "input"}
+                    />
                   )}
                 </div>
               </div>
@@ -2260,7 +2238,7 @@ export default function PlaceValuePractice({
             focusDelayMs={1000}
             pictureMax={PICTURE_MAX_BY_TYPE[currentItem.answerType] || undefined}
             fit="width"
-            autoFocus={TYPED_ANSWER_TYPES.has(currentItem.answerType)}
+            autoFocus={false} // no <input> in the reveal any more: the pad is the answer surface
             header={HEADER_TAILS[hashString(currentItem.itemKey) % HEADER_TAILS.length]}
             problem={buildProblem(currentItem)}
             picture={pictureFor(currentItem, tokenState, mode === "abstract")}
@@ -2319,29 +2297,20 @@ export default function PlaceValuePractice({
 
               if (answerType === "singleNumber") {
                 return (
-                  <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, width: "100%" }}>
-                    <input
-                      type="number" inputMode="numeric"
+                  <div style={{ width: "100%" }}>
+                    <NumberAnswer
                       value={retry.value ?? ""}
-                      placeholder="?"
-                      disabled={retry.phase !== "ask" || revealStage < 2}
-                      onChange={(e) => setRetry((r) => ({ ...r, value: e.target.value.replace(/\D/g, "") }))}
-                      onKeyDown={handleRetryKeyDown}
-                      style={{
-                        width: "clamp(110px, 36vw, 160px)", height: "64px", boxSizing: "border-box",
-                        fontSize: "clamp(32px, 9vw, 44px)", fontFamily: "'Shrikhand', cursive",
-                        fontWeight: 400, textAlign: "center", border: "none",
-                        borderBottom: `4px solid ${COLORS.black}`,
-                        backgroundColor: retry.phase === "missed" ? COLORS.yellow : retry.phase === "done" ? COLORS.green : COLORS.cream, // cream, not pink: no red in the reveal (wrong-answer-reveal-spec R4)
-                        color: COLORS.black, outline: "none", padding: "2px 0",
-                        WebkitAppearance: "none", MozAppearance: "textfield",
-                        animation: retry.phase === "done" ? "correctPulse 0.4s ease" : "none",
-                        transition: "background-color 0.3s ease",
+                      onChange={(v) => setRetry((r) => ({ ...r, value: v }))}
+                      onSubmit={handleRetrySubmit}
+                      live={retry.phase === "ask" && revealStage >= 2}
+                      state={retry.phase === "missed" ? "missed" : retry.phase === "done" ? "correct" : "input"}
+                      compact top={0}
+                      displayStyle={{
+                        width: "clamp(110px, 36vw, 160px)", minHeight: 56,
+                        fontSize: "clamp(32px, 9vw, 44px)", padding: "2px 0",
+                        backgroundColor: COLORS.cream, // cream, not pink: no red in the reveal (wrong-answer-reveal-spec R4)
                       }}
                     />
-                    {retry.phase === "ask" && revealStage >= 2 && (
-                      <BrutalButton onClick={handleRetrySubmit} bg={COLORS.yellow} style={{ minHeight: 48, fontSize: 18, flex: 1 }}>Check</BrutalButton>
-                    )}
                   </div>
                 );
               }

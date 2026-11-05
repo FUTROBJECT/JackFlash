@@ -10,6 +10,7 @@ import LogoLockup from "./LogoLockup.jsx";
 import { computeSelection, tickErrorWindow, markErrorPriority, clearErrorPriority, dedupeFacts } from "./factSelectionPolicy.js";
 import WrongAnswerReveal from "./shared/WrongAnswerReveal.jsx";
 import DerivationToken from "./shared/DerivationToken.jsx";
+import { NumberAnswer, NumberDisplay, NumberPadBar } from "./shared/NumberPad.jsx";
 
 
 // Register the multiply module on first load
@@ -262,9 +263,12 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   // 0 = picture only, 1 = derivation line shown (numeral), 2 = blank chip +
   // live re-ask input. Driven by timers keyed off retry.phase === "ask".
   const [revealStage, setRevealStage] = useState(0);
-  const inputRef = useRef(null);
-  // Fluency timing: when the current fact became answerable (set on focus, not
-  // on render — render/focus latency isn't billed to the child).
+  const headerRef = useRef(null);       // the sticky header — measured by the pad's scroll-into-view
+  const problemRef = useRef(null);      // the equation block — the pad's scroll never pushes it under the header
+  const answerBoxRef = useRef(null);    // the answer box's wrapper — kept just above the sticky pad
+  const getClampEl = useCallback(() => problemRef.current, []);
+  // Fluency timing: when the current fact became answerable (set after the card
+  // settles, not on render — render/focus latency isn't billed to the child).
   const factShownAtRef = useRef(0);
   // Error-priority window (docs/fact-selection-policy.md §8): in-memory only,
   // { [factKey]: drawsRemaining }. Not persisted, discarded on unmount.
@@ -434,11 +438,9 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     }
 
     setTimeout(() => {
-      // preventScroll + scroll home: iOS keyboard-avoidance scrolls the page on
-      // focus even when the input is already visible, which shoves the sticky
-      // header's safe-area zone up behind the Dynamic Island on every new fact.
+      // Scroll home on every new fact. (No input to focus: the answer is typed on
+      // the in-app pad, so iOS never raises its keyboard over the card.)
       if (viewRef.current !== "practice") return;
-      inputRef.current?.focus({ preventScroll: true });
       window.scrollTo(0, 0);
       factShownAtRef.current = Date.now();
     }, 100);
@@ -643,12 +645,6 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     }
   }, [currentFact, userAnswer, profileId, moduleId, pickNewFact, streak, sessionStats, sessionStartTime, mod, mode, lockedMode, userHidScaffold, showScaffold, pictureRequested]);
 
-  // The reveal owns Enter while open (see handleRetryKeyDown below) — this
-  // card's own input is hidden behind it whenever feedback === "incorrect".
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleSubmit();
-  };
-
   // Timed reveal choreography (spec "Timing"): picture builds 0–400ms →
   // derivation line at 400ms (stage 1, numeral) → re-ask opens ~900ms
   // (stage 2, blank chip + live input). Keyed on the retry phase entering
@@ -709,20 +705,6 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
     }
   }, [currentFact, retry, pickNewFact, profileId, moduleId]);
 
-  // Enter: submits the re-answer in "ask", advances immediately in "missed".
-  const handleRetryKeyDown = (e) => {
-    if (e.key !== "Enter") return;
-    if (retry.phase === "ask") {
-      handleRetrySubmit();
-    } else if (retry.phase === "missed") {
-      if (advanceTimeoutRef.current) {
-        clearTimeout(advanceTimeoutRef.current);
-        advanceTimeoutRef.current = null;
-      }
-      pickNewFact();
-    }
-  };
-
   // Calculate scaffold opacity based on mastery
   const scaffoldOpacity = mode === "concrete"
     ? 1
@@ -773,7 +755,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       `}</style>
 
       {/* Header */}
-      <div style={{
+      <div ref={headerRef} style={{
         background: COLORS.yellow,
         padding: "calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 14px) clamp(12px, 4vw, 20px) 10px",
         borderBottom: `4px solid ${COLORS.black}`,
@@ -1259,7 +1241,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                 const padA = aStr.padStart(maxLen, '\u2007'); // figure space (same width as a digit)
                 const padB = bStr.padStart(maxLen, '\u2007');
                 return (
-                  <div style={{
+                  <div ref={problemRef} style={{
                     display: "flex", flexDirection: "column", alignItems: "center",
                   }}>
                     {/* Numbers container — right-aligned internally, centered as a block */}
@@ -1300,25 +1282,18 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                       height: "5px", backgroundColor: COLORS.black,
                       borderRadius: "2px", marginTop: "10px",
                     }} />
-                    {/* Answer input */}
-                    <input ref={inputRef} type="number" inputMode="numeric" value={userAnswer}
-                      onChange={(e) => setUserAnswer(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      disabled={feedback === "correct" || feedback === "incorrect"}
-                      placeholder="?"
-                      style={{
-                        width: "clamp(140px, 55vw, 300px)",
-                        fontSize: numFont, fontFamily: "'Shrikhand', cursive",
-                        fontWeight: 400, textAlign: "center",
-                        border: "none", borderRadius: "0",
-                        backgroundColor: feedback === "correct" ? COLORS.green : feedback === "incorrect" ? COLORS.cream : "transparent", // cream, not pink (R4)
-                        color: COLORS.black, outline: "none",
-                        padding: "4px 0", marginTop: "4px",
-                        transition: "background-color 0.3s ease",
-                        boxSizing: "border-box",
-                        caretColor: "transparent",
-                      }}
-                    />
+                    {/* Answer box — typed on the pad at the bottom of the card (no <input>) */}
+                    <div ref={answerBoxRef} style={{ width: "clamp(140px, 55vw, 300px)", marginTop: "4px" }}>
+                      <NumberDisplay
+                        value={userAnswer}
+                        live={feedback !== "correct" && feedback !== "incorrect"}
+                        state={feedback === "correct" ? "correct" : "input"}
+                        displayStyle={{
+                          width: "100%", fontSize: numFont, borderBottom: "none", padding: "4px 0", lineHeight: 1.15,
+                          backgroundColor: feedback === "incorrect" ? COLORS.cream : "transparent", // cream, not pink (R4)
+                        }}
+                      />
+                    </div>
                   </div>
                 );
               })()}
@@ -1451,12 +1426,20 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                   {["NICE!", "GOT IT!", "YES!", "CORRECT!", "BOOM!"][sessionStats.total % 5]}
                 </div>
               )}
-            </div>
 
-            <div style={{ display: "flex", gap: "8px", marginTop: "16px", justifyContent: "center", flexWrap: "wrap" }}>
-              {feedback !== "correct" && feedback !== "incorrect" && (
-                <BrutalButton onClick={handleSubmit} bg={COLORS.yellow}>Check!</BrutalButton>
-              )}
+              {/* The in-app number pad replaces the system keyboard AND the old Check
+                  button. MUST stay the card's LAST child: it is position: sticky to
+                  the viewport bottom inside the card. */}
+              <NumberPadBar
+                value={userAnswer}
+                onChange={setUserAnswer}
+                onSubmit={handleSubmit}
+                live={feedback !== "correct" && feedback !== "incorrect"}
+                sticky
+                headerRef={headerRef}
+                getClampEl={getClampEl}
+                displayRef={answerBoxRef}
+              />
             </div>
 
             {/* Mode description removed — decluttered practice view */}
@@ -1494,6 +1477,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
         <WrongAnswerReveal
           open={feedback === "incorrect"}
           focusDelayMs={1000}
+          autoFocus={false} // no <input> in the reveal: the pad is the answer surface
           // Tall-array follow-up to phase 1b (docs/wrong-answer-reveal-spec.md,
           // phase 1c "Fold the line"): the fold case pays back the derivation
           // line's ~50px to the picture band, so the array (and its final
@@ -1550,45 +1534,23 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
           }
           prompt={retry.phase === "ask" && revealStage >= 2 ? "Now you — use the picture." : null}
           input={
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", width: "100%" }}>
-              <input
-                type="number"
-                inputMode="numeric"
+            <div style={{ width: "100%" }}>
+              {/* R2 band budget: the compact pad (3 rows of 44) replaces the iOS keyboard,
+                  and its Check replaces the old Check button. */}
+              <NumberAnswer
                 value={retry.value}
-                placeholder="?"
-                disabled={retry.phase !== "ask" || revealStage < 2}
-                onChange={(e) => setRetry((r) => ({ ...r, value: e.target.value }))}
-                onKeyDown={handleRetryKeyDown}
-                style={{
-                  width: "clamp(120px, 42vw, 220px)",
-                  // R2 band budget: input capped at 64px tall (was ~78px) so
-                  // it and the derivation line above it fit above a 300px
-                  // iOS keyboard at 375×667.
-                  height: "64px",
-                  boxSizing: "border-box",
-                  fontSize: "clamp(32px, 9vw, 44px)",
-                  fontFamily: "'Shrikhand', cursive",
-                  fontWeight: 400,
-                  textAlign: "center",
-                  border: "none",
-                  borderBottom: `4px solid ${COLORS.black}`,
-                  backgroundColor: retry.phase === "missed" ? COLORS.yellow : retry.phase === "done" ? COLORS.green : COLORS.cream, // cream, not pink: no red in the reveal (wrong-answer-reveal-spec R4)
-                  color: COLORS.black,
-                  outline: "none",
+                onChange={(v) => setRetry((r) => ({ ...r, value: v }))}
+                onSubmit={handleRetrySubmit}
+                live={retry.phase === "ask" && revealStage >= 2}
+                state={retry.phase === "missed" ? "missed" : retry.phase === "done" ? "correct" : "input"}
+                compact
+                top={0}
+                displayStyle={{
+                  width: "clamp(120px, 42vw, 220px)", minHeight: 56,
+                  fontSize: "clamp(32px, 9vw, 44px)", backgroundColor: COLORS.cream, // cream, not pink: no red in the reveal (R4)
                   padding: "2px 0",
-                  WebkitAppearance: "none",
-                  MozAppearance: "textfield",
-                  animation: retry.phase === "done" ? "correctPulse 0.4s ease" : "none",
-                  transition: "background-color 0.3s ease",
                 }}
               />
-              {retry.phase === "ask" && revealStage >= 2 && (
-                // R4 — no exclamation marks inside the reveal (the card's own
-                // "Check!" button outside the reveal is unaffected). Full
-                // card width, bigger tap target (spec "phase 1b" typography
-                // table: minHeight 48 / fontSize 18 / width 100%).
-                <BrutalButton onClick={handleRetrySubmit} bg={COLORS.yellow} style={{ minHeight: 48, fontSize: 18, width: "100%" }}>Check</BrutalButton>
-              )}
             </div>
           }
         />
