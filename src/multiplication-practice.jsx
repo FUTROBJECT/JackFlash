@@ -266,7 +266,11 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
   const headerRef = useRef(null);       // the sticky header — measured by the pad's scroll-into-view
   const problemRef = useRef(null);      // the equation block — the pad's scroll never pushes it under the header
   const answerBoxRef = useRef(null);    // the answer box's wrapper — kept just above the sticky pad
-  const getClampEl = useCallback(() => problemRef.current, []);
+  const pictureGroupRef = useRef(null); // the picture group above the equation (card order, as Add)
+  // As Add's column card: on load the picture's top never scrolls under the
+  // header (Concrete's builder is the task); once digits are typed the pad
+  // scrolls the answer box into view.
+  const getClampEl = useCallback(() => pictureGroupRef.current || problemRef.current, []);
   // Fluency timing: when the current fact became answerable (set after the card
   // settles, not on render — render/focus latency isn't billed to the child).
   const factShownAtRef = useRef(0);
@@ -712,6 +716,23 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
       ? Math.max(0.15, 1 - getMasteryLevel(currentFact.factKey) * 0.3)
       : 0;
 
+  // Card order (docs/practice-header-ui.md, revision 2): dots → picture group (nudge,
+  // picture, caption, fact-family chip, Show me) → equation + answer → pad,
+  // as Add's column card. These say which picture-group blocks render so the
+  // gaps between blocks come out at exactly 16px (12px inside the group).
+  const pictureShown = mode === "concrete"
+    ? true
+    : !(mode === "abstract" && !showScaffold) && (showScaffold || (!userHidScaffold && scaffoldOpacity > 0));
+  const captionShown = mode === "pictorial" && !userHidScaffold && scaffoldOpacity > 0;
+  // The chip and Show me stay mounted (hidden) during feedback so the equation
+  // doesn't jump up the moment an answer is checked.
+  const familyChipShown = mode === "abstract" && showScaffold;
+  const showMeShown = (
+    (mode === "abstract" && !showScaffold) ||
+    (mode === "pictorial" && !showScaffold && (userHidScaffold || scaffoldOpacity < 1))
+  );
+  const pictureGroupShown = nudge === "notSure" || pictureShown || familyChipShown || showMeShown;
+
   // Check if the current selection has no accessible tables
   const isCurrentGroupLocked = mod ? ((focusNumber && !isTableAccessible(focusNumber))
     || currentTables.length === 0) : false;
@@ -1126,9 +1147,122 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
               animation: feedback === "correct" ? "correctPulse 0.4s ease" : feedback === "incorrect" ? "shake 0.4s ease" : "none",
               transition: "box-shadow 0.3s ease",
             }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
                 <MasteryDots level={Math.min(getMasteryLevel(currentFact.factKey), DEFAULT_MASTERY_THRESHOLD)} max={DEFAULT_MASTERY_THRESHOLD} />
               </div>
+
+              {pictureGroupShown && <div ref={pictureGroupRef}>
+              {/* "Not sure" nudge (docs/confidence-pass-spec.md C2) — just above the
+                  picture. Stays until the next submit or item. */}
+              {nudge === "notSure" && (
+                <div style={{
+                  display: "inline-block", verticalAlign: "top",
+                  fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
+                  fontSize: "clamp(14px, 4vw, 16px)", color: COLORS.black,
+                  backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM,
+                  borderRadius: "8px", padding: "6px 12px",
+                }}>
+                  Not sure? Count the picture.
+                </div>
+              )}
+
+              {/* Concrete: interactive builder — the tap gesture IS the operation
+                  (docs/multiply-concrete-spec.md). Pictorial: passive scaffold that
+                  fades with mastery. Abstract: nothing (unchanged). */}
+              {mode === "concrete" && ConcreteMultiply && ConcreteDivide ? (
+                <div style={{ marginTop: nudge === "notSure" ? "12px" : 0, display: "flex", justifyContent: "center" }}>
+                  {currentFact.operation === "divide" ? (
+                    <ConcreteDivide
+                      dividend={currentFact.a}
+                      divisor={currentFact.b}
+                      groupsMade={builderGroups}
+                      onMakeGroup={() => setBuilderGroups((g) => Math.min(g + 1, currentFact.answer))}
+                      onUndoGroup={() => setBuilderGroups((g) => Math.max(0, g - 1))}
+                      revealed={showScaffold}
+                      reducedMotion={reducedMotion}
+                    />
+                  ) : (
+                    <ConcreteMultiply
+                      a={currentFact.a}
+                      b={currentFact.b}
+                      groupsBuilt={builderGroups}
+                      onAddGroup={() => setBuilderGroups((g) => Math.min(g + 1, currentFact.a))}
+                      onRemoveGroup={() => setBuilderGroups((g) => Math.max(0, g - 1))}
+                      revealed={showScaffold}
+                      reducedMotion={reducedMotion}
+                    />
+                  )}
+                </div>
+              ) : pictureShown && (
+                <div style={{ marginTop: nudge === "notSure" ? "12px" : 0, display: "flex", justifyContent: "center" }}>
+                  {/* Bug fix (docs/wrong-answer-reveal-spec.md "CPA modes"): this
+                      used to be gated on `mode !== "abstract"` at the ternary
+                      above, so an Abstract miss showed no picture at all. Adopt
+                      the fractions guard — abstract only renders once revealed
+                      (via a wrong answer or "Show me"), pictorial is unaffected
+                      (scaffoldOpacity is 0 in abstract, so this is a no-op there
+                      unless showScaffold is true). A miss never changes mode. */}
+                  {!(mode === "abstract" && !showScaffold) && (showScaffold || (!userHidScaffold && scaffoldOpacity > 0)) && (
+                    currentFact.operation === "divide" && DivisionScaffold ? (
+                      <DivisionScaffold
+                        rows={currentFact.a}
+                        cols={currentFact.b}
+                        opacity={showScaffold ? 1 : scaffoldOpacity}
+                        animate={true}
+                        countToken={feedback === "correct" ? "correct" : "blank"}
+                      />
+                    ) : (
+                      <MultiplyScaffold
+                        rows={currentFact.a}
+                        cols={currentFact.b}
+                        opacity={showScaffold ? 1 : scaffoldOpacity}
+                        animate={true}
+                      />
+                    )
+                  )}
+                </div>
+              )}
+              {captionShown && (
+                <div style={{ marginTop: "6px", fontSize: "11px", fontFamily: "'Space Mono', monospace", opacity: 0.45, fontWeight: 700 }}>
+                  {currentFact.operation === "divide"
+                    ? `${currentFact.a} split into groups of ${currentFact.b}`
+                    // DotArray's orientation rule (docs/wrong-answer-reveal-spec.md,
+                    // phase 1c): b < a draws a columns of b dots, so the caption
+                    // must read "groups of" to match what's on screen — the
+                    // rows-layout caption ("rows × columns") is unchanged.
+                    : currentFact.b < currentFact.a
+                      ? `${currentFact.a} groups of ${currentFact.b}`
+                      : `${currentFact.a} rows × ${currentFact.b} columns`}
+                </div>
+              )}
+              {/* Fact-family chip: Abstract "Show me" detour only, pre-answer.
+                  Never in the reveal (R3) and never before "Show me" is tapped. */}
+              {familyChipShown && (
+                <div aria-hidden={feedback ? "true" : undefined}
+                  style={{ textAlign: "center", marginTop: pictureShown ? "12px" : 0, visibility: feedback ? "hidden" : "visible" }}>
+                  <FactFamilyChip fact={currentFact} />
+                </div>
+              )}
+              {/* "Show me" (CLAUDE.md: Abstract = symbols + "Show me" fallback) —
+                  pre-answer only, doesn't affect logging. Ported from the
+                  fractions pattern (fractions-practice.jsx). Pictorial
+                  (docs/confidence-pass-spec.md C2): shown whenever the
+                  scaffold isn't already at full opacity — tapped-hidden
+                  (userHidScaffold) OR simply faded below 1 with mastery —
+                  not just the fully-hidden case. Tapping sets showScaffold
+                  (full opacity) rather than only un-hiding, in both modes. */}
+              {showMeShown && (
+                <div aria-hidden={feedback ? "true" : undefined}
+                  style={{ marginTop: (pictureShown || nudge === "notSure") ? "12px" : 0, display: "flex", justifyContent: "center", visibility: feedback ? "hidden" : "visible" }}>
+                  {/* Pulses after two consecutive misses in Abstract (see missRun). */}
+                  <span className={mode === "abstract" && missRun >= 2 ? "showMePulse" : undefined}>
+                    <BrutalButton small onClick={() => { setShowScaffold(true); setPictureRequested(true); }} bg={COLORS.cream} style={{ minHeight: 44 }}>
+                      Show me
+                    </BrutalButton>
+                  </span>
+                </div>
+              )}
+              </div>}
 
               {/* Vertical equation — stacked, ones column aligned, centered as a group */}
               {(() => {
@@ -1146,6 +1280,7 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                 return (
                   <div ref={problemRef} style={{
                     display: "flex", flexDirection: "column", alignItems: "center",
+                    marginTop: pictureGroupShown ? "16px" : 0,
                   }}>
                     {/* Numbers container — right-aligned internally, centered as a block */}
                     <div style={{ position: "relative", display: "inline-flex", flexDirection: "column", alignItems: "flex-end" }}>
@@ -1200,118 +1335,6 @@ export default function MultiplicationPractice({ moduleId = "multiply", profileI
                   </div>
                 );
               })()}
-
-              {/* "Not sure" nudge (docs/confidence-pass-spec.md C2) — under the
-                  problem, above the scaffold. Stays until the next submit or item. */}
-              {nudge === "notSure" && (
-                <div style={{
-                  marginTop: "12px", display: "inline-block",
-                  fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
-                  fontSize: "clamp(14px, 4vw, 16px)", color: COLORS.black,
-                  backgroundColor: COLORS.cream, border: BRUTAL_BORDER_SM,
-                  borderRadius: "8px", padding: "6px 12px",
-                }}>
-                  Not sure? Count the picture.
-                </div>
-              )}
-
-              {/* Concrete: interactive builder — the tap gesture IS the operation
-                  (docs/multiply-concrete-spec.md). Pictorial: passive scaffold that
-                  fades with mastery. Abstract: nothing (unchanged). */}
-              {mode === "concrete" && ConcreteMultiply && ConcreteDivide ? (
-                <div style={{ marginTop: "16px", display: "flex", justifyContent: "center" }}>
-                  {currentFact.operation === "divide" ? (
-                    <ConcreteDivide
-                      dividend={currentFact.a}
-                      divisor={currentFact.b}
-                      groupsMade={builderGroups}
-                      onMakeGroup={() => setBuilderGroups((g) => Math.min(g + 1, currentFact.answer))}
-                      onUndoGroup={() => setBuilderGroups((g) => Math.max(0, g - 1))}
-                      revealed={showScaffold}
-                      reducedMotion={reducedMotion}
-                    />
-                  ) : (
-                    <ConcreteMultiply
-                      a={currentFact.a}
-                      b={currentFact.b}
-                      groupsBuilt={builderGroups}
-                      onAddGroup={() => setBuilderGroups((g) => Math.min(g + 1, currentFact.a))}
-                      onRemoveGroup={() => setBuilderGroups((g) => Math.max(0, g - 1))}
-                      revealed={showScaffold}
-                      reducedMotion={reducedMotion}
-                    />
-                  )}
-                </div>
-              ) : (
-                <div style={{ marginTop: "16px", display: "flex", justifyContent: "center" }}>
-                  {/* Bug fix (docs/wrong-answer-reveal-spec.md "CPA modes"): this
-                      used to be gated on `mode !== "abstract"` at the ternary
-                      above, so an Abstract miss showed no picture at all. Adopt
-                      the fractions guard — abstract only renders once revealed
-                      (via a wrong answer or "Show me"), pictorial is unaffected
-                      (scaffoldOpacity is 0 in abstract, so this is a no-op there
-                      unless showScaffold is true). A miss never changes mode. */}
-                  {!(mode === "abstract" && !showScaffold) && (showScaffold || (!userHidScaffold && scaffoldOpacity > 0)) && (
-                    currentFact.operation === "divide" && DivisionScaffold ? (
-                      <DivisionScaffold
-                        rows={currentFact.a}
-                        cols={currentFact.b}
-                        opacity={showScaffold ? 1 : scaffoldOpacity}
-                        animate={true}
-                        countToken={feedback === "correct" ? "correct" : "blank"}
-                      />
-                    ) : (
-                      <MultiplyScaffold
-                        rows={currentFact.a}
-                        cols={currentFact.b}
-                        opacity={showScaffold ? 1 : scaffoldOpacity}
-                        animate={true}
-                      />
-                    )
-                  )}
-                </div>
-              )}
-              {mode === "pictorial" && !userHidScaffold && scaffoldOpacity > 0 && (
-                <div style={{ marginTop: "6px", fontSize: "11px", fontFamily: "'Space Mono', monospace", opacity: 0.45, fontWeight: 700 }}>
-                  {currentFact.operation === "divide"
-                    ? `${currentFact.a} split into groups of ${currentFact.b}`
-                    // DotArray's orientation rule (docs/wrong-answer-reveal-spec.md,
-                    // phase 1c): b < a draws a columns of b dots, so the caption
-                    // must read "groups of" to match what's on screen — the
-                    // rows-layout caption ("rows × columns") is unchanged.
-                    : currentFact.b < currentFact.a
-                      ? `${currentFact.a} groups of ${currentFact.b}`
-                      : `${currentFact.a} rows × ${currentFact.b} columns`}
-                </div>
-              )}
-              {/* Fact-family chip: Abstract "Show me" detour only, pre-answer.
-                  Never in the reveal (R3) and never before "Show me" is tapped. */}
-              {mode === "abstract" && showScaffold && !feedback && (
-                <div style={{ textAlign: "center" }}>
-                  <FactFamilyChip fact={currentFact} />
-                </div>
-              )}
-              {/* "Show me" (CLAUDE.md: Abstract = symbols + "Show me" fallback) —
-                  pre-answer only, doesn't affect logging. Ported from the
-                  fractions pattern (fractions-practice.jsx). Pictorial
-                  (docs/confidence-pass-spec.md C2): shown whenever the
-                  scaffold isn't already at full opacity — tapped-hidden
-                  (userHidScaffold) OR simply faded below 1 with mastery —
-                  not just the fully-hidden case. Tapping sets showScaffold
-                  (full opacity) rather than only un-hiding, in both modes. */}
-              {!feedback && (
-                (mode === "abstract" && !showScaffold) ||
-                (mode === "pictorial" && !showScaffold && (userHidScaffold || scaffoldOpacity < 1))
-              ) && (
-                <div style={{ marginTop: "12px", textAlign: "center" }}>
-                  {/* Pulses after two consecutive misses in Abstract (see missRun). */}
-                  <span className={mode === "abstract" && missRun >= 2 ? "showMePulse" : undefined}>
-                    <BrutalButton small onClick={() => { setShowScaffold(true); setPictureRequested(true); }} bg={COLORS.cream} style={{ minHeight: 44 }}>
-                      Show me
-                    </BrutalButton>
-                  </span>
-                </div>
-              )}
 
               {/* Correct feedback only — the wrong-answer chip/because/hint/bond
                   are gone (docs/wrong-answer-reveal-spec.md R3): the reveal

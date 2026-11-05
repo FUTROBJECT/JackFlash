@@ -93,3 +93,49 @@ Measured with the largest realistic values ("⭐ 120/282", 12/34, 🔥 12, a
 only the group label truncates at 320 ("6S, 7S, 8S …"). Multiply and Add
 re-checked after the change (Add column answer scored, header updated, no
 console errors).
+
+## Revision 2 — slim bar + drop-down, one card order (2026-11-05)
+
+Adam: "the current single row header is very cramped" and "I want the order
+of elements on each module to be consistent on how they present information
+vertically." He chose the slim bar with a drop-down.
+
+**Header (`src/shared/PracticeHeader.jsx`), 64px + safe area:**
+`[⌂]  group label …  ⭐ done/total  (avatar▾)` over a green progress bar.
+Everything right of Home is one button (aria-expanded). Tapping it drops a
+cream panel over the top of the card with three tiles: **Session**
+(correct/total), **Streak** (orange at ≥3) and **Days** (only when
+`dailyStreak.current > 0`; orange at ≥7, 👑 at 30). A dim overlay catches the
+closing tap so it never presses a key or choice under it; any key also
+closes it. The panel is absolutely positioned, so `headerRef`'s bottom (used
+by the sticky pads) never moves. The avatar badge and the four score chips
+of revision 1 are gone.
+
+**Card order, every module:** dots → question → picture group (nudge,
+picture, caption, Show me) → answer → pad. Where the question and the answer
+are one block (Add's column, Multiply's stacked equation), the picture group
+sits between the dots and that block. Multiply was the one exception (its
+picture sat under the answer, half under the pad) and now follows it:
+dots → picture → equation + answer box → pad, 16px between blocks, 12px
+inside the picture group. Multiply's pad keeps the **picture's** top in view
+on load (as Add); the first typed digit scrolls the answer box above the pad.
+
+Verified in the preview: header 64px at 320/375/393 with "⭐ 120/282" and a
+three-tile panel, no overflow; the closing tap types nothing. Multiply
+Pictorial 8×2, 8×8 (with the "Not sure?" chip) and 8×10 fit at 393×759 with
+the picture above; 8×8 wrong → reveal → right; Concrete 8×2's builder stays
+in view while making groups, typed answer scored; Abstract "Show me" brings
+the picture + fact family above the problem, wrong → re-ask → right; Add
+word problem unchanged under the new header; no console errors. At 320×568
+the top of a big dot array sits under the header in Pictorial (problem and
+answer stay in view) — before this change it was under the pad.
+
+After the ui review: Enter/Space on the toggle and Tab/modifier keys no
+longer close the panel (Esc and other keys still do); Home and the avatar
+sink into their shadows when pressed; each tile is a labelled group ("This
+session: 3 of 5 right", "Streak: 3 in a row", "12 days in a row") and the
+toggle has `aria-controls`; tile labels are 12px full black (still fit at
+320); every header transition stops under Reduce Motion; an unknown avatar
+id shows 🙂 instead of the id. Multiply's "Show me" / fact-family chip stay
+mounted (hidden) during feedback, so the equation doesn't jump when an
+answer is checked (measured: 189 → 189px).

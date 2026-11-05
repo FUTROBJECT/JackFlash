@@ -208,7 +208,10 @@ submission). Read it before any store-facing work. Key state:
 Tokens only, from `constants.js`: `BRUTAL_BORDER` 3px / `_SM` 2.5px solid
 #1A1A1A; `BRUTAL_SHADOW` 4px 4px / `_SM` 3px 3px; button press =
 `translate(3px, 3px)` sinking into its own shadow. Fonts: Space Grotesk
-(body), Space Mono (buttons/labels), Shrikhand (hero numbers). Header chrome
+(body), Space Mono (buttons/labels), Shrikhand (hero numbers). Practice cards
+all read dots → question → picture → answer → pad (picture before wherever
+the child answers); the practice header is the shared slim bar with a
+drop-down for session/streak/days (`src/shared/PracticeHeader.jsx`). Header chrome
 is always `COLORS.yellow`; module identity lives in chips/accents. Black text
 on color chips (white fails contrast on yellow/orange). Touch targets ≥44px;
 number inputs need inline `WebkitAppearance: "none"`. Fractions render
