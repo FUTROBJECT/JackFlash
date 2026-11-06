@@ -7,7 +7,7 @@
 
 ## 🚀 Submit 1.2 (9) — the ordered list (2026-11-06)
 
-The build is already uploaded (store flavour, nothing staged, all bundle products in). Nothing to archive. Work top to bottom.
+**2026-11-06 update: 1.2 (9) is superseded.** Adam's first Build & Read item on build 9 opened with no chart and no "Show me" (the item picker's on-ramp check read a stale Pictorial mode while the group default switched to Concrete; fixed in `place-value-practice.jsx`, commit after 68756be). Archive and upload **1.2 (10)** before step 2 (`CURRENT_PROJECT_VERSION` is already 10): `npm run cap:sync` (store build, never tester) → Any iOS Device → Product → Archive → Distribute → App Store Connect → Upload; bump the build number to 11 after. Then everything below applies to 1.2 (10).
 
 **1. In-app purchases (App Store Connect → Monetization → In-App Purchases)**
 - [ ] Create `module.placevalue.full` — $3.99 tier, non-consumable, display name "Place Value", description from `purchaseManager.js`; review screenshot `screenshots/iap-review/place-value-and-all-of-jackflash.png`
@@ -19,7 +19,7 @@ The build is already uploaded (store flavour, nothing staged, all bundle product
 - [x] RevenueCat already has every entitlement, product and package (`fractions`, `add`, `placeValue`, `all`; packages in the current `default` offering)
 
 **2. Version page (App Store → the 1.0 draft)**
-- [ ] Change the version to **1.2** (General → Version), then Build → select **1.2 (9)**
+- [ ] Change the version to **1.2** (General → Version), then Build → select **1.2 (10)** (not 9 — see the update above)
 - [ ] Paste from `JackFlash-AppStore-Listing.md`: name, subtitle, promotional text (1.2, 159 chars), description (3,325 chars), keywords, What's New (1.2)
 - [ ] In-App Purchases section: attach **all six** — `module.fractions.full`, `module.add.full`, `module.placevalue.full`, `bundle.all`, `bundle.rest.one`, `bundle.rest.two`. Apple reviews them with the binary; easy to miss
 - [ ] App Review Information: the 1.2 review notes from the listing doc; contact adamlaserlab@gmail.com; sign-in required **off**
@@ -28,7 +28,8 @@ The build is already uploaded (store flavour, nothing staged, all bundle product
 - [ ] Pricing and Availability: Free; all territories; standard EULA
 - [x] Screenshots already on the version page (uploaded 2026-10-12). Optional: a Place Value frame
 
-**3. Device pass on 1.2 (9)** (TestFlight install of build 9, or the store-flavour Xcode build)
+**3. Device pass on 1.2 (10)** (TestFlight install of build 10, or the store-flavour Xcode build)
+- [ ] Place Value, Build & Read: the first item shows its disc chart (the build-9 bug), in Concrete and after switching modes
 - [ ] Sandbox: buy Place Value → its locked groups open. Fresh install: buy All of JackFlash → every module open, no $3.99 buttons left
 - [ ] **Restore Purchases round-trip**: delete → reinstall → Restore → everything returns without payment (never checked off; Apple requires it)
 - [ ] Airplane mode: launch, fonts, practice in every module

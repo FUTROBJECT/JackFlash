@@ -1414,15 +1414,22 @@ export default function PlaceValuePractice({
 
     // Per-group default CPA mode (add-practice.jsx's pattern) — until the
     // child has made an explicit choice, which then sticks across groups.
+    // effMode is the mode this item will actually render in: `mode` is the
+    // closure's value from BEFORE setPickedMode lands, so the first Build &
+    // Read item (default Concrete) still reads as Pictorial here.
+    let effMode = mode;
     if (!hasExplicitModeRef.current && selected && mod?.defaultModeByGroup) {
       const defaultMode = mod.defaultModeByGroup[selected.group] || "pictorial";
       setPickedMode(defaultMode);
+      effMode = lockedMode || defaultMode;
     }
 
     // Finish-line on-ramp (§5 gate 2): at correct===2 in Pictorial with no
-    // parent lock, the scaffold starts hidden behind "Show me".
+    // parent lock, the scaffold starts hidden behind "Show me". Checked
+    // against effMode, never the stale closure mode: a hidden scaffold in
+    // Concrete has no "Show me" (shipped once — B1 opened on an empty card).
     const rec = getMasteryData()[selected?.itemKey];
-    if (selected && mode === "pictorial" && !lockedMode && (rec?.correct || 0) === DEFAULT_MASTERY_THRESHOLD - 1) {
+    if (selected && effMode === "pictorial" && !lockedMode && (rec?.correct || 0) === DEFAULT_MASTERY_THRESHOLD - 1) {
       setUserHidScaffold(true);
     }
 
@@ -1819,6 +1826,10 @@ export default function PlaceValuePractice({
                         hasExplicitModeRef.current = true;
                         setPickedMode(m.id);
                         setPreferredMode(profileId, moduleId, m.id);
+                        // A chart hidden in Pictorial must not carry into
+                        // Concrete (always shown, no "Show me") or Abstract.
+                        setUserHidScaffold(false);
+                        setShowScaffold(false);
                       }}
                       style={{
                         flex: 1, padding: "10px 6px", borderRadius: 10, border: BRUTAL_BORDER_SM,
