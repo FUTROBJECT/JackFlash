@@ -1,9 +1,9 @@
 # JackFlash — App Store Listing Copy
 
-v2 (launch-ready) · For Apple App Store (Google Play uses the same copy with minor field-name differences).
+v3 (1.2, the first public release — updated 2026-11-06) · For Apple App Store (Google Play uses the same copy with minor field-name differences).
 Character counts shown against Apple's limits.
 
-**What ships in v1:** Multiply & Divide (free, all groups) and Fractions ($3.99 one-time — "Fractions Full", product id `module.fractions.full` — with the Foundations group free to try). Add & Subtract, Place Value, and Connections appear in the app as Coming Soon previews and cannot be purchased. There is no bundle at launch.
+**What ships in 1.2 (the first App Store release; 1.0 and 1.1 were TestFlight-only):** Multiply & Divide (free, all groups); Fractions, Add & Subtract and Place Value ($3.99 once each, first group free to try — `module.fractions.full`, `module.add.full`, `module.placevalue.full`); and All of JackFlash ($9.99 once, every module including future ones — `bundle.all`, with `bundle.rest.one` $5.99 / `bundle.rest.two` $1.99 for families who already own one or two modules). Connections appears in the app as a Coming Soon preview and cannot be purchased. Family Sharing is on for every purchase.
 
 ---
 
@@ -28,9 +28,11 @@ Alternatives, if search data later argues for a change:
 
 ## Promotional Text  *(limit: 170 characters — editable any time without an app update)*
 
-> Singapore Math practice, never timed, never ranked. Multiply & Divide is free; Fractions is $3.99 once — no subscription. No ads. No tracking. Practice works offline.
+> Singapore Math practice, never timed, never ranked. Multiply & Divide is free; every other module is $3.99 once, or all of them for $9.99. No ads. No tracking.
 
-166 characters. Leads with the three pillars in priority order: the approach (and that it's never timed or ranked), one-time price, private by architecture. "Practice works offline" rather than "fully offline": the purchase goes through Apple. Good slot for seasonal or feature updates later (e.g. "Now with Add & Subtract").
+159 characters (the 1.2 text, decided 2026-10-14). Leads with the three pillars in priority order: the approach (and that it's never timed or ranked), one-time price, private by architecture. Good slot for seasonal or feature updates later.
+
+Pre-1.2 draft, kept for reference: "Singapore Math practice, never timed, never ranked. Multiply & Divide is free; Fractions is $3.99 once — no subscription. No ads. No tracking. Practice works offline." (166)
 
 ---
 
@@ -44,7 +46,7 @@ multiplication,division,times tables,singapore,fractions,homeschool,flashcards,b
 
 ---
 
-## Description  *(limit: 4000 characters — current draft: 2,756)*
+## Description  *(limit: 4000 characters — current draft: 3,325)*
 
 The first ~3 lines show before the "more" fold — they carry the most weight.
 
@@ -53,7 +55,10 @@ The first ~3 lines show before the "more" fold — they carry the most weight.
 JackFlash is Singapore Math practice — the visual, mastery-based approach behind the world's top-performing classrooms, built by a dad for his kid, Jack. Multiply & Divide is completely free. No ads, no subscription, and nothing your child does ever leaves the device.
 
 SEE THE MATH, DON'T JUST GUESS
-Built on the Concrete–Pictorial–Abstract method, JackFlash teaches multiplication and division as visual fact families, not flashcard drills. Kids build each fact with their hands in Concrete mode, see it as dot arrays, number bonds, and bar models, then answer without help. As mastery grows, the scaffolding fades on its own. Understanding first, fluency second.
+Built on the Concrete–Pictorial–Abstract method, JackFlash teaches math as visual fact families, not flashcard drills. Kids build each fact with their hands in Concrete mode, see it as dot arrays, number bonds, bar models, fraction bars, and place-value charts, then answer without help. As mastery grows, the scaffolding fades on its own. Understanding first, fluency second.
+
+FOUR MODULES, ONE METHOD
+Multiply & Divide: every table from 2s to 9s, with division as the other half of each fact family. Fractions: naming, equivalent fractions, comparing and ordering, and adding and subtracting. Add & Subtract: the written column method, mental math on a number line, and bar-model word problems. Place Value: build and read numbers to 10,000, digit values, expanded form, comparing and patterns. All of it follows the Grade 3 Singapore Math (think! Mathematics) sequence.
 
 SMART PRACTICE THAT ADAPTS
 Smart Practice — JackFlash's adaptive engine — sorts every fact into five categories: new, learning, needs practice, mastered, and review-due. A child who owns their 2s and 5s but keeps missing 7s and 8s sees far more 7s and 8s. No time wasted drilling facts they already know.
@@ -71,15 +76,17 @@ PRIVATE BY ARCHITECTURE
 No accounts. No ads. No tracking. Practice works fully offline, and everything your child does stays on the device. That's not a policy promise — the app has nowhere to send your child's data. The only thing that ever goes online is a parent's purchase, handled by Apple.
 
 SIMPLE, HONEST PRICING
-Multiply & Divide is free. All of it — every table group, forever. Fractions covers equivalent fractions, comparing and ordering, and fraction addition and subtraction: try the Foundations group free, then unlock the rest with a one-time $3.99 purchase. No subscription. Ever. Add & Subtract, Place Value, and the Connections capstone are coming soon.
+Multiply & Divide is free. All of it — every table group, forever. Fractions, Add & Subtract, and Place Value each let you try their first group free, then unlock the rest for $3.99, once. Or get all of JackFlash — every module, including the ones still to come — for $9.99, once. Family Sharing is on, so one purchase covers your family's devices. No subscription. Ever. The Connections capstone is coming soon.
 
 Five minutes of focused practice beats thirty minutes of grinding. JackFlash makes those five minutes count.
 
 ---
 
-## What's New  *(version notes — for v1.0)*
+## What's New  *(version notes — for 1.2, the first App Store release)*
 
-> Welcome to JackFlash. This first release includes Multiply & Divide (completely free) and Fractions (Foundations group free to try, one-time unlock for the rest) — with Smart Practice, touch-the-math Concrete mode, visual scaffolds, mastery that means from memory, daily streaks, achievements, and multi-child profiles. Built by a dad for his kid, Jack. We'd love your feedback.
+> Welcome to JackFlash. This first release includes four Singapore Math modules: Multiply & Divide (completely free), Fractions, Add & Subtract, and Place Value (first group of each free to try, one-time unlock for the rest, or all of JackFlash for $9.99 once). Smart Practice adapts to your child, Concrete mode lets them build each fact by hand, visual scaffolds fade as mastery grows, and mastered means from memory — never timed, never ranked. Daily streaks, achievements, and profiles for every child in the family. Built by a dad for his kid, Jack. We'd love your feedback.
+
+Pre-1.2 draft (never published): "Welcome to JackFlash. This first release includes Multiply & Divide (completely free) and Fractions (Foundations group free to try, one-time unlock for the rest) — with Smart Practice, touch-the-math Concrete mode, visual scaffolds, mastery that means from memory, daily streaks, achievements, and multi-child profiles. Built by a dad for his kid, Jack. We'd love your feedback."
 
 ---
 
@@ -104,11 +111,11 @@ Rendered frames (2026-10-12, from the store build on the simulators with demo da
 >
 > Reaching settings and the store: from the home screen, tap "Parent Zone." A parental gate asks a multiplication question (e.g. "What is 26 × 3?") — type the answer to enter. The store is on the Modules tab inside the Parent Zone, along with Restore Purchases.
 >
-> In-app purchases: one product at launch — Fractions Full (`module.fractions.full`, $3.99 one-time), which unlocks the Fractions module beyond its free Foundations group. Multiply & Divide is entirely free with full access to all content — no purchase involved. Add & Subtract, Place Value, and Connections appear as "Coming Soon" previews and cannot be purchased.
+> In-app purchases: Fractions Full (`module.fractions.full`), Add & Subtract Full (`module.add.full`) and Place Value Full (`module.placevalue.full`), $3.99 one-time each; each unlocks that module beyond its free first group. All of JackFlash (`bundle.all`, $9.99 one-time) unlocks every module. Two "The rest of JackFlash" upgrades unlock the same content for families who already own modules: `bundle.rest.one` ($5.99) appears after one module is purchased, `bundle.rest.two` ($1.99) after two. In the sandbox: buy Fractions, then open Parent Zone → Modules to see the $5.99 offer. Multiply & Divide is entirely free with full access to all content — no purchase involved. Connections appears as a "Coming Soon" preview and cannot be purchased.
 >
 > All children's progress data is stored on-device only. Nothing about the child is collected or transmitted; no ads, analytics, or tracking.
 
-(~135 words. Update the product list here with each module release.)
+(~190 words, the 1.2 text. Update the product list here with each module release.)
 
 ---
 
@@ -153,7 +160,8 @@ All three grant the RevenueCat entitlement `all`. The offer appears only once 3 
 
 ## Notes & Open Decisions
 
-- **What ships at launch:** Two modules — Multiply & Divide (entirely free, all groups) and Fractions ($3.99 one-time, Foundations group free to sample). Add & Subtract, Place Value, and Connections are visible in-app as Coming Soon teasers but are not purchasable. The description says "coming soon" without naming dates — keep it that way until each is real, to stay within Apple's rules on advertising unreleased content.
+- **What ships at launch (revised 2026-11-06):** 1.2 is the first public release. Four modules — Multiply & Divide (entirely free, all groups), Fractions, Add & Subtract and Place Value ($3.99 one-time each, first group free to sample) — plus the All of JackFlash bundle. Connections is visible in-app as a Coming Soon teaser but is not purchasable. The description says "coming soon" without naming a date — keep it that way until it's real, to stay within Apple's rules on advertising unreleased content.
+- **Pre-1.2 plan, for the record:** 1.0 was to ship Multiply + Fractions only, with Add & Subtract, Place Value and Connections as Coming Soon teasers and no bundle. 1.0 and 1.1 went to TestFlight only and were folded into 1.2.
 - **No bundle at launch; it ships in 1.2 with Place Value** (decided 2026-10-13). The bundle exists in code but stays hidden until 3+ paid modules are live, so it's an honest discount rather than a pre-sale of unbuilt content: at 1.2 that's Fractions + Add & Subtract + Place Value, $11.97 separately vs **$9.99 for everything, including modules that ship later**. It never appears in customer-facing copy until then. Do not create the `bundle.all` IAP in App Store Connect until 1.2 is being prepared.
 - **Pricing in metadata:** the description and promo text say $3.99 (it's the loudest pillar for the homeschool audience). Apple sets regional price tiers, so verify the USD tier matches before submission, and remember promo text is editable without an app update if it ever drifts.
 - **Mastery copy rule (revised 2026-10-06):** the selling point is "mastered means from memory," never "fast." Math isn't a race; never phrase mastery as speed, or kids as timed, tested, ranked or penalized. The Multiply & Divide time window is an invisible way to tell memory from counting — mention it only as reassurance (no timer, no "too slow"). Full rules: `docs/voice-and-messaging.md`.
