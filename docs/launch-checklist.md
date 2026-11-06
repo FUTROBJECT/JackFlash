@@ -130,13 +130,13 @@ Re-upload recipe: `npm --prefix "<primary checkout>" run cap:sync` (store build,
 - [x] 1.2 (5) uploaded to App Store Connect (2026-10-14)
 - [ ] TestFlight: What to Test pasted, 1.2 (5) added to Friends (1.1 builds removed), submitted for Beta App Review
 - [x] **1.2 (8) archived and uploaded 2026-11-05** (store build) — in-app number pad for every typed answer (no iPhone keyboard), last skill pills removed. Same build (tester flavour) on Jack's phone. Build number now 9
-- [ ] TestFlight: What to Test for 1.2 (8), add to Friends, remove 1.2 (7)
+- [x] TestFlight 1.2 (8): superseded by 1.2 (9), whose What to Test covers it
 - [x] **1.2 (9) archived and uploaded 2026-11-05** (store build) — slim practice header with a drop-down for session / streak / days; every card reads dots → picture → answer (Multiply's picture moved above the problem). Same build (tester flavour) on Jack's phone. Build number now 10
-- [ ] TestFlight: What to Test for 1.2 (9), add to Friends, remove 1.2 (8)
+- [x] TestFlight 1.2 (9): What to Test pasted (covers what changed in (7), (8) and (9)), added to Friends — 2026-11-05
 - [x] **1.2 (7) archived and uploaded 2026-11-05** (store build) — the card layout pass on all three modules (Add & Subtract, Fractions, Place Value: picture before answer, 16px rhythm, no pills/focus chip, bigger labels; Add's Start over in the keypad; question-only Fractions pictures; F2 reveal bar fix). Same build (tester flavour) installed on Jack's phone. Build number now 8
-- [ ] TestFlight: What to Test for 1.2 (7), add to Friends, remove 1.2 (6)
+- [x] TestFlight 1.2 (7): superseded by 1.2 (9), whose What to Test covers it
 - [x] **1.2 (6) archived and uploaded 2026-11-02** on Xcode 27.2, from the CLI (`xcodebuild -exportArchive` with `method: app-store-connect`, `destination: upload`, `manageAppVersionAndBuildNumber: false`). Build number now 7 for the next upload
-- [ ] TestFlight: What to Test for 1.2 (6), add to Friends, remove 1.2 (5)
+- [x] TestFlight 1.2 (6): superseded by 1.2 (9)
 - [x] Tester feedback on 1.2 (5), fixed 2026-10-16 (in 1.2 (6)): Fractions F3/F4 always put the greater fraction on the same side (F3 left, F4 right) — now 8/8 on a fixed irregular pattern, keys unchanged; Multiply's practice-set toggles jumped the progress screen to the top — now it stays put, and practice opens at the top
 Ships after 1.1 is live. Bundle = **$9.99, every module including future ones** (Connections etc.). It appears only once 3 paid modules are on sale ($11.97 separately), so it's a real discount, never a pre-sale.
 
