@@ -30,6 +30,7 @@
 
 **3. Device pass on 1.2 (10)** (TestFlight install of build 10, or the store-flavour Xcode build)
 - [ ] Place Value, Build & Read: the first item shows its disc chart (the build-9 bug), in Concrete and after switching modes
+- [ ] Practice header: the centered pull-tab opens and closes the session panel in every module; the closing tap types nothing (new in 1.2 (10), `docs/practice-header-ui.md` revision 3)
 - [ ] Sandbox: buy Place Value → its locked groups open. Fresh install: buy All of JackFlash → every module open, no $3.99 buttons left
 - [ ] **Restore Purchases round-trip**: delete → reinstall → Restore → everything returns without payment (never checked off; Apple requires it)
 - [ ] Airplane mode: launch, fonts, practice in every module

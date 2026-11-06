@@ -139,3 +139,26 @@ toggle has `aria-controls`; tile labels are 12px full black (still fit at
 id shows 🙂 instead of the id. Multiply's "Show me" / fact-family chip stay
 mounted (hidden) during feedback, so the equation doesn't jump when an
 answer is checked (measured: 189 → 189px).
+
+## Revision 3 — centered pull-tab (2026-11-06)
+
+Adam: the ▾ badge on the avatar "is very small and perhaps easily missed";
+he asked for "a more obvious, perhaps larger, maybe even center-located
+arrow". Mocked a rounded tab and a half-circle at 375px; he chose the tab.
+
+**What changed (`src/shared/PracticeHeader.jsx` only):** the avatar badge is
+gone. A **56 × 22 white tab** (2.5px border, 7px radius, 16px chevron)
+hangs from the middle of the header's bottom border, inside a **44px-tall
+hit area** (64 wide) that straddles the border — 21px over the progress bar,
+which toggles the same panel, 23px below it. It is absolutely positioned, so
+the header stays 64px + safe area and `headerRef`'s bottom (the sticky pads'
+measurement) is unchanged; the tab sits in the 12px gutter above the card
+and clears the card's top border at 320px. The chevron flips when open and
+the panel now drops from 30px below the header so it clears the tab. The
+tab has its own label ("Show/Hide session score and streak", aria-expanded,
+aria-controls); the group/avatar row keeps its label and still toggles.
+Press = 2px sink (no shadow to sink into — it hangs from the bar).
+
+Verified in the preview at 320 / 375 / 393 on all four modules, closed and
+open: no horizontal overflow, the closing tap types nothing, the tab reopens
+the panel, no console errors.
