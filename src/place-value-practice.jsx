@@ -44,7 +44,7 @@ import {
 import { checkAfterAnswer, checkAfterSession, getAllAchievementsForProfile } from "./achievementEngine.js";
 import AchievementPopup from "./AchievementPopup.jsx";
 import { isContentAccessible } from "./purchaseManager.js";
-import PracticeHeader from "./shared/PracticeHeader.jsx";
+import PracticeHeader, { PRACTICE_BODY_TOP } from "./shared/PracticeHeader.jsx";
 import WrongAnswerReveal from "./shared/WrongAnswerReveal.jsx";
 import DerivationLine from "./shared/DerivationLine.jsx";
 import DerivationToken from "./shared/DerivationToken.jsx";
@@ -1769,7 +1769,7 @@ export default function PlaceValuePractice({
       })()}
 
       {/* ========= BODY ========= */}
-      <div style={{ padding: "clamp(12px, 3vw, 20px) clamp(12px,4vw,20px) 40px" }}>
+      <div style={{ padding: `${PRACTICE_BODY_TOP}px clamp(12px,4vw,20px) 40px` }}>
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
 
           {/* ===== PROGRESS VIEW ===== */}

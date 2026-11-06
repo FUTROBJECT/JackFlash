@@ -32,6 +32,10 @@ function Chevron({ open }) {
 // press sinks it 2px (no shadow to sink into — it hangs from the bar).
 const TAB_HIT = 44;
 const TAB_H = 22;
+// The tab hangs 19px below the header's 4px border (hit area 44 − 21 above
+// the border − 4). Practice screens use this as the body's top padding so
+// the card's top border sits a clear 13px under the tab (revision 3).
+export const PRACTICE_BODY_TOP = 32;
 function PullTab({ open, pressed, onToggle, pressProps }) {
   return (
     <button onClick={onToggle} {...pressProps}

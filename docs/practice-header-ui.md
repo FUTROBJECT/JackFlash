@@ -152,8 +152,13 @@ hangs from the middle of the header's bottom border, inside a **44px-tall
 hit area** (64 wide) that straddles the border — 21px over the progress bar,
 which toggles the same panel, 23px below it. It is absolutely positioned, so
 the header stays 64px + safe area and `headerRef`'s bottom (the sticky pads'
-measurement) is unchanged; the tab sits in the 12px gutter above the card
-and clears the card's top border at 320px. The chevron flips when open and
+measurement) is unchanged. Adam then asked for "more breathing room" under
+the tab: the four practice screens' body top padding is now
+`PRACTICE_BODY_TOP` (32px, exported from the header) instead of
+clamp(12px, 3vw, 20px), so the card's top border sits 13px under the tab at
+every width. On very short screens (320 × 568) the pad's load-time
+keep-in-view scroll still slides the card's top under the header, as it did
+before the tab; the question itself stays clear. The chevron flips when open and
 the panel now drops from 30px below the header so it clears the tab. The
 tab has its own label ("Show/Hide session score and streak", aria-expanded,
 aria-controls); the group/avatar row keeps its label and still toggles.
