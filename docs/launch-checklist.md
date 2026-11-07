@@ -1,7 +1,46 @@
 # JackFlash — App Store v1 Launch: Readiness Status & Punch List
 
-**Audited:** 2026-08-21 (full repo verification sweep — build, flags, offline, assets, compliance). **Updated:** 2026-10-12 (native build done; staged modules hidden in the store build; store sync run; build 1.0 (1) uploaded; screenshots rendered).
-**Verdict: the repo is launch-ready.** Everything left is off-repo: toolchain, store accounts, and wiring.
+**Audited:** 2026-08-21 (full repo verification sweep — build, flags, offline, assets, compliance). **Updated:** 2026-11-06 (decided: submit **1.2 (9)** to the App Store as the first public release; 1.0 and 1.1 never shipped. Listing, landing and support copy updated for 1.2).
+**Verdict: the repo is launch-ready.** Everything left is in App Store Connect plus one device pass — the ordered list is the next section.
+
+---
+
+## 🚀 Submit 1.2 (9) — the ordered list (2026-11-06)
+
+**2026-11-06 update: 1.2 (9) is superseded.** Adam's first Build & Read item on build 9 opened with no chart and no "Show me" (the item picker's on-ramp check read a stale Pictorial mode while the group default switched to Concrete; fixed in `place-value-practice.jsx`, commit after 68756be). Archive and upload **1.2 (10)** before step 2 (`CURRENT_PROJECT_VERSION` is already 10): `npm run cap:sync` (store build, never tester) → Any iOS Device → Product → Archive → Distribute → App Store Connect → Upload; bump the build number to 11 after. Then everything below applies to 1.2 (10).
+
+**1. In-app purchases (App Store Connect → Monetization → In-App Purchases)**
+- [ ] Create `module.placevalue.full` — $3.99 tier, non-consumable, display name "Place Value", description from `purchaseManager.js`; review screenshot `screenshots/iap-review/place-value-and-all-of-jackflash.png`
+- [ ] Create `bundle.all` — $9.99 — "All of JackFlash" — "Every module, including the ones still to come."; same screenshot
+- [ ] Create `bundle.rest.one` — $5.99 — "The rest of JackFlash" — "Every other module, including ones to come."; screenshot `rest-of-jackflash-owns-one.png`
+- [ ] Create `bundle.rest.two` — $1.99 — "The rest of JackFlash" — same description; screenshot `rest-of-jackflash-owns-two.png`
+- [ ] Upload the review screenshot on `module.add.full` too if it still shows "Missing Metadata" (`add-subtract-store.png`). All six should read **Ready to Submit**. Do **not** click "Add for Review" on any product page.
+- [ ] **Family Sharing: Turn On** for all six (Fractions and Add included). Irreversible; the copy already says it's on.
+- [x] RevenueCat already has every entitlement, product and package (`fractions`, `add`, `placeValue`, `all`; packages in the current `default` offering)
+
+**2. Version page (App Store → the 1.0 draft)**
+- [ ] Change the version to **1.2** (General → Version), then Build → select **1.2 (10)** (not 9 — see the update above)
+- [ ] Paste from `JackFlash-AppStore-Listing.md`: name, subtitle, promotional text (1.2, 159 chars), description (3,325 chars), keywords, What's New (1.2)
+- [ ] In-App Purchases section: attach **all six** — `module.fractions.full`, `module.add.full`, `module.placevalue.full`, `bundle.all`, `bundle.rest.one`, `bundle.rest.two`. Apple reviews them with the binary; easy to miss
+- [ ] App Review Information: the 1.2 review notes from the listing doc; contact adamlaserlab@gmail.com; sign-in required **off**
+- [ ] App Information: category Education; Made for Kids, age band 6–8; age rating questionnaire (expect 4+); privacy policy URL `https://futrobject.github.io/JackFlash/privacy.html`
+- [ ] App Privacy: Purchase History only (App Functionality + Analytics; not linked; no tracking)
+- [ ] Pricing and Availability: Free; all territories; standard EULA
+- [x] Screenshots already on the version page (uploaded 2026-10-12). Optional: a Place Value frame
+
+**3. Device pass on 1.2 (10)** (TestFlight install of build 10, or the store-flavour Xcode build)
+- [ ] Place Value, Build & Read: the first item shows its disc chart (the build-9 bug), in Concrete and after switching modes
+- [ ] Practice header: the centered pull-tab opens and closes the session panel in every module; the closing tap types nothing (new in 1.2 (10), `docs/practice-header-ui.md` revision 3)
+- [ ] Sandbox: buy Place Value → its locked groups open. Fresh install: buy All of JackFlash → every module open, no $3.99 buttons left
+- [ ] **Restore Purchases round-trip**: delete → reinstall → Restore → everything returns without payment (never checked off; Apple requires it)
+- [ ] Airplane mode: launch, fonts, practice in every module
+- [ ] Store screen: Multiply Included, three $3.99 modules, All of JackFlash $9.99, Connections Coming Soon, Restore
+
+**4. Submit**
+- [ ] Version page → **Submit for Review**. TestFlight Beta App Review for the Friends group is optional, not a prerequisite
+- [ ] After approval: Release (manual or automatic as set on the version page), then update `public/landing.html`'s store CTA/toast with the real App Store link; put the Place Value / bundle line into the in-app Privacy/Terms/FAQ in the next build (the in-app FAQ still says "no bundle")
+
+**Done in-repo 2026-11-06:** listing doc (promo, description, What's New, review notes, what-ships note), landing pricing rows + FAQ + Family Sharing line, support "What's free" answer.
 
 **Runbooks (the how-to lives there, not here):**
 - `docs/LAUNCH-native-setup.md` — toolchain → native projects → icons → signing → submission
@@ -160,11 +199,12 @@ Ships after 1.1 is live. Bundle = **$9.99, every module including future ones** 
 - [x] Preview play-test of the store build (2026-10-14): bundle appears (save $1.98); hidden when Fractions owned; bundle buy unlocks all, no buy buttons left, Connections "Coming soon · included"
 - [ ] On device (sandbox) after the IAPs exist: buy Place Value, buy the bundle on a fresh install, Restore both
 
-**Copy (only once 1.2 is live)**
-- [ ] Landing pricing + FAQ, promo text, review notes: paste from `JackFlash-AppStore-Listing.md` → "Pricing from 1.2"; description and What's New updated for Place Value
+**Copy**
+- [x] Landing pricing + FAQ, promo text, review notes, description and What's New updated for 1.2 (2026-11-06; the listing doc's main fields now carry the 1.2 text)
 - [ ] App Store screenshots: consider a Place Value frame
 
 **Ship**
-- [ ] Version 1.2 (`MARKETING_VERSION`), archive, TestFlight (Friends), then Submit for Review with `module.add.full`, `module.placevalue.full`, `bundle.all`, `bundle.rest.one` and `bundle.rest.two` attached to the 1.2 version page (five new purchases)
+- [x] Version 1.2 (`MARKETING_VERSION`), archived and uploaded — 1.2 (9) is the submission build
+- [ ] Submit for Review with all six purchases attached to the 1.2 version page — see "Submit 1.2 (9)" at the top of this file
 - [x] Code (2026-10-14): `getBundleOffer()` picks the offer by how many paid modules the family owns; card copy per the listing doc; preview-tested none / one / two / three owned and buying "the rest" (everything unlocks, card turns "All of JackFlash ✓")
 

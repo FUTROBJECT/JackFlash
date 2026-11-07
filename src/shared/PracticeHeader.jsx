@@ -2,11 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { COLORS, BRUTAL_BORDER, BRUTAL_BORDER_SM, BRUTAL_SHADOW, BRUTAL_SHADOW_SM, AVATARS } from "../constants.js";
 
 // Sticky slim practice header shared by the four practice screens
-// (docs/practice-header-ui.md, revision 2): Home · the working group with a
-// progress bar · the avatar with a ▾. Tapping the group/avatar drops a panel
-// over the top of the card with this session's score, the streak and the
+// (docs/practice-header-ui.md, revision 3): Home · the working group with a
+// progress bar · the avatar, and a centered pull-tab hanging from the bottom
+// border. Tapping the tab (or the group/avatar row) drops a panel over the
+// top of the card with this session's score, the streak and the
 // days-in-a-row count; a tap anywhere (or any key) closes it, and that tap
 // does nothing else, so a child can't answer by accident while closing it.
+// The tab is the visible affordance (revision 2's 12px chevron badge on the
+// avatar was missed); it's absolutely positioned, so it adds no height.
 // Presentational only — each screen computes its own pill value ("done/total")
 // and label and passes them in. `headerRef` lands on the sticky element
 // (ColumnMethod / NumberPad measure its bottom); the panel is absolutely
@@ -16,10 +19,43 @@ const mono = "'Space Mono', monospace";
 
 function Chevron({ open }) {
   return (
-    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" className="jf-ph-anim"
-      style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }}>
-      <path d="M2.5 4.5L6 8L9.5 4.5" fill="none" stroke={COLORS.black} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width="16" height="16" viewBox="0 0 12 12" aria-hidden="true" className="jf-ph-anim"
+      style={{ display: "block", transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }}>
+      <path d="M2.5 4.5L6 8L9.5 4.5" fill="none" stroke={COLORS.black} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  );
+}
+
+// The 56×22 handle: a 44px-tall hit area straddling the header's bottom
+// border (21px over the progress bar, which toggles the same panel, 23px
+// below it), with the visible tab at its foot hanging from the border. The
+// press sinks it 2px (no shadow to sink into — it hangs from the bar).
+const TAB_HIT = 44;
+const TAB_H = 22;
+// The tab hangs 19px below the header's 4px border (hit area 44 − 21 above
+// the border − 4). Practice screens use this as the body's top padding so
+// the card's top border sits a clear 13px under the tab (revision 3).
+export const PRACTICE_BODY_TOP = 32;
+function PullTab({ open, pressed, onToggle, pressProps }) {
+  return (
+    <button onClick={onToggle} {...pressProps}
+      aria-expanded={open} aria-controls="jf-ph-panel"
+      aria-label={`${open ? "Hide" : "Show"} session score and streak`}
+      style={{
+        position: "absolute", left: "50%", top: `calc(100% - ${TAB_HIT - TAB_H - 1}px)`,
+        transform: "translateX(-50%)", width: 64, height: TAB_HIT, padding: 0, margin: 0,
+        border: "none", background: "none", cursor: "pointer",
+        display: "flex", alignItems: "flex-end", justifyContent: "center",
+      }}>
+      <span aria-hidden="true" className="jf-ph-anim" style={{
+        width: 56, height: TAB_H, boxSizing: "border-box", borderRadius: 7,
+        border: BRUTAL_BORDER_SM, backgroundColor: "white", color: COLORS.black,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        transform: pressed ? "translateY(2px)" : "none", transition: "transform 0.1s ease",
+      }}>
+        <Chevron open={open} />
+      </span>
+    </button>
   );
 }
 
@@ -39,7 +75,7 @@ function Stat({ label, value, spoken, bg = "white" }) {
 
 export default function PracticeHeader({ headerRef, onBack, avatar, pill, session, streak, dailyStreak }) {
   const [open, setOpen] = useState(false);
-  const [pressed, setPressed] = useState(null); // "home" | "toggle" — the press sinks into its shadow
+  const [pressed, setPressed] = useState(null); // "home" | "toggle" | "tab" — the press sinks into its shadow
   const toggleRef = useRef(null);
   const pressProps = (which) => ({
     onPointerDown: () => setPressed(which),
@@ -143,20 +179,15 @@ export default function PracticeHeader({ headerRef, onBack, avatar, pill, sessio
                 }}>
                   {AVATARS.find((a) => a.id === avatar)?.emoji || (/\p{Extended_Pictographic}/u.test(String(avatar)) ? avatar : "🙂")}
                 </span>
-                <span aria-hidden="true" style={{
-                  position: "absolute", right: -6, bottom: -6, width: 20, height: 20, borderRadius: "50%",
-                  border: BRUTAL_BORDER_SM, backgroundColor: "white", boxSizing: "border-box",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <Chevron open={open} />
-                </span>
               </span>
             )}
           </button>
 
+          <PullTab open={open} pressed={pressed === "tab"} onToggle={() => setOpen((o) => !o)} pressProps={pressProps("tab")} />
+
           {open && (
             <div id="jf-ph-panel" className="jf-ph-panel" role="region" aria-label="This session" style={{
-              position: "absolute", top: "calc(100% + 16px)", left: 0, right: 0,
+              position: "absolute", top: `calc(100% + ${TAB_H + 8}px)`, left: 0, right: 0,
               backgroundColor: COLORS.cream, border: BRUTAL_BORDER, borderRadius: 12, boxShadow: BRUTAL_SHADOW,
               padding: 12, display: "flex", gap: 8,
             }}>
