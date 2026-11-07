@@ -17,7 +17,7 @@
 - [x] Create `bundle.rest.two` — $1.99 — "The rest of JackFlash" — same description; screenshot `rest-of-jackflash-owns-two.png`
 - [x] Upload the review screenshot on `module.add.full` too if it still shows "Missing Metadata" (`add-subtract-store.png`). All six should read **Ready to Submit**. Do **not** click "Add for Review" on any product page.
 - [x] **Family Sharing: Turn On** for all six — done 2026-11-07. All six show as Drafts / "Prepare for Submission" (the current ASC label for not-yet-submitted purchases); they ride with the 1.2 version.
-- [x] RevenueCat already has every entitlement, product and package (`fractions`, `add`, `placeValue`, `all`; packages in the current `default` offering)
+- [x] RevenueCat: entitlements and products existed, but **the `default` offering only held the Fractions package** — the October notes below claiming `add`, `placeValue`, `all`, `rest1`, `rest2` packages were wrong (first sandbox try on 1.2 (10): "Product not found in store offerings" for Place Value and Add). Five custom packages added to `default` 2026-11-07; store shows all prices on device
 
 **2. Version page (App Store → the 1.0 draft)**
 - [ ] Change the version to **1.2** (General → Version), then Build → select **1.2 (10)** (not 9 — see the update above)
@@ -152,7 +152,7 @@ Re-upload recipe: `npm --prefix "<primary checkout>" run cap:sync` (store build,
 - [ ] Keep Jack on the tester build; note anything in Add that needs fixing before it ships
 - [x] App Store Connect → In-App Purchases: `module.add.full` created ($3.99, non-consumable) — 2026-10-13. **Not attached to 1.0.**
 - [x] IAP review screenshot: `screenshots/iap-review/add-subtract-store.png` (1206 × 2622 — Apple only accepts App Store screenshot sizes here) — upload it on the IAP page so it reaches "Ready to Submit"
-- [x] RevenueCat: `add` entitlement ← `module.add.full`; custom package `add` in the current offering — 2026-10-13
+- [x] RevenueCat: `add` entitlement ← `module.add.full` — 2026-10-13. (The `add` package was NOT in the offering until 2026-11-07.)
 - [x] Code (2026-10-13): removed `add` from `STAGED_MODULES` (`src/modules/moduleRegistry.js`); set `module.add.full` to `available: true` and map its entitlement in `purchaseManager.js`. Free sample = `colAdd` + `facts` (already set in `add.jsx`)
 - [x] Play-tested the store build in the preview (2026-10-13): Add in onboarding and the picker, column adding free (right and wrong answer), colSub/mental/words locked, simulated buy unlocks them, Place Value + Connections still Coming Soon, no bundle; Multiply loads
 - [x] 1.1 (2) archived and uploaded (2026-10-13); add-on IAP removed from the 1.0 draft submission (only Fractions rides with 1.0)
@@ -183,7 +183,7 @@ Ships after 1.1 is live. Bundle = **$9.99, every module including future ones** 
 **Place Value**
 - [ ] Jack uses it on the tester build (already open there); note anything to fix before it ships. Check the module against `docs/place-value-spec.md` and the QA convention in CLAUDE.md (every answerType × CPA mode, one wrong answer each)
 - [ ] App Store Connect: IAP `module.placevalue.full` ($3.99, non-consumable), review screenshot at 1206 × 2622 — **don't** click "Add for Review" on the IAP page
-- [x] RevenueCat (2026-10-14): entitlement `placeValue` ← `module.placevalue.full`; custom package `placeValue` in the current offering
+- [x] RevenueCat (2026-10-14): entitlement `placeValue` ← `module.placevalue.full`. (The `placeValue` package was NOT in the offering until 2026-11-07.)
 - [x] Code (2026-10-14): `placeValue` unstaged; `module.placevalue.full` available with a "what's free" description (Build & Read free); `placeValue` entitlement mapped. Pre-release pass fixed X3 (true answers marked wrong) and V2 (nonsense / >10,000 choices) — see the spec's last section
 
 **Family Sharing (decided 2026-10-14 — do now, it's irreversible)**
@@ -194,7 +194,7 @@ Ships after 1.1 is live. Bundle = **$9.99, every module including future ones** 
   - `bundle.all` — $9.99 — display name "All of JackFlash" — "Every module, including the ones still to come."
   - `bundle.rest.one` — $5.99 — "The rest of JackFlash" — "Every other module, including ones to come."
   - `bundle.rest.two` — $1.99 — "The rest of JackFlash" — same description
-- [x] RevenueCat (2026-10-14): entitlement `all` ← the three bundle products only; packages `all`, `rest1`, `rest2` in the current offering
+- [x] RevenueCat (2026-10-14): entitlement `all` ← the three bundle products only. (Packages `all`, `rest1`, `rest2` were NOT in the offering until 2026-11-07.)
 - [x] IAP review screenshots (1206 × 2622) in `screenshots/iap-review/`: `place-value-and-all-of-jackflash.png` (Place Value + bundle.all), `rest-of-jackflash-owns-one.png`, `rest-of-jackflash-owns-two.png`
 - [x] Code (2026-10-14): bundle hidden when what's left to buy costs less; savings vs what's left; "Every module, including the ones still to come"; owning the bundle marks every module owned (no $3.99 buttons, no double charge); web build shows an in-app note
 - [x] Preview play-test of the store build (2026-10-14): bundle appears (save $1.98); hidden when Fractions owned; bundle buy unlocks all, no buy buttons left, Connections "Coming soon · included"

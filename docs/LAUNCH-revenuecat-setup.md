@@ -183,7 +183,7 @@ IAP does **not** work in the browser or a plain simulator — use a device build
 
 | Symptom | Likely cause |
 |---|---|
-| `"Product not found in store offerings."` | Offering not marked **current**, or the `module.fractions.full` product isn't attached to a package in it. |
+| `"Product not found in store offerings."` | Offering not marked **current**, or the product isn't attached to a package in it. **Check the product's page → "Associated Offerings"**: if it says "No associated offerings", open the `default` offering → Edit → New Package (Custom identifier) → attach the product. Happened 2026-11-07 to five of six products; entitlements alone don't make a product sellable. |
 | Purchase sheet never appears / empty offerings | Paid Applications agreement unsigned (iOS); no build on a testing track yet (Play); product not **Active** (Play) / still propagating (can take a few hours after creation). |
 | Buys, but groups stay locked | Entitlement id isn't exactly **`fractions`**, or the product isn't attached to that entitlement for the platform you're testing. |
 | Wrong / no SDK key | `appl_`/`goog_` keys swapped or still `…__TODO`; confirm the platform-correct key is in `REVENUECAT_KEYS`. |
