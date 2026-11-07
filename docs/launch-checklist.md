@@ -32,7 +32,8 @@
 **3. Device pass on 1.2 (10)** (TestFlight install of build 10, or the store-flavour Xcode build)
 - [ ] Place Value, Build & Read: the first item shows its disc chart (the build-9 bug), in Concrete and after switching modes
 - [ ] Practice header: the centered pull-tab opens and closes the session panel in every module; the closing tap types nothing (new in 1.2 (10), `docs/practice-header-ui.md` revision 3)
-- [ ] Sandbox: buy Place Value → its locked groups open. Fresh install: buy All of JackFlash → every module open, no $3.99 buttons left
+- [x] Sandbox 2026-11-07: bought Place Value (groups open) → card became "The rest of JackFlash" $5.99 → bought a second module → card $1.99 → bought it: every module open, no buy buttons, card shows ✓. The $5.99/$1.99 "rest" ladder works against real App Store products
+- [ ] **Post-launch follow-up (1.3):** when the family owns two modules, the last module still shows its $3.99 button next to the $1.99 "rest" card, which buys strictly more. Honest but reads like a mistake — replace that button with "Included in the rest of JackFlash, $1.99" when the rest offer costs less than the module
 - [ ] **Restore Purchases round-trip**: delete → reinstall → Restore → everything returns without payment (never checked off; Apple requires it)
 - [ ] Airplane mode: launch, fonts, practice in every module
 - [ ] Store screen: Multiply Included, three $3.99 modules, All of JackFlash $9.99, Connections Coming Soon, Restore
