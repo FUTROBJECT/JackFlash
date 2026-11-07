@@ -7,7 +7,8 @@
 
 ## 🚀 Submit 1.2 (9) — the ordered list (2026-11-06)
 
-**2026-11-06 update: 1.2 (9) is superseded.** Adam's first Build & Read item on build 9 opened with no chart and no "Show me" (the item picker's on-ramp check read a stale Pictorial mode while the group default switched to Concrete; fixed in `place-value-practice.jsx`, commit after 68756be). Archive and upload **1.2 (10)** before step 2 (`CURRENT_PROJECT_VERSION` is already 10): `npm run cap:sync` (store build, never tester) → Any iOS Device → Product → Archive → Distribute → App Store Connect → Upload; bump the build number to 11 after. Then everything below applies to 1.2 (10).
+**2026-11-06 update: 1.2 (9) is superseded.** Adam's first Build & Read item on build 9 opened with no chart and no "Show me" (the item picker's on-ramp check read a stale Pictorial mode while the group default switched to Concrete; fixed in `place-value-practice.jsx`, 9e1c50a). PR #2 (store copy, that fix, the header pull-tab + 32px gutter) merged 2026-11-07.
+- [x] **1.2 (10) archived and uploaded 2026-11-07** (store build from the primary checkout). Build number now 11. Everything below applies to 1.2 (10).
 
 **1. In-app purchases (App Store Connect → Monetization → In-App Purchases)**
 - [ ] Create `module.placevalue.full` — $3.99 tier, non-consumable, display name "Place Value", description from `purchaseManager.js`; review screenshot `screenshots/iap-review/place-value-and-all-of-jackflash.png`
