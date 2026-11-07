@@ -1,7 +1,7 @@
 # JackFlash — App Store v1 Launch: Readiness Status & Punch List
 
 **Audited:** 2026-08-21 (full repo verification sweep — build, flags, offline, assets, compliance). **Updated:** 2026-11-06 (decided: submit **1.2 (9)** to the App Store as the first public release; 1.0 and 1.1 never shipped. Listing, landing and support copy updated for 1.2).
-**Verdict: the repo is launch-ready.** Everything left is in App Store Connect plus one device pass — the ordered list is the next section.
+**🚀 Submitted for App Store review: 1.2 (10), 2026-11-06 9:03 PM (submission 62b3e0b4-…), with all six in-app purchases — every item Waiting for Review.** Apple emails the account holder on each status change. The ordered list below is what got it there; the only open items are post-launch.
 
 ---
 
@@ -20,26 +20,26 @@
 - [x] RevenueCat: entitlements and products existed, but **the `default` offering only held the Fractions package** — the October notes below claiming `add`, `placeValue`, `all`, `rest1`, `rest2` packages were wrong (first sandbox try on 1.2 (10): "Product not found in store offerings" for Place Value and Add). Five custom packages added to `default` 2026-11-07; store shows all prices on device
 
 **2. Version page (App Store → the 1.0 draft)**
-- [ ] Change the version to **1.2** (General → Version), then Build → select **1.2 (10)** (not 9 — see the update above)
-- [ ] Paste from `JackFlash-AppStore-Listing.md`: name, subtitle, promotional text (1.2, 159 chars), description (3,325 chars), keywords, What's New (1.2)
-- [ ] In-App Purchases section: attach **all six** — `module.fractions.full`, `module.add.full`, `module.placevalue.full`, `bundle.all`, `bundle.rest.one`, `bundle.rest.two`. Apple reviews them with the binary; easy to miss
-- [ ] App Review Information: the 1.2 review notes from the listing doc; contact adamlaserlab@gmail.com; sign-in required **off**
-- [ ] App Information: category Education; Made for Kids, age band 6–8; age rating questionnaire (expect 4+); privacy policy URL `https://futrobject.github.io/JackFlash/privacy.html`
-- [ ] App Privacy: Purchase History only (App Functionality + Analytics; not linked; no tracking)
-- [ ] Pricing and Availability: Free; all territories; standard EULA
+- [x] Change the version to **1.2** (General → Version), then Build → select **1.2 (10)** (not 9 — see the update above)
+- [x] Paste from `JackFlash-AppStore-Listing.md`: name, subtitle, promotional text (1.2, 159 chars), description (3,325 chars), keywords, What's New (1.2)
+- [x] In-App Purchases section: attach **all six** — `module.fractions.full`, `module.add.full`, `module.placevalue.full`, `bundle.all`, `bundle.rest.one`, `bundle.rest.two`. Apple reviews them with the binary; easy to miss
+- [x] App Review Information: the 1.2 review notes from the listing doc; contact adamlaserlab@gmail.com; sign-in required **off**
+- [x] App Information: category Education; Made for Kids, age band 6–8; age rating questionnaire (expect 4+); privacy policy URL `https://futrobject.github.io/JackFlash/privacy.html`
+- [x] App Privacy: Purchase History only (App Functionality + Analytics; not linked; no tracking) — published
+- [x] Pricing and Availability: Free; all territories; standard EULA
 - [x] Screenshots already on the version page (uploaded 2026-10-12). Optional: a Place Value frame
 
 **3. Device pass on 1.2 (10)** (TestFlight install of build 10, or the store-flavour Xcode build)
-- [ ] Place Value, Build & Read: the first item shows its disc chart (the build-9 bug), in Concrete and after switching modes
-- [ ] Practice header: the centered pull-tab opens and closes the session panel in every module; the closing tap types nothing (new in 1.2 (10), `docs/practice-header-ui.md` revision 3)
+- [x] Place Value, Build & Read: the first item shows its disc chart (the build-9 bug) — 2026-11-07
+- [x] Practice header: the centered pull-tab opens and closes the session panel in every module; the closing tap types nothing — 2026-11-07
 - [x] Sandbox 2026-11-07: bought Place Value (groups open) → card became "The rest of JackFlash" $5.99 → bought a second module → card $1.99 → bought it: every module open, no buy buttons, card shows ✓. The $5.99/$1.99 "rest" ladder works against real App Store products
 - [ ] **Post-launch follow-up (1.3):** when the family owns two modules, the last module still shows its $3.99 button next to the $1.99 "rest" card, which buys strictly more. Honest but reads like a mistake — replace that button with "Included in the rest of JackFlash, $1.99" when the rest offer costs less than the module
-- [ ] **Restore Purchases round-trip**: delete → reinstall → Restore → everything returns without payment (never checked off; Apple requires it)
-- [ ] Airplane mode: launch, fonts, practice in every module
-- [ ] Store screen: Multiply Included, three $3.99 modules, All of JackFlash $9.99, Connections Coming Soon, Restore
+- [x] **Restore Purchases round-trip** — 2026-11-07: delete → reinstall → Restore brought back both modules and the bundle, no payment sheet
+- [x] Airplane mode: launch, fonts, practice in every module — 2026-11-07
+- [x] Store screen: Multiply Included, three $3.99 modules, All of JackFlash $9.99, Connections Coming Soon, Restore — 2026-11-07; one answer of every kind with a wrong one each, all four modules
 
 **4. Submit**
-- [ ] Version page → **Submit for Review**. TestFlight Beta App Review for the Friends group is optional, not a prerequisite
+- [x] Version page → **Add for Review** → Submit — 2026-11-06 9:03 PM. Seven items in review: the version and six purchases
 - [ ] After approval: Release (manual or automatic as set on the version page), then update `public/landing.html`'s store CTA/toast with the real App Store link; put the Place Value / bundle line into the in-app Privacy/Terms/FAQ in the next build (the in-app FAQ still says "no bundle")
 
 **Done in-repo 2026-11-06:** listing doc (promo, description, What's New, review notes, what-ships note), landing pricing rows + FAQ + Family Sharing line, support "What's free" answer.
