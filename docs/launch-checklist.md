@@ -11,12 +11,12 @@
 - [x] **1.2 (10) archived and uploaded 2026-11-07** (store build from the primary checkout). Build number now 11. Everything below applies to 1.2 (10).
 
 **1. In-app purchases (App Store Connect → Monetization → In-App Purchases)**
-- [ ] Create `module.placevalue.full` — $3.99 tier, non-consumable, display name "Place Value", description from `purchaseManager.js`; review screenshot `screenshots/iap-review/place-value-and-all-of-jackflash.png`
-- [ ] Create `bundle.all` — $9.99 — "All of JackFlash" — "Every module, including the ones still to come."; same screenshot
-- [ ] Create `bundle.rest.one` — $5.99 — "The rest of JackFlash" — "Every other module, including ones to come."; screenshot `rest-of-jackflash-owns-one.png`
-- [ ] Create `bundle.rest.two` — $1.99 — "The rest of JackFlash" — same description; screenshot `rest-of-jackflash-owns-two.png`
-- [ ] Upload the review screenshot on `module.add.full` too if it still shows "Missing Metadata" (`add-subtract-store.png`). All six should read **Ready to Submit**. Do **not** click "Add for Review" on any product page.
-- [ ] **Family Sharing: Turn On** for all six (Fractions and Add included). Irreversible; the copy already says it's on.
+- [x] Create `module.placevalue.full` — $3.99 tier, non-consumable, display name "Place Value", description from `purchaseManager.js`; review screenshot `screenshots/iap-review/place-value-and-all-of-jackflash.png`
+- [x] Create `bundle.all` — $9.99 — "All of JackFlash" — "Every module, including the ones still to come."; same screenshot
+- [x] Create `bundle.rest.one` — $5.99 — "The rest of JackFlash" — "Every other module, including ones to come."; screenshot `rest-of-jackflash-owns-one.png`
+- [x] Create `bundle.rest.two` — $1.99 — "The rest of JackFlash" — same description; screenshot `rest-of-jackflash-owns-two.png`
+- [x] Upload the review screenshot on `module.add.full` too if it still shows "Missing Metadata" (`add-subtract-store.png`). All six should read **Ready to Submit**. Do **not** click "Add for Review" on any product page.
+- [x] **Family Sharing: Turn On** for all six — done 2026-11-07. All six show as Drafts / "Prepare for Submission" (the current ASC label for not-yet-submitted purchases); they ride with the 1.2 version.
 - [x] RevenueCat already has every entitlement, product and package (`fractions`, `add`, `placeValue`, `all`; packages in the current `default` offering)
 
 **2. Version page (App Store → the 1.0 draft)**
