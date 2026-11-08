@@ -11,7 +11,9 @@
 // Process doc: docs/paper-design-surface.md
 (() => {
   const REPO = window.__JF_REPO || "__REPO__"; // absolute repo path, for paper-asset:// urls
-  const W = 375, H = 812;
+  // Capture width. 375 is the design width; set window.__JF_WIDTH = 320 (and
+  // resize the preview to match) for narrow-phone variants.
+  const W = window.__JF_WIDTH || 375, H = 812;
   // background-size/repeat/position are kept (DOTTED_RULE needs them); the
   // "initial, initial" noise they carry on plain fills is dropped below.
   const DROP = /^(--|cursor|transition|animation|-webkit-tap|user-select|touch-action|outline|white-space-collapse|text-wrap|will-change|pointer-events|-webkit-overflow|overscroll|border-image|background-(attachment|origin|clip)|appearance|-webkit-appearance|resize|caret|box-sizing)/;
@@ -45,6 +47,9 @@
     if (out.rowGap !== undefined && out.rowGap === out.columnGap) { out.gap = out.rowGap; delete out.rowGap; delete out.columnGap; }
     if (out.transform === "translate(0px, 0px)" || out.transform === "none") delete out.transform;
     if (out.opacity === "1") delete out.opacity;
+    // Offsets without a position (the position came from a stylesheet or an
+    // animation keyframe) would become flow content in Paper; keep them pinned.
+    if ((out.left || out.top || out.right || out.bottom) && !out.position && /^(absolute|fixed)$/.test(cs.position)) out.position = "absolute";
     return out;
   }
 
@@ -104,6 +109,9 @@
       if (!textOnly && !st.flexDirection && !el.style.display) st.flexDirection = "column";
       if (!st.alignItems) st.alignItems = textOnly ? "center" : "stretch";
       if (!st.justifyContent) st.justifyContent = "center";
+      // Paper breaks words anywhere when a flex item is narrow; Chrome never
+      // splits a one-word button label, so pin single-word labels.
+      if (textOnly && !/\s/.test(el.textContent.trim()) && !st.whiteSpace) st.whiteSpace = "nowrap";
       if (st.background === "none") delete st.background;
       if (tag === "a") st.textDecoration = st.textDecoration || "none";
     }
@@ -127,7 +135,20 @@
     const hasMargin = Object.values(m).some(nz);
     const cols = st.__cols; delete st.__cols;
     let kids = [...el.childNodes].map((n) => serialize(n, depth + 1));
-    if (cols) { const gap = parseFloat(st.gap || st.columnGap || 0); const w = `calc((100% - ${gap * (cols - 1)}px) / ${cols})`; kids = kids.map((k) => k.startsWith("<div style=\"") ? k.replace("<div style=\"", `<div style="width:${w};flex-shrink:0;`) : k); }
+    if (cols) {
+      // grid → flex: each child gets an equal share of the row; a child that
+      // spanned N columns (number-pad Backspace / Check) gets N shares plus
+      // the gaps between them, and the grid-column declaration is dropped.
+      const gap = parseFloat(st.gap || st.columnGap || 0);
+      const share = (n) => `calc((100% - ${gap * (cols - 1)}px) / ${cols} * ${n} + ${gap * (n - 1)}px)`;
+      kids = kids.map((k) => {
+        if (!k.startsWith("<div style=\"")) return k;
+        const m = k.match(/grid-column(?:-start)?:span (\d+)/);
+        const n = m ? Number(m[1]) : 1;
+        k = k.replace(/;?grid-column(?:-start|-end)?:[^;"]*/g, "");
+        return k.replace("<div style=\"", `<div style="width:${n === 1 ? `calc((100% - ${gap * (cols - 1)}px) / ${cols})` : share(n)};flex-shrink:0;`);
+      });
+    }
     const styleStr = styleAttr(st);
     const name = el.getAttribute("aria-label") || el.getAttribute("data-layer") || (tag === "button" ? "Button" : null);
     const nameAttr = name ? ` layer-name="${name.replace(/"/g, "").slice(0, 50)}"` : "";
@@ -159,7 +180,7 @@
   // saved path, byte count and the data-jf-hash of every SVG it still had to
   // emit in full (add those to __jfAliases once they exist in Paper).
   window.__jfSave = async (name, sel, port = 5199) => {
-    if (window.innerWidth !== W) throw new Error(`viewport is ${window.innerWidth}px wide; captures must be taken at ${W}px (resize the preview to the mobile preset first) — clamp()/vw values resolve against the viewport`);
+    if (window.innerWidth !== W) throw new Error(`viewport is ${window.innerWidth}px wide; captures must be taken at ${W}px (resize the preview to the mobile preset first, or set window.__JF_WIDTH for a narrow variant) — clamp()/vw values resolve against the viewport`);
     const html = window.__jfExtract(sel);
     const res = await fetch(`http://localhost:${port}/save?name=${encodeURIComponent(name)}`, { method: "POST", body: html });
     const info = await res.json();

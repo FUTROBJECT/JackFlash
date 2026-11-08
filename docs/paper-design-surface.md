@@ -121,10 +121,52 @@ so single-word labels that fit in Chrome (tab names, avatar names, the
 wordmark) can break mid-word — give them `white-space: nowrap`. Paper
 ignores `transform: scale()`; scale the font sizes and boxes instead.
 
-**Not captured yet:** Fractions tapTwo / orderThree / fractionInput /
-buildBar items, Add mental number line and bar-model word problems, Place
-Value compare/order, Multiply division items, Achievement popup, Legal pages
-(Privacy / Terms), Help FAQ, 320-wide variants, Connections (staged).
+**Second capture pass (8 Nov 2026), 29 more artboards:** one item of every
+remaining answerType, reached through the Progress view's "Practise only …"
+skill rows on a fully unlocked seed profile (`purchases` holding the three
+`module.*.full` ids) —
+
+- Fractions: buildBar (F2), tapTwo (F3), tapTwoOrEqual (C1), orderThree
+  (C2), fractionInput (E3 and A1), singleNumber (E2), number line (E4)
+- Add: open number line (M1, M3), bar models (W1 part-whole, W2 comparison,
+  W3 two-step), facts (F1), column subtraction across zeros (S3)
+- Place Value: buildNumber (B2), tapTwo compare (C1), orderThree (C2),
+  expanded form (X1), digit value (V1), number patterns (C3)
+- Multiply division item (Concrete, `lockedOperation: "divide"`),
+  Achievement popup (Warming Up, 3 in a row; needs `achievements: []`),
+  Parent Zone · Privacy Policy and · Terms of Service (Settings tab links)
+- 320-wide variants: Home · Players, Multiply · Concrete, Parent Zone ·
+  Modules, Fractions · choice4 (set `window.__JF_WIDTH = 320` and resize the
+  preview to 320×568 before `__jfSave`)
+
+**Still not captured:** Connections (staged), Help FAQ as a separate page
+(the "How it Works" tab *is* the FAQ, already captured), wrong-answer
+states for the new answerTypes, and the Pictorial/Abstract modes of the
+non-Multiply modules.
+
+### Driving the app to a screen
+
+The dev build has no deep links; the capture helpers live in page JS.
+Install the extractor, then use plain DOM clicks (`button.click()`), which
+leave no hover residue. The things that are not obvious:
+
+- Reset onboarding: `localStorage.removeItem("jackflash_data")` + reload.
+  Seed a profile: `tools/paper/seed-profile.json`; add
+  `"purchases": ["module.add.full","module.fractions.full","module.placevalue.full"]`
+  to unlock everything (web, non-tester build).
+- Switch module: edit `profiles[0].activeModule` in the blob and reload
+  (`dataManager` caches the blob in memory).
+- A specific skill: Home → the card's **Progress** button → tap the row
+  whose `aria-label` is `Practise only <skill label>`; the practice view
+  then draws only that skill. Tapping the home button in the practice
+  header returns to Home.
+- Parent gate: read `What is a × b?` from `body.innerText`, set the input
+  through the native value setter and dispatch `input`, then Submit.
+- React inputs need the native setter:
+  `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set.call(el, v); el.dispatchEvent(new Event("input",{bubbles:true}))`.
+- Achievement popup: `achievements: []` on the profile, `lockedOperation:
+  "multiply"`, answer three items correctly with the pad buttons and
+  `__jfSave` within ~2 s (it auto-dismisses after 3 s).
 
 ### Writing captures into Paper — lessons
 
@@ -139,6 +181,18 @@ Value compare/order, Multiply division items, Achievement popup, Legal pages
   trio), writes one item per repeated grid, then `duplicate_nodes` +
   `set_text_content` for the rest. Scratch generator pattern: a small
   Node script that emits the HTML.
+- Grid → flex loses column spans unless the spanned child is widened: the
+  extractor now gives a `grid-column: span N` child N shares plus the gaps
+  (number-pad Backspace spans 2, Check spans 3). Before 8 Nov 2026 this was
+  a manual perl fix, and every keypad screen written without it shows
+  "Check" wrapped onto two lines in a fifth-width key.
+- An element whose `left`/`top` came with its `position` from a stylesheet
+  or animation keyframe (the achievement confetti) arrives with offsets but
+  no position and becomes flow content; the extractor now copies the
+  computed `position` when it is absolute or fixed.
+- Single-word button labels (Check, Children, Submit) get `white-space:
+  nowrap` from the extractor, because Paper breaks words anywhere inside a
+  narrow flex item and Chrome never splits a one-word label.
 - After every write set the artboard to `height: fit-content`
   (`update_styles`) and screenshot it; fit-content is what makes the long
   Parent Zone and Progress artboards readable.
