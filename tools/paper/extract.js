@@ -147,7 +147,8 @@
     // Paper drops bare text that sits beside element children (the "5" next
     // to an absolutely positioned "×"), so mixed content gets its text nodes
     // wrapped in their own divs.
-    const mixed = el.children.length > 0 && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+    const INLINE = /^(span|strong|b|em|i|u|small|sup|sub|mark|a)$/i;
+    const mixed = [...el.children].some((c) => !INLINE.test(c.tagName)) && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
     let kids = [...el.childNodes].map((n) => (mixed && n.nodeType === 3 && n.textContent.trim()) ? `<div>${esc(n.textContent)}</div>` : serialize(n, depth + 1));
     if (cols) {
       // grid → flex: each child gets an equal share of the row; a child that

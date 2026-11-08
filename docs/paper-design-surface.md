@@ -271,6 +271,10 @@ leave no hover residue. The things that are not obvious:
   longhands in `el.style` but returns "" for each. The extractor falls back
   to the computed value, otherwise the declaration vanishes — every capture
   before 8 Nov 2026 had a header with no padding for this reason.
+- The mixed-content wrap must leave *inline* siblings alone: a sentence
+  with `<span style="font-weight:700">` words is text + inline children,
+  and wrapping its text in divs breaks the sentence into lines. Only wrap
+  when a sibling is block-level.
 - After every write set the artboard to `height: fit-content`
   (`update_styles`) and screenshot it; fit-content is what makes the long
   Parent Zone and Progress artboards readable.
@@ -296,6 +300,11 @@ artboard so UI stays as-built.
   green** (`#06D6A0`), against the design rule of black text on colour chips.
 - The parent-zone tab strip draws the active tab with a yellow pill and no
   border, unlike every other chip in the app (2–2.5px black border).
+- **CreateProfile has no safe-area padding** (`padding: "20px"` on the
+  step container, `ProfilePicker.jsx` ~:957): on a phone with a Dynamic
+  Island the "Pick your avatar!" heading sits under the status bar. Seen in
+  the 393×852 capture; the other first-run screens add
+  `var(--safe-area-inset-top)`.
 - The Add Player module step (CreateProfile step 3) prints "Grades Grades
   2–4": the row label "Grades" is followed by a description that already
   starts with "Grades".
