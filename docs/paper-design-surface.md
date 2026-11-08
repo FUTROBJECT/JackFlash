@@ -31,11 +31,11 @@ Artboards sit in numbered sections, one section per area of the app, each
 a row (or two) of top-aligned artboards. The grid is fixed so new captures
 drop into a predictable slot:
 
-- **Every artboard is 375 wide.** The 320px variants keep their 320px
-  content centred inside a 375 frame (`alignItems: center` on the
-  artboard), so columns stay aligned. Artboards are `height: fit-content`
-  with a 812px minimum.
-- Column step **455px** (375 + 80 gap), at most six per row.
+- **Every artboard is 393 wide (iPhone 16).** The 320px variants keep
+  their 320px content centred inside a 393 frame (`alignItems: center` on
+  the artboard), so columns stay aligned. Artboards are `height:
+  fit-content` with an 852px minimum.
+- Column step **473px** (393 + 80 gap), at most six per row.
 - A section starts with a label frame at x = 0 (layer `§ N …`, Space Mono
   28/700 title + Space Grotesk 14 subtitle); its first row starts **120px**
   below the label. Rows are separated by **240px** measured from the
@@ -51,6 +51,26 @@ drop into a predictable slot:
   `update_styles` (`left`/`top` on artboards; `position: absolute` +
   `left`/`top` on label frames). `create_artboard` ignores a position, so a
   new board always needs that step.
+
+## Capture standard: iPhone 16, insets on
+
+Captures are taken at **393×852** with the safe-area insets the phone
+reports (59px top, 34px bottom), so the header, bottom nav and sheets sit
+exactly where they do on Adam's iPhone 16. The app reads its insets from
+`--safe-area-inset-*` CSS variables (the Capacitor plugin sets them on
+device), so the web preview reproduces the phone when the variables are set
+before capture:
+
+```js
+window.__JF_WIDTH = 393; window.__JF_HEIGHT = 852;
+document.documentElement.style.setProperty('--safe-area-inset-top', '59px');
+document.documentElement.style.setProperty('--safe-area-inset-bottom', '34px');
+```
+
+then `resize_window` to 393×852 and `__jfSave(...)` as usual. The prep step
+adds a presentation status bar (9:41, signal, wifi, battery) over the top
+inset of every 852px root. The 320px variants are still captured at 320×568
+with insets 0 (a notch-less phone) and framed in a 393 artboard.
 
 ## Capturing a screen (code → Paper)
 
@@ -246,6 +266,11 @@ leave no hover residue. The things that are not obvious:
   below the header (`top: 48px`) if the header should stay bright.
 - A reveal sheet whose card is centred by `margin: auto` in the app arrives
   left-aligned; give the wrapper `align-items: center`.
+- A shorthand written with `calc()`/`var()`/`clamp()` (the practice
+  header's `padding`) is a *pending-substitution value*: Chrome lists its
+  longhands in `el.style` but returns "" for each. The extractor falls back
+  to the computed value, otherwise the declaration vanishes — every capture
+  before 8 Nov 2026 had a header with no padding for this reason.
 - After every write set the artboard to `height: fit-content`
   (`update_styles`) and screenshot it; fit-content is what makes the long
   Parent Zone and Progress artboards readable.
