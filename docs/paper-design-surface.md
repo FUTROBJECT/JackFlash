@@ -31,22 +31,26 @@ Artboards sit in numbered sections, one section per area of the app, each
 a row (or two) of top-aligned artboards. The grid is fixed so new captures
 drop into a predictable slot:
 
-- Column step **455px** (375 artboard + 80 gap); the four 320px variants
-  sit in the same rows and simply end 55px early.
-- A section starts with a label frame at x = 0 (layer name `§ N …`, Space
-  Mono 28/700 title + Space Grotesk 14 subtitle), then its first row
-  **110px** below the label's top. Rows are separated by 160px measured
-  from the tallest artboard in the row, sections by 260px.
+- **Every artboard is 375 wide.** The 320px variants keep their 320px
+  content centred inside a 375 frame (`alignItems: center` on the
+  artboard), so columns stay aligned. Artboards are `height: fit-content`
+  with a 812px minimum.
+- Column step **455px** (375 + 80 gap), at most six per row.
+- A section starts with a label frame at x = 0 (layer `§ N …`, Space Mono
+  28/700 title + Space Grotesk 14 subtitle); its first row starts **120px**
+  below the label. Rows are separated by **240px** measured from the
+  tallest artboard in the row, sections by **360px**.
 - Sections, in order: 1 Onboarding & first run · 2 Home · 3 Parent Zone ·
   4 Multiply & Divide · 5 Fractions · 6 Add & Subtract · 7 Place Value.
-  Tall artboards (progress view, legal pages, expanded child) go last in
-  their section so they don't stretch the first row.
-- Positioning is plain `update_styles` with `left`/`top` on the artboard
-  (or on a label frame, with `position: absolute`); `create_artboard`
-  ignores a position and drops the board in the nearest empty spot, so
-  always move it afterwards. The row maths lives in the session that laid
-  the page out; re-derive from the numbers above rather than nudging by
-  eye.
+  Artboards taller than a phone (expanded child, How it works, legal pages,
+  progress view, Onboarding 3) share a row of their own at the end of the
+  section so the main flow stays one phone high.
+- **Re-run the row maths whenever an artboard is rewritten**: fit-content
+  heights change, and a taller board silently runs into the row below.
+  Read heights with `get_basic_info`, compute `top` per row, apply with
+  `update_styles` (`left`/`top` on artboards; `position: absolute` +
+  `left`/`top` on label frames). `create_artboard` ignores a position, so a
+  new board always needs that step.
 
 ## Capturing a screen (code → Paper)
 
