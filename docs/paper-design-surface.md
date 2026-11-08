@@ -132,11 +132,14 @@ operands beside operators wrapped, offset-only elements pinned. Write the
 prepped file verbatim with `write_html`; the only remaining manual touch is
 an `<input>` placeholder (grey, left-aligned).
 
-**Writing in bulk.** Hand the prepped files to a *Sonnet* subagent (the
-Agent tool's `model: "sonnet"`) with the name → artboard/root id table; it
-reads each file, writes it verbatim, sets the artboard to fit-content and
-screenshots it. That keeps ~15–40 KB per screen out of the main context and
-off the Fable rate limit. Mechanical re-writes never need Opus or Fable.
+**Writing in bulk.** Hand the prepped files to *Sonnet* subagents (the
+Agent tool's `model: "sonnet"`), **4–6 screens per agent**: each write
+costs the agent the file (15–45 KB) plus a ~8k-token createdNodes reply, so
+20 rows overflow one context and the agent stops early. Give each a
+name → artboard id table; it looks up the root with `get_children`, writes
+the file verbatim, sets the artboard to fit-content and screenshots it.
+Tell it every Paper call needs `fileId`. Mechanical writes never need Opus
+or Fable.
 
 ## Status — what is in Paper, what is queued
 
@@ -271,10 +274,10 @@ leave no hover residue. The things that are not obvious:
   longhands in `el.style` but returns "" for each. The extractor falls back
   to the computed value, otherwise the declaration vanishes — every capture
   before 8 Nov 2026 had a header with no padding for this reason.
-- The mixed-content wrap must leave *inline* siblings alone: a sentence
-  with `<span style="font-weight:700">` words is text + inline children,
-  and wrapping its text in divs breaks the sentence into lines. Only wrap
-  when a sibling is block-level.
+- The bare-text wrap applies only beside an **absolutely positioned**
+  sibling (the "×" case). Beside in-flow siblings — bold `<span>`s in a
+  sentence, the disc icon in "2 fives: 5,", the column headings — Paper
+  keeps bare text, and wrapping it stacks the words one per line.
 - After every write set the artboard to `height: fit-content`
   (`update_styles`) and screenshot it; fit-content is what makes the long
   Parent Zone and Progress artboards readable.
