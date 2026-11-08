@@ -134,7 +134,11 @@
     const nz = (v) => v && v !== "0" && v !== "0px" && v !== "auto";
     const hasMargin = Object.values(m).some(nz);
     const cols = st.__cols; delete st.__cols;
-    let kids = [...el.childNodes].map((n) => serialize(n, depth + 1));
+    // Paper drops bare text that sits beside element children (the "5" next
+    // to an absolutely positioned "×"), so mixed content gets its text nodes
+    // wrapped in their own divs.
+    const mixed = el.children.length > 0 && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+    let kids = [...el.childNodes].map((n) => (mixed && n.nodeType === 3 && n.textContent.trim()) ? `<div>${esc(n.textContent)}</div>` : serialize(n, depth + 1));
     if (cols) {
       // grid → flex: each child gets an equal share of the row; a child that
       // spanned N columns (number-pad Backspace / Check) gets N shares plus

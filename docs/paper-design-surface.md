@@ -224,6 +224,9 @@ leave no hover residue. The things that are not obvious:
 - Single-word button labels (Check, Children, Submit) get `white-space:
   nowrap` from the extractor, because Paper breaks words anywhere inside a
   narrow flex item and Chrome never splits a one-word label.
+- Paper drops bare text that sits beside an element child (the "5" next to
+  the absolutely positioned "×" in the Multiply question). The extractor now
+  wraps text nodes of mixed-content elements in their own `<div>`.
 - After every write set the artboard to `height: fit-content`
   (`update_styles`) and screenshot it; fit-content is what makes the long
   Parent Zone and Progress artboards readable.
