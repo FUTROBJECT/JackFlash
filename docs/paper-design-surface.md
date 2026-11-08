@@ -100,12 +100,16 @@ Paper is on **Pro** (upgraded 7 Nov 2026 after the free tier's weekly MCP
 limit blocked writes and screenshots). If writes ever stop with no error
 detail, check the plan before debugging the HTML.
 
-**Known nits in the as-built artboards** (fix in Paper when next there):
-Home · Players draws the profile card's "Progress" footer outside the card
-border; Parent Zone · Children · Jack expanded wraps each `<select>`'s ▼
-onto its own line and squashes the Reset/Delete buttons. Both are
-extractor artefacts (a `<select>` has no flex children to carry its arrow;
-the card footer lost its grid row), not app bugs.
+**Extractor gaps found in review (fixed by hand in Paper on 8 Nov 2026,
+still open in `extract.js`):** a `<button>` whose only child is a text node
+loses its border, padding, shadow and font (Home · Players "Progress" footer,
+Parent Zone "Reset Progress" / "Delete Profile"), and the shared `Dropdown`
+button loses its flex row so the ▼ wraps under the label. Both come from the
+`textOnly` branch of the button conversion, which centres the text but copies
+no box styles. When fixing by hand: Progress footer = white, 2.5px border,
+3px shadow, radius 8, padding 6px 8px, Space Mono 11/700; PZ small buttons =
+padding 7px 14px, Space Mono 13/700; Dropdown = flex row, space-between,
+gap 10, padding 9px 12px, Space Grotesk 14/600 label, Space Mono 11 arrow.
 
 **Not captured yet:** Fractions tapTwo / orderThree / fractionInput /
 buildBar items, Add mental number line and bar-model word problems, Place
