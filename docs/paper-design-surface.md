@@ -288,6 +288,10 @@ leave no hover residue. The things that are not obvious:
   browser; converted to `flex` they stretch across a column parent (the
   stacked fraction's vinculum ran the full row). The extractor now gives
   them `width: fit-content` and an `align-self` matching `text-align`.
+- `visibility: hidden` elements still take up space (the wrong-answer
+  reveal's blank answer chip sizes itself by a hidden copy of the answer).
+  The extractor emits an empty box of the measured size for them, so the
+  chip keeps its height instead of collapsing to a line.
 - After every write set the artboard to `height: fit-content`
   (`update_styles`) and screenshot it; fit-content is what makes the long
   Parent Zone and Progress artboards readable.

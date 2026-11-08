@@ -78,7 +78,15 @@
     const tag = el.tagName.toLowerCase();
     if (/^(script|style|noscript|template)$/.test(tag)) return "";
     const cs = getComputedStyle(el);
-    if (cs.display === "none" || cs.visibility === "hidden") return "";
+    if (cs.display === "none") return "";
+    // visibility:hidden still takes up space (DerivationToken's blank chip
+    // sizes itself by a hidden copy of its content) -> keep an empty box of
+    // the measured size so the parent doesn't collapse.
+    if (cs.visibility === "hidden") {
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return "";
+      return `<div style="width:${+r.width.toFixed(2)}px;height:${+r.height.toFixed(2)}px;flex-shrink:0"></div>`;
+    }
     if (tag === "svg") {
       const c = el.cloneNode(true);
       c.querySelectorAll("animate,animateTransform,animateMotion").forEach((n) => n.remove());
