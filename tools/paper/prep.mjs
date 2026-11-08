@@ -42,6 +42,10 @@ export function prep(html, name) {
   h = h.replace(/border:medium none currentcolor;/g, "");
   h = h.replace(/border-(?:top|right|bottom|left)-width:medium;?/g, "");
   h = h.replace(/border-(?:top|right|bottom|left)-color:currentcolor;?/g, "");
+  // Captures from before 8 Nov 2026 folded negative margins into negative
+  // padding and let a centred max-width block hug its content.
+  h = h.replace(/padding:-(\d+(?:\.\d+)?)px (\S+) (\S+) (\S+)"/g, 'position:relative;top:-$1px;padding:0 $2 $3 $4"');
+  h = h.replace(/(align-items:center;[^"]*"><div style=")((?:(?!width:)[^"])*max-width:)/g, "$1width:100%;$2");
   // grid → flex: a spanned child gets N shares plus the gaps between them.
   h = h.replace(/<div style="width:calc\(\(100% - (\d+)px\) \/ (\d+)\);flex-shrink:0;([^>]*?)grid-column(?:-start)?:span (\d+);?([^>]*?)>/g, (m, g, c, pre, n, post) => {
     const gap = c > 1 ? g / (c - 1) : 0;

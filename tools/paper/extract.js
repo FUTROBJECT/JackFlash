@@ -174,11 +174,19 @@
     else if (tag === "select") { html = `<div style="${styleStr}"${nameAttr}>${esc(el.options[el.selectedIndex]?.text || "")}</div>`; }
     else html = `<div style="${styleStr}"${nameAttr}>${kids.join("")}</div>`;
     if (hasMargin) {
-      const pad = `padding:${nz(m.t) ? m.t : 0} ${nz(m.r) ? m.r : 0} ${nz(m.b) ? m.b : 0} ${nz(m.l) ? m.l : 0}`;
+      // Negative margins can't become padding: pull the wrapper by that much
+      // with a relative offset instead (the home banner's margin-top:-16px).
+      const neg = (v) => nz(v) && parseFloat(v) < 0;
+      const pos = (v) => (nz(v) && !neg(v) ? v : 0);
+      const pad = `padding:${pos(m.t)} ${pos(m.r)} ${pos(m.b)} ${pos(m.l)}`;
+      const shift = `${neg(m.t) ? `position:relative;top:${m.t};` : ""}${neg(m.l) ? `position:relative;left:${m.l};` : ""}`;
       const centered = m.l === "auto" && m.r === "auto";
       const w = st.width === "100%" || st.alignSelf === "stretch" || centered ? "width:100%;" : "";
       const al = centered ? "align-items:center;" : "";
-      html = `<div style="display:flex;flex-direction:column;${w}${al}${pad}">${html}</div>`;
+      // A centred block with max-width fills its line up to that max in the
+      // browser; as a flex child it would hug its content, so give it width:100%.
+      if (centered && st.maxWidth && !st.width) html = html.replace(/^<div style="/, '<div style="width:100%;');
+      html = `<div style="display:flex;flex-direction:column;${w}${al}${shift}${pad}">${html}</div>`;
     }
     return html;
   }

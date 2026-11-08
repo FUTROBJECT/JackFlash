@@ -278,6 +278,12 @@ leave no hover residue. The things that are not obvious:
   sibling (the "×" case). Beside in-flow siblings — bold `<span>`s in a
   sentence, the disc icon in "2 fives: 5,", the column headings — Paper
   keeps bare text, and wrapping it stacks the words one per line.
+- A centred block with `max-width` (margin auto) fills its line up to the
+  max in the browser; as a Paper flex child it hugs its content. The
+  margin fold now gives such a child `width:100%` (the home session
+  banner, the create-profile and parent-gate cards).
+- A negative margin cannot become padding; the fold turns it into a
+  relative offset on the wrapper (`position:relative; top:-16px`).
 - After every write set the artboard to `height: fit-content`
   (`update_styles`) and screenshot it; fit-content is what makes the long
   Parent Zone and Progress artboards readable.
