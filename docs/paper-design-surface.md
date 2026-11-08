@@ -100,11 +100,19 @@ the SVG. Known hashes in the current build:
 | `ctad19`, `1w8thee` | bolt + wordmark variants inside the module picker / avatar picker | not yet aliased |
 | `yawywz` | fractions wrong-answer circle | not yet aliased |
 
-Hand-fixes that are still manual after extraction (candidates for the
-extractor): a `position: fixed` root or bottom nav becomes
-`position: relative/absolute` inside the artboard; hover/pressed residue (a
-tab tinted because the mouse was over it) is removed; an `<input>` placeholder
-is given the placeholder grey and left alignment.
+**Prep step.** `node tools/paper/prep.mjs tools/paper/captures <outDir>`
+rewrites every capture into Paper-safe HTML: fixed → absolute inside a
+relative 812px root, z-index dropped, quotes normalised, hover residue and
+border longhand noise removed, grid spans widened, one-word labels no-wrap,
+operands beside operators wrapped, offset-only elements pinned. Write the
+prepped file verbatim with `write_html`; the only remaining manual touch is
+an `<input>` placeholder (grey, left-aligned).
+
+**Writing in bulk.** Hand the prepped files to a *Sonnet* subagent (the
+Agent tool's `model: "sonnet"`) with the name → artboard/root id table; it
+reads each file, writes it verbatim, sets the artboard to fit-content and
+screenshots it. That keeps ~15–40 KB per screen out of the main context and
+off the Fable rate limit. Mechanical re-writes never need Opus or Fable.
 
 ## Status — what is in Paper, what is queued
 
