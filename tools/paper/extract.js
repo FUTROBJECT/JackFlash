@@ -13,7 +13,12 @@
   const REPO = window.__JF_REPO || "__REPO__"; // absolute repo path, for paper-asset:// urls
   // Capture width. 375 is the design width; set window.__JF_WIDTH = 320 (and
   // resize the preview to match) for narrow-phone variants.
-  const W = window.__JF_WIDTH || 375, H = 812;
+  // Default is the 375×812 design viewport. For phone-faithful captures set
+  // window.__JF_WIDTH = 393, window.__JF_HEIGHT = 852 (iPhone 16), resize the
+  // preview to match, and give the app its insets the way the Capacitor
+  // plugin does: document.documentElement.style.setProperty('--safe-area-inset-top','59px')
+  // and '--safe-area-inset-bottom','34px'.
+  const W = window.__JF_WIDTH || 375, H = window.__JF_HEIGHT || 812;
   // background-size/repeat/position are kept (DOTTED_RULE needs them); the
   // "initial, initial" noise they carry on plain fills is dropped below.
   const DROP = /^(--|cursor|transition|animation|-webkit-tap|user-select|touch-action|outline|white-space-collapse|text-wrap|will-change|pointer-events|-webkit-overflow|overscroll|border-image|background-(attachment|origin|clip)|appearance|-webkit-appearance|resize|caret|box-sizing)/;
@@ -28,6 +33,11 @@
       const p = el.style[i];
       if (DROP.test(p)) continue;
       let v = el.style.getPropertyValue(p);
+      // A shorthand written with calc()/var()/clamp() (the practice header's
+      // padding, safe-area insets) is a "pending-substitution value": Chrome
+      // lists its longhands but returns "" for each. The computed value is
+      // the resolved px, so take that.
+      if (!v) v = cs.getPropertyValue(p);
       if (!v || /^(initial|inherit|unset|none)(,\s*(initial|none))*$/.test(v) && p !== "border" && p !== "text-decoration") continue;
       if (NEEDS_COMPUTED.test(v)) { const c = cs.getPropertyValue(p); if (c) v = c; }
       if (p === "line-height" && /em$/.test(v)) v = cs.lineHeight;
@@ -188,7 +198,7 @@
     const html = window.__jfExtract(sel);
     const res = await fetch(`http://localhost:${port}/save?name=${encodeURIComponent(name)}`, { method: "POST", body: html });
     const info = await res.json();
-    return { ...info, hashes: [...html.matchAll(/data-jf-hash="([^"]+)"/g)].map((m) => m[1]) };
+    return { ...info, viewport: `${window.innerWidth}x${window.innerHeight}`, hashes: [...html.matchAll(/data-jf-hash="([^"]+)"/g)].map((m) => m[1]) };
   };
   return "extractor ready";
 })();
