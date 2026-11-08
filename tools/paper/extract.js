@@ -36,6 +36,7 @@
     const sides = ["Top", "Right", "Bottom", "Left"];
     const same = (ks) => ks.every((k) => out[k] !== undefined) && ks.every((k) => out[k] === out[ks[0]]);
     const bw = sides.map((s) => `border${s}Width`), bs = sides.map((s) => `border${s}Style`), bc = sides.map((s) => `border${s}Color`);
+    if (!bs.some((k) => out[k])) { [...bw, ...bc].forEach((k) => delete out[k]); } // border:none residue (medium / currentcolor)
     if (same(bw) && same(bs) && same(bc)) { out.border = `${out[bw[0]]} ${out[bs[0]]} ${out[bc[0]]}`; [...bw, ...bs, ...bc].forEach((k) => delete out[k]); }
     const br = ["borderTopLeftRadius", "borderTopRightRadius", "borderBottomRightRadius", "borderBottomLeftRadius"];
     if (same(br)) { out.borderRadius = out[br[0]]; br.forEach((k) => delete out[k]); }
@@ -158,6 +159,7 @@
   // saved path, byte count and the data-jf-hash of every SVG it still had to
   // emit in full (add those to __jfAliases once they exist in Paper).
   window.__jfSave = async (name, sel, port = 5199) => {
+    if (window.innerWidth !== W) throw new Error(`viewport is ${window.innerWidth}px wide; captures must be taken at ${W}px (resize the preview to the mobile preset first) — clamp()/vw values resolve against the viewport`);
     const html = window.__jfExtract(sel);
     const res = await fetch(`http://localhost:${port}/save?name=${encodeURIComponent(name)}`, { method: "POST", body: html });
     const info = await res.json();

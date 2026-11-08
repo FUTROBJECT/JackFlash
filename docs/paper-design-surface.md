@@ -100,16 +100,26 @@ Paper is on **Pro** (upgraded 7 Nov 2026 after the free tier's weekly MCP
 limit blocked writes and screenshots). If writes ever stop with no error
 detail, check the plan before debugging the HTML.
 
-**Fixed in review (8 Nov 2026):** three artboards had lost borders, padding
-and fonts on their buttons (Home · Players "Progress" footer, Parent Zone
-"Reset Progress" / "Delete Profile", the shared `Dropdown`). The cause was
-quoting, not layout: for form controls the extractor copies the *computed*
-font family, and computed styles quote it with double quotes
-(`font-family:"Space Mono"`), which terminates the `style="…"` attribute and
-drops every declaration after it when Paper parses the HTML. `extract.js`
-now routes every emitted value through a single-quote normaliser
-(`styleAttr`) and `url()`s use single quotes too, so new captures are safe;
-the three artboards were repaired by hand with `update_styles`.
+**Recaptured 8 Nov 2026:** the first ten artboards (Splash, Onboarding
+1–4, Create profile 1–2, Home · Players, Parent gate, Parent Zone · Modules)
+had been pushed through chat with the first extractor, before margin folding
+and quote normalising existed, so buttons had lost their styles and the 20px
+screen padding was gone. They were recaptured with the current extractor and
+each artboard's content replaced. Two things bit during that run and are now
+guarded in `extract.js`:
+
+- **Viewport.** The preview tab had drifted back to desktop width, so every
+  `clamp()`/`vw` value (wordmark size, splash lockup scale, avatar grid
+  columns) resolved for 1024px. `__jfSave` now refuses to run unless the
+  viewport is exactly 375px; set the mobile preset first.
+- **Quoting.** Form controls copy their computed font family, which Chrome
+  quotes with double quotes; inside `style="…"` that ended the attribute and
+  dropped every later declaration. Every emitted value is now single-quoted.
+
+Paper-side rules learnt: Paper defaults text to `overflow-wrap: anywhere`,
+so single-word labels that fit in Chrome (tab names, avatar names, the
+wordmark) can break mid-word — give them `white-space: nowrap`. Paper
+ignores `transform: scale()`; scale the font sizes and boxes instead.
 
 **Not captured yet:** Fractions tapTwo / orderThree / fractionInput /
 buildBar items, Add mental number line and bar-model word problems, Place
