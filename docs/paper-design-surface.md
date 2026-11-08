@@ -144,6 +144,14 @@ so single-word labels that fit in Chrome (tab names, avatar names, the
 wordmark) can break mid-word — give them `white-space: nowrap`. Paper
 ignores `transform: scale()`; scale the font sizes and boxes instead.
 
+**First-pass artboards rebuilt (8 Nov 2026):** the 21 raw captures from the
+first pass carried double-quoted font families (the pre-fix extractor), so
+every keypad key, header label and button in those artboards had lost its
+styles. The capture files were repaired in place (quotes → single), re-run
+through the prep step with the span / nowrap / residue fixes, and each
+artboard's root replaced. The captures folder is therefore clean: every
+file in it can be re-prepped and written again at any time.
+
 **Second capture pass (8 Nov 2026), 29 more artboards:** one item of every
 remaining answerType, reached through the Progress view's "Practise only …"
 skill rows on a fully unlocked seed profile (`purchases` holding the three
