@@ -16,7 +16,7 @@
   // "initial, initial" noise they carry on plain fills is dropped below.
   const DROP = /^(--|cursor|transition|animation|-webkit-tap|user-select|touch-action|outline|white-space-collapse|text-wrap|will-change|pointer-events|-webkit-overflow|overscroll|border-image|background-(attachment|origin|clip)|appearance|-webkit-appearance|resize|caret|box-sizing)/;
   const NEEDS_COMPUTED = /(calc\(|clamp\(|var\(|vw|vh|dvh|\dem\b|rem\b|env\()/;
-  const fixUrl = (v) => String(v).replace(/url\(["']?\/(?!\/)/g, `url("paper-asset://${REPO}/public/`);
+  const fixUrl = (v) => String(v).replace(/url\(["']?\/(?!\/)/g, `url('paper-asset://${REPO}/public/`);
   const kebab = (p) => p.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
   const camel = (p) => p.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 
@@ -47,6 +47,12 @@
     return out;
   }
 
+  // Every value goes through here before it lands in a style="" attribute.
+  // Computed styles quote font families with double quotes ("Space Mono"),
+  // which terminates the attribute and silently drops every declaration
+  // after it when Paper parses the HTML — single quotes are safe.
+  const q = (v) => String(v).replace(/"/g, "'");
+  const styleAttr = (obj) => Object.entries(obj).map(([k, v]) => `${kebab(k)}:${q(v)}`).join(";");
   const esc = (s) => s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
   const hash = (s) => { let x = 5381; for (let i = 0; i < s.length; i++) x = ((x << 5) + x + s.charCodeAt(i)) | 0; return (x >>> 0).toString(36); };
 
@@ -83,7 +89,7 @@
       const inl = styles(el, cs);
       if (tag === "strong" || tag === "b") inl.fontWeight = inl.fontWeight || "700";
       if (tag === "em" || tag === "i") inl.fontStyle = inl.fontStyle || "italic";
-      const s = Object.entries(inl).map(([k, v]) => `${kebab(k)}:${v}`).join(";");
+      const s = styleAttr(inl);
       return s ? `<span style="${s}">${esc(el.textContent)}</span>` : esc(el.textContent);
     }
     const st = styles(el, cs);
@@ -121,7 +127,7 @@
     const cols = st.__cols; delete st.__cols;
     let kids = [...el.childNodes].map((n) => serialize(n, depth + 1));
     if (cols) { const gap = parseFloat(st.gap || st.columnGap || 0); const w = `calc((100% - ${gap * (cols - 1)}px) / ${cols})`; kids = kids.map((k) => k.startsWith("<div style=\"") ? k.replace("<div style=\"", `<div style="width:${w};flex-shrink:0;`) : k); }
-    const styleStr = Object.entries(st).map(([k, v]) => `${kebab(k)}:${v}`).join(";");
+    const styleStr = styleAttr(st);
     const name = el.getAttribute("aria-label") || el.getAttribute("data-layer") || (tag === "button" ? "Button" : null);
     const nameAttr = name ? ` layer-name="${name.replace(/"/g, "").slice(0, 50)}"` : "";
     let html;

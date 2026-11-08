@@ -100,16 +100,16 @@ Paper is on **Pro** (upgraded 7 Nov 2026 after the free tier's weekly MCP
 limit blocked writes and screenshots). If writes ever stop with no error
 detail, check the plan before debugging the HTML.
 
-**Extractor gaps found in review (fixed by hand in Paper on 8 Nov 2026,
-still open in `extract.js`):** a `<button>` whose only child is a text node
-loses its border, padding, shadow and font (Home · Players "Progress" footer,
-Parent Zone "Reset Progress" / "Delete Profile"), and the shared `Dropdown`
-button loses its flex row so the ▼ wraps under the label. Both come from the
-`textOnly` branch of the button conversion, which centres the text but copies
-no box styles. When fixing by hand: Progress footer = white, 2.5px border,
-3px shadow, radius 8, padding 6px 8px, Space Mono 11/700; PZ small buttons =
-padding 7px 14px, Space Mono 13/700; Dropdown = flex row, space-between,
-gap 10, padding 9px 12px, Space Grotesk 14/600 label, Space Mono 11 arrow.
+**Fixed in review (8 Nov 2026):** three artboards had lost borders, padding
+and fonts on their buttons (Home · Players "Progress" footer, Parent Zone
+"Reset Progress" / "Delete Profile", the shared `Dropdown`). The cause was
+quoting, not layout: for form controls the extractor copies the *computed*
+font family, and computed styles quote it with double quotes
+(`font-family:"Space Mono"`), which terminates the `style="…"` attribute and
+drops every declaration after it when Paper parses the HTML. `extract.js`
+now routes every emitted value through a single-quote normaliser
+(`styleAttr`) and `url()`s use single quotes too, so new captures are safe;
+the three artboards were repaired by hand with `update_styles`.
 
 **Not captured yet:** Fractions tapTwo / orderThree / fractionInput /
 buildBar items, Add mental number line and bar-model word problems, Place
@@ -121,7 +121,8 @@ Value compare/order, Multiply division items, Achievement popup, Legal pages
 - **Quote font families with single quotes** inside `style="…"`. A
   double-quoted `font-family:"Space Mono"` terminates the attribute and
   silently drops every declaration after it (the Progress view lost its
-  chip borders and padding this way).
+  chip borders and padding this way). The extractor normalises this since
+  8 Nov 2026; hand-written HTML (generators, DS atoms) still has to.
 - Captures over ~60 KB (the Progress view was 108 KB) are better written
   as a hand-generated compact version that clones already-written nodes
   with `<x-paper-clone node-id="…"/>` (the practice header, the mastery-dot
