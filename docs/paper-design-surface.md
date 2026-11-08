@@ -235,6 +235,13 @@ leave no hover residue. The things that are not obvious:
 - Paper drops bare text that sits beside an element child (the "5" next to
   the absolutely positioned "×" in the Multiply question). The extractor now
   wraps text nodes of mixed-content elements in their own `<div>`.
+- Paper stacks siblings in document order and ignores `z-index`, so an
+  overlay or dropdown panel that the app layers with z-index renders behind
+  whatever follows it in the DOM. After writing such a screen, `move_nodes`
+  the overlay (and the panel) to the end of the root; start the overlay
+  below the header (`top: 48px`) if the header should stay bright.
+- A reveal sheet whose card is centred by `margin: auto` in the app arrives
+  left-aligned; give the wrapper `align-items: center`.
 - After every write set the artboard to `height: fit-content`
   (`update_styles`) and screenshot it; fit-content is what makes the long
   Parent Zone and Progress artboards readable.
