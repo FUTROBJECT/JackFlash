@@ -1,0 +1,32 @@
+{
+  "_comment": "localStorage['jackflash_data'] for a fresh 'Jack' profile with onboarding complete. Paste into the preview to skip onboarding: localStorage.setItem('jackflash_data', JSON.stringify(<this object>)); location.reload(). Mastery is empty, so every module opens on its first group.",
+  "version": 2,
+  "onboardingComplete": true,
+  "activeProfileId": "ae27a0cd-9e25-4110-99c3-bc73d9316d24",
+  "unlockedModules": ["multiply"],
+  "purchases": [],
+  "bundlePurchased": false,
+  "parentSettings": { "masteryThreshold": 3 },
+  "profiles": [
+    {
+      "id": "ae27a0cd-9e25-4110-99c3-bc73d9316d24",
+      "name": "Jack",
+      "avatar": "robot-blue",
+      "activeModule": "multiply",
+      "createdAt": "2026-11-08T05:04:14.075Z",
+      "mastery": { "multiply": {} },
+      "dailyStreak": { "current": 0, "lastPracticeDate": null, "longest": 0, "daysPracticed": 0 },
+      "achievements": [],
+      "sessionHistory": [],
+      "settings": {
+        "showScaffoldButton": true,
+        "showHintButton": true,
+        "lockedMode": null,
+        "lockedGroup": null,
+        "lockedOperation": null,
+        "preferredMode": {},
+        "enabledTables": null
+      }
+    }
+  ]
+}

@@ -200,6 +200,12 @@ submission). Read it before any store-facing work. Key state:
   its goals or success: math isn't a race; mastery means "from memory", never
   "fast"; the child is only compared with their own last week. Read before
   writing any copy.
+- `docs/paper-design-surface.md` — Paper (app.paper.design) is the design
+  surface: file "JackFlash UI" (UI / Design system / Visual directions /
+  Early concepts pages, tokens from `constants.js`). `tools/paper/extract.js`
+  lifts a rendered screen out of the dev preview as Paper-ready HTML;
+  `tools/paper/capture-server.mjs` saves it to `tools/paper/captures/`. Read
+  the doc before any Paper work.
 - `NOTES-next-modules.md` — cross-session build notes; read before building
   a new module
 
