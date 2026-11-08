@@ -12,7 +12,9 @@
 (() => {
   const REPO = window.__JF_REPO || "__REPO__"; // absolute repo path, for paper-asset:// urls
   const W = 375, H = 812;
-  const DROP = /^(--|cursor|transition|animation|-webkit-tap|user-select|touch-action|outline|white-space-collapse|text-wrap|will-change|pointer-events|-webkit-overflow|overscroll|border-image|background-(position|size|repeat|attachment|origin|clip)|appearance|-webkit-appearance|resize|caret|box-sizing)/;
+  // background-size/repeat/position are kept (DOTTED_RULE needs them); the
+  // "initial, initial" noise they carry on plain fills is dropped below.
+  const DROP = /^(--|cursor|transition|animation|-webkit-tap|user-select|touch-action|outline|white-space-collapse|text-wrap|will-change|pointer-events|-webkit-overflow|overscroll|border-image|background-(attachment|origin|clip)|appearance|-webkit-appearance|resize|caret|box-sizing)/;
   const NEEDS_COMPUTED = /(calc\(|clamp\(|var\(|vw|vh|dvh|\dem\b|rem\b|env\()/;
   const fixUrl = (v) => String(v).replace(/url\(["']?\/(?!\/)/g, `url("paper-asset://${REPO}/public/`);
   const kebab = (p) => p.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
@@ -24,7 +26,7 @@
       const p = el.style[i];
       if (DROP.test(p)) continue;
       let v = el.style.getPropertyValue(p);
-      if (!v || v === "initial" || v === "inherit" || v === "unset") continue;
+      if (!v || /^(initial|inherit|unset|none)(,\s*(initial|none))*$/.test(v) && p !== "border" && p !== "text-decoration") continue;
       if (NEEDS_COMPUTED.test(v)) { const c = cs.getPropertyValue(p); if (c) v = c; }
       if (p === "line-height" && /em$/.test(v)) v = cs.lineHeight;
       v = fixUrl(v.replace(/100vh|100dvh/g, H + "px").replace(/100vw/g, W + "px")).replace(/,\s*initial\s*$/, "");

@@ -85,34 +85,48 @@ is given the placeholder grey and left alignment.
 
 ## Status — what is in Paper, what is queued
 
-**In the Paper file now (UI page):** Splash · Onboarding 1–4 · Create profile
-1 Name, 2 Avatar · Home · Players · Parent gate · Parent Zone · Modules
-(store). **Design system page:** DS 01–08 complete.
+**In the Paper file now (UI page, 7 Nov 2026):** all 22 captures are
+written and screenshot-checked — Splash · Onboarding 1–4 · Create profile
+1–3 · Home (Players, after a session, Module picker sheet, Avatar picker) ·
+Parent gate · Parent Zone (Children, Children · Jack expanded, Modules store,
+How it works, Settings) · Multiply (Concrete, Pictorial, Abstract, Abstract ·
+Show me, Header panel open, Wrong answer reveal, Progress & settings view) ·
+Fractions (choice4 circle, choice4 bar, wrong answer) · Add (Column method,
+wrong answer) · Place Value (Build & Read). **Design system page:** DS 01–08
+complete. The raw captures stay in `tools/paper/captures/` as the source of
+record for each artboard.
 
-**Captured to `tools/paper/captures/`, waiting to be written into Paper**
-(the Paper MCP weekly limit was hit on 7 Nov 2026; it resets in six days, or
-Paper Pro removes it):
+Paper is on **Pro** (upgraded 7 Nov 2026 after the free tier's weekly MCP
+limit blocked writes and screenshots). If writes ever stop with no error
+detail, check the plan before debugging the HTML.
 
-- Home · Players · after a session, Home · Module picker sheet, Home · Avatar
-  picker
-- Parent Zone · Children, · Children · Jack expanded, · How it works, · Settings
-- Multiply · Concrete, · Pictorial, · Abstract, · Abstract · Show me, · Header
-  panel open, · Wrong answer reveal, · Progress & settings view
-- Fractions · choice4 (circle), · choice4 (bar), · choice4 · wrong answer
-- Add · Column method (colAdd), · Column method · wrong answer
-- Place Value · Build & Read item
+**Known nits in the as-built artboards** (fix in Paper when next there):
+Home · Players draws the profile card's "Progress" footer outside the card
+border; Parent Zone · Children · Jack expanded wraps each `<select>`'s ▼
+onto its own line and squashes the Reset/Delete buttons. Both are
+extractor artefacts (a `<select>` has no flex children to carry its arrow;
+the card footer lost its grid row), not app bugs.
 
-Empty artboards already exist on the UI page for: Create profile · 3 Module
-(Add Player), Home · Modules, Home · Progress sheet, Home · Avatar picker,
-Parent Zone · Children / How it works / Settings. Fill those first.
+**Not captured yet:** Fractions tapTwo / orderThree / fractionInput /
+buildBar items, Add mental number line and bar-model word problems, Place
+Value compare/order, Multiply division items, Achievement popup, Legal pages
+(Privacy / Terms), Help FAQ, 320-wide variants, Connections (staged).
 
-- Create profile · 3 Module (Add Player)
+### Writing captures into Paper — lessons
 
-**Not captured yet:** Fractions
-tapTwo / orderThree / fractionInput / buildBar items, Add mental number line
-and bar-model word problems, Place Value compare/order, Multiply division
-items, Achievement popup, Legal pages (Privacy / Terms), Help FAQ, 320-wide
-variants, Connections (staged).
+- **Quote font families with single quotes** inside `style="…"`. A
+  double-quoted `font-family:"Space Mono"` terminates the attribute and
+  silently drops every declaration after it (the Progress view lost its
+  chip borders and padding this way).
+- Captures over ~60 KB (the Progress view was 108 KB) are better written
+  as a hand-generated compact version that clones already-written nodes
+  with `<x-paper-clone node-id="…"/>` (the practice header, the mastery-dot
+  trio), writes one item per repeated grid, then `duplicate_nodes` +
+  `set_text_content` for the rest. Scratch generator pattern: a small
+  Node script that emits the HTML.
+- After every write set the artboard to `height: fit-content`
+  (`update_styles`) and screenshot it; fit-content is what makes the long
+  Parent Zone and Progress artboards readable.
 
 ## Paper → code
 
