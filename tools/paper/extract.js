@@ -126,7 +126,14 @@
       if (tag === "a") st.textDecoration = st.textDecoration || "none";
     }
     if (depth === 0) { st.width = W + "px"; if (!st.minHeight && !st.height) st.minHeight = H + "px"; }
-    if (/^inline/.test(st.display || "")) st.display = "flex";
+    if (/^inline/.test(st.display || "")) {
+      // inline-flex / inline-block shrink to their content in the browser; as
+      // a Paper flex child they would stretch (the stacked fraction's vinculum
+      // ran the full row). Keep them shrink-to-fit, placed as text-align would.
+      st.display = "flex";
+      if (!st.width) st.width = "fit-content";
+      if (!st.alignSelf) st.alignSelf = cs.textAlign === "center" ? "center" : cs.textAlign === "right" ? "flex-end" : "flex-start";
+    }
     if ((st.display === "block" || !st.display) && el.children.length && !/^(span|p|h[1-6]|label|strong|em|b)$/.test(tag)) { st.display = "flex"; st.flexDirection = st.flexDirection || "column"; }
     if (st.display === "grid") {
       // grid → wrapping flex row pinned to the measured width; the computed

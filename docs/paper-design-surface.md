@@ -284,6 +284,10 @@ leave no hover residue. The things that are not obvious:
   banner, the create-profile and parent-gate cards).
 - A negative margin cannot become padding; the fold turns it into a
   relative offset on the wrapper (`position:relative; top:-16px`).
+- `inline-flex` / `inline-block` elements shrink to their content in the
+  browser; converted to `flex` they stretch across a column parent (the
+  stacked fraction's vinculum ran the full row). The extractor now gives
+  them `width: fit-content` and an `align-self` matching `text-align`.
 - After every write set the artboard to `height: fit-content`
   (`update_styles`) and screenshot it; fit-content is what makes the long
   Parent Zone and Progress artboards readable.

@@ -46,6 +46,9 @@ export function prep(html, name) {
   // padding and let a centred max-width block hug its content.
   h = h.replace(/padding:-(\d+(?:\.\d+)?)px (\S+) (\S+) (\S+)"/g, 'position:relative;top:-$1px;padding:0 $2 $3 $4"');
   h = h.replace(/(align-items:center;[^"]*"><div style=")((?:(?!width:)[^"])*max-width:)/g, "$1width:100%;$2");
+  // Inline-level elements (the extractor passes their vertical-align through)
+  // must shrink to content, not stretch across a column parent.
+  h = h.replace(/<div style="((?:(?!width:)[^"])*vertical-align:middle[^"]*)"/g, (m, st) => `<div style="${st};width:fit-content;align-self:center"`);
   // grid → flex: a spanned child gets N shares plus the gaps between them.
   h = h.replace(/<div style="width:calc\(\(100% - (\d+)px\) \/ (\d+)\);flex-shrink:0;([^>]*?)grid-column(?:-start)?:span (\d+);?([^>]*?)>/g, (m, g, c, pre, n, post) => {
     const gap = c > 1 ? g / (c - 1) : 0;
