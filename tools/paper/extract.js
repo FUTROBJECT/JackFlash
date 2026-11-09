@@ -181,7 +181,11 @@
     if (el.children.length === 0 && el.textContent.trim() && depth > 0) {
       const rect = el.getBoundingClientRect();
       const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.3;
-      if (rect.height < lh * 1.6) { if (!st.whiteSpace) st.whiteSpace = "nowrap"; }
+      // Judge the lines by the text's own box: a tab/button with min-height 44px
+      // is taller than one line even when its label fits on one.
+      const rng = document.createRange(); rng.selectNodeContents(el);
+      const textH = rng.getBoundingClientRect().height || rect.height;
+      if (textH < lh * 1.6) { if (!st.whiteSpace) st.whiteSpace = "nowrap"; }
       else if (!st.minWidth && !st.width) st.minWidth = `${+rect.width.toFixed(2)}px`;
     }
     if (/^inline/.test(st.display || "")) {

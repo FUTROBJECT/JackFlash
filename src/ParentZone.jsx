@@ -548,17 +548,23 @@ export function ParentZone({
         {/* Tab Bar */}
         <div style={{
           display: "flex",
-          gap: "10px",
+          gap: "4px",
           marginBottom: "20px",
           borderBottom: `2px solid ${COLORS.black}`,
           paddingBottom: "10px",
         }}>
+          {/* Four tabs share the row evenly and never wrap or overflow: a
+              320px phone has 280px for them, and "How it Works" used to wrap
+              to three lines while "Settings" ran off the screen. */}
           {["children", "modules", "howItWorks", "settings"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               style={{
-                padding: "8px 12px",
+                flex: "1 1 auto",
+                minWidth: 0,
+                minHeight: "44px",
+                padding: "0 4px",
                 borderRadius: "8px",
                 border: "none",
                 backgroundColor: activeTab === tab ? COLORS.yellow : "transparent",
@@ -567,6 +573,7 @@ export function ParentZone({
                 cursor: "pointer",
                 fontFamily: "'Space Grotesk', sans-serif",
                 fontSize: "13px",
+                whiteSpace: "nowrap",
                 transition: "background-color 0.2s",
               }}
             >

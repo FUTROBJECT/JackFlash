@@ -257,6 +257,10 @@ Rules the retake added (all in `extract.js` / `prep.mjs`):
 - **`inline-block` with block children stacks.** The Fact Family chip's label
   sat beside its equations; the `inline-*` shrink-to-fit rule now adds
   `flex-direction:column` for an `inline-block` that has non-inline children.
+- **Line count from the text, not the box.** The nowrap-if-it-fit-on-one-line
+  rule compared the *element's* height with a line, so a tab or button with
+  `min-height: 44px` never got `white-space: nowrap` and "How it Works"
+  wrapped in Paper. It now measures the text's own range box.
 - **Header drawer (prep).** The practice header's session/streak panel hangs
   off the sticky header with a dim scrim between header and content; Paper
   paints in DOM order, so content covered both. `prep.mjs` moves the scrim
@@ -264,9 +268,8 @@ Rules the retake added (all in `extract.js` / `prep.mjs`):
   adds the header's padding to the panel's offsets.
 
 Look-alike findings from the retake that are the app's own rendering, not
-Paper bugs: the Parent Zone "How it Works" tab and the Terms of Service
-heading wrap to two lines at 393 px (measured in the browser: tab 50 px
-high, heading 75 px); the achievement confetti sits at one point because the
+Paper bugs: the Terms of Service heading wraps to two lines at 393 px
+(measured in the browser: 75 px high); the achievement confetti sits at one point because the
 app animates it with `transform` (ignored by Paper); Create profile · 2's
 title sits under the status bar (the safe-area gap below).
 
@@ -471,7 +474,9 @@ first.
   bugs but are the app's own rendering: the Parent-gate question
   ("What is 38 × 7?") wraps onto two lines at 393px (15 chars of 32px Space
   Mono is 294px, the card's inner width is 287px); at 320px the Parent Zone
-  tab strip wraps "How it Works" onto three lines and stretches every tab to
-  that height; in Place Value C3 the comma after each Shrikhand number sits
+  tab strip used to wrap "How it Works" onto three lines and push "Settings"
+  off the screen (fixed in the app on 2026-11-09: the four tabs share the row,
+  `nowrap`, 44px high, 4px side padding; the eight Parent Zone artboards were
+  re-captured); in Place Value C3 the comma after each Shrikhand number sits
   ~6px from its ink because of Shrikhand's trailing side bearing plus Space
   Mono's comma advance (the markup gap is 2px).
