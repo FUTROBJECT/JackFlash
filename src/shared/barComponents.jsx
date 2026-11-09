@@ -1568,6 +1568,8 @@ export function PartWholeBar({
   const fontSize = 13 + (compact ? 0 : 1); // 14 normal, 13 compact
 
   const partAW = (W - 24) / 2;
+  const midA = 8 + partAW / 2, midB = W / 2 + 4 + partAW / 2;   // part midpoints
+  const midGap = barTop + barH + Math.floor(gap / 2);             // bracket bar
   const capSize = compact ? 12 : 11;
   const cellProps = { missingToken, missingValue, fontSize, animate };
   return (
@@ -1578,10 +1580,16 @@ export function PartWholeBar({
         <PwCell x={8} y={barTop} w={W - 16} h={barH} {...cellProps}
           label={labelWhole || whole} missing={missingIs === "whole"} color={COLORS.yellow}
         />
-        {/* Bracket lines */}
-        <line x1={W / 2} y1={barTop + barH} x2={W / 2} y2={partTop}
+        {/* Bracket: a stem from the whole's centre to halfway down the gap, a
+            bar between the two parts' midpoints, and a drop onto each part
+            (design decided in Paper, 2026-11-09 — docs/paper-design-surface.md). */}
+        <line x1={W / 2} y1={barTop + barH} x2={W / 2} y2={midGap + 1}
           stroke={COLORS.black} strokeWidth={2} />
-        <line x1={18} y1={partTop} x2={W - 18} y2={partTop}
+        <line x1={midA - 1} y1={midGap} x2={midB + 1} y2={midGap}
+          stroke={COLORS.black} strokeWidth={2} />
+        <line x1={midA} y1={midGap} x2={midA} y2={partTop}
+          stroke={COLORS.black} strokeWidth={2} />
+        <line x1={midB} y1={midGap} x2={midB} y2={partTop}
           stroke={COLORS.black} strokeWidth={2} />
         {/* Part A */}
         <PwCell x={8} y={partTop} w={partAW} h={partH} {...cellProps}
@@ -1638,14 +1646,18 @@ function SchematicComparison({
           fontFamily="'Shrikhand', cursive" fontSize={font} fill={COLORS.black}>
           {cellText("bigger", biggerValue)}
         </text>
+        {/* Difference: a divider inside the longer bar where the shorter one
+            ends, a dashed midline across the extra length, and the difference
+            pill directly under that segment on a short stem (design decided
+            in Paper, 2026-11-09 — docs/paper-design-surface.md). */}
         <g style={{ animation: animate ? "fadeSlideUp 0.3s ease 0.15s both" : "none" }}>
-          <line x1={xL + baseW} y1={bigTop + 6} x2={xL + bigW} y2={bigTop + 6}
+          <line x1={xL + baseW} y1={bigTop} x2={xL + baseW} y2={bigBot}
+            stroke={COLORS.black} strokeWidth={1.5} />
+          <line x1={xL + baseW} y1={bigTop + barH / 2} x2={xL + bigW} y2={bigTop + barH / 2}
             stroke={COLORS.black} strokeWidth={1.5} strokeDasharray="3 2" />
-          <line x1={xL + baseW} y1={bigTop} x2={xL + baseW} y2={rectY + rectH - 4}
+          <line x1={xL + baseW + (bigW - baseW) / 2} y1={bigBot} x2={xL + baseW + (bigW - baseW) / 2} y2={rectY}
             stroke={COLORS.black} strokeWidth={1.5} />
-          <line x1={xL + bigW} y1={bigTop} x2={xL + bigW} y2={rectY + rectH - 4}
-            stroke={COLORS.black} strokeWidth={1.5} />
-          <rect x={xL + baseW + 2} y={rectY} width={bigW - baseW - 4} height={rectH}
+          <rect x={xL + baseW} y={rectY} width={bigW - baseW} height={rectH}
             fill={cellFill("diff", COLORS.yellow)} stroke={COLORS.black} strokeWidth={2} rx={3} />
           <text x={xL + baseW + (bigW - baseW) / 2} y={rectY + rectH / 2 + 1}
             textAnchor="middle" dominantBaseline="central"
@@ -1681,13 +1693,12 @@ export function ComparisonBar({
   opacity = 1, animate = false,
 }) {
   const W = 280;
-  const H = compact ? 76 : 110;
   const barH = compact ? 20 : 28;
   const y1 = compact ? 8 : 18;               // base bar top
   const y2 = compact ? 36 : 58;              // bigger bar top
-  const rectY = y2 + (compact ? 20 : 22);    // difference chip
+  const rectY = y2 + barH + (compact ? 5 : 7); // difference chip, under the bar
   const rectH = compact ? 16 : 18;
-  const lineEnd = compact ? rectY + rectH - 6 : 94;
+  const H = rectY + rectH + (compact ? 4 : 6);
   const fontMain = compact ? 12 : 13;
   const fontDiff = compact ? 10.5 : 11;
   const availW = W - 76;
@@ -1757,17 +1768,19 @@ export function ComparisonBar({
           {cellText("bigger", biggerValue)}
         </text>
 
-        {/* Difference bracket (only when bigger > base) */}
+        {/* Difference (only when bigger > base): divider where the base ends,
+            dashed midline across the extra length, pill under it on a stem —
+            same design as SchematicComparison. */}
         {bigW > baseW && (
           <g style={{ animation: animate ? "fadeSlideUp 0.3s ease 0.15s both" : "none" }}>
-            <line x1={55 + baseW} y1={y2 + 6} x2={55 + bigW} y2={y2 + 6}
+            <line x1={55 + baseW} y1={y2} x2={55 + baseW} y2={y2 + barH}
+              stroke={COLORS.black} strokeWidth={1.5} />
+            <line x1={55 + baseW} y1={y2 + barH / 2} x2={55 + bigW} y2={y2 + barH / 2}
               stroke={COLORS.black} strokeWidth={1.5} strokeDasharray="3 2" />
-            <line x1={55 + baseW} y1={y2} x2={55 + baseW} y2={lineEnd}
+            <line x1={55 + baseW + (bigW - baseW) / 2} y1={y2 + barH} x2={55 + baseW + (bigW - baseW) / 2} y2={rectY}
               stroke={COLORS.black} strokeWidth={1.5} />
-            <line x1={55 + bigW} y1={y2} x2={55 + bigW} y2={lineEnd}
-              stroke={COLORS.black} strokeWidth={1.5} />
-            <rect x={55 + baseW + 2} y={rectY}
-              width={Math.max(4, bigW - baseW - 4)} height={rectH}
+            <rect x={55 + baseW} y={rectY}
+              width={Math.max(4, bigW - baseW)} height={rectH}
               fill={cellFill("diff", COLORS.yellow)}
               stroke={COLORS.black} strokeWidth={2} rx={3}
             />

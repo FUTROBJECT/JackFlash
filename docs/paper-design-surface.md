@@ -335,11 +335,14 @@ style objects and `constants.js` tokens the codebase uses (never read values
 off a screenshot). Then recapture the built screen and replace the proposal
 artboard so UI stays as-built.
 
-## Design decisions made in Paper, not yet in code
+## Design decisions made in Paper first
 
-Paper is the design surface, so these artboards deliberately differ from
-the app until the code catches up. A re-write from the capture files would
-revert them — re-apply (or ship the code change) after any re-write.
+Paper is the design surface: a change is drawn here first, then built. While
+a decision is Paper-only its artboards deliberately differ from the app, and
+a re-write from the capture files would revert it — re-apply (or ship the
+code) after any re-write. Both decisions below **shipped in code on
+2026-11-09** (`src/shared/barComponents.jsx`) and the W1/W2/W3 captures were
+retaken, so Paper and the app agree again.
 
 - **Bar-model connector (Adam, 2026-11-09):** the whole/parts diagram joins
   the whole to its two parts with a bracket — a stem from the whole's
