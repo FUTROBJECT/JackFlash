@@ -24,6 +24,31 @@ export function prep(html, name) {
   h = h.replace(/^<div style="/, `<div layer-name="${name.replace(/"/g, "")}" style="position:relative;${hasFixed ? `height:${H}px;` : ""}`);
   // Only a ROOT that is itself a full-screen overlay becomes a relative block.
   h = h.replace(/^(<div layer-name="[^"]*" style="position:relative;(?:height:\d+px;)?)position:absolute;top:0px;right:0px;bottom:0px;left:0px;z-index:\d+;/, `$1width:${W}px;height:${H}px;`);
+  // The practice header's session/streak drawer: a panel hanging off the sticky
+  // header, with a dim scrim (z-index 49) between header and content. Paper
+  // paints in DOM order, so content later in the tree covers both. Move the
+  // scrim and then the panel to the end of the root; the panel's offsets were
+  // relative to the header's inner row, so add the header's padding to them
+  // (the scrim starts below the header so the header stays bright).
+  {
+    const hdr = h.match(/position:sticky;top:0px;z-index:50;padding:(\d+(?:\.\d+)?)px (\d+(?:\.\d+)?)px (\d+(?:\.\d+)?)px/);
+    const panelOpen = /<div style="position:absolute;top:(\d+(?:\.\d+)?)px;left:0px;right:0px;background-color:rgb\(255, 248, 231\);box-shadow:[^"]*"[^>]*>/;
+    const scrimRe = /<div style="position:absolute;top:0px;right:0px;bottom:0px;left:0px;(?:z-index:\d+;)?background-color:rgba\(26, 26, 26, 0\.18\)"><\/div>/;
+    const pm = hdr && h.match(panelOpen);
+    if (pm && scrimRe.test(h)) {
+      let depth = 0, end = pm.index;
+      for (const m of h.slice(pm.index).matchAll(/<div\b[^>]*>|<\/div>/g)) {
+        depth += m[0] === "</div>" ? -1 : 1;
+        if (depth === 0) { end = pm.index + m.index + m[0].length; break; }
+      }
+      const [padTop, padSide, padBottom] = [hdr[1], hdr[2], hdr[3]].map(Number);
+      const panel = h.slice(pm.index, end).replace(/top:[\d.]+px;left:0px;right:0px/, `top:${+(padTop + Number(pm[1])).toFixed(2)}px;left:${padSide}px;right:${padSide}px`);
+      h = h.slice(0, pm.index) + h.slice(end);
+      h = h.replace(scrimRe, "");
+      const scrim = `<div layer-name="Scrim" style="position:absolute;top:${padTop + 44 + padBottom + 4}px;right:0px;bottom:0px;left:0px;background-color:rgba(26, 26, 26, 0.18)"></div>`;
+      h = h.replace(/<\/div>\s*$/, `${scrim}${panel}</div>`);
+    }
+  }
   // Phone-faithful captures (H >= 852) get a presentation status bar over the
   // safe-area inset: 9:41, signal, wifi, battery, all in the ink colour. It is
   // appended as the root's last child so it paints above the header.

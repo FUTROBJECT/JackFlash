@@ -188,6 +188,10 @@
       // inline-flex / inline-block shrink to their content in the browser; as
       // a Paper flex child they would stretch (the stacked fraction's vinculum
       // ran the full row). Keep them shrink-to-fit, placed as text-align would.
+      // An inline-block lays its children out as block flow (stacked), which a
+      // bare display:flex would turn into a row (the Fact Family chip's label
+      // sat beside its equations).
+      if (cs.display === "inline-block" && !st.flexDirection && [...el.children].some((c) => getComputedStyle(c).display !== "inline")) st.flexDirection = "column";
       st.display = "flex";
       if (!st.width) st.width = "fit-content";
       if (!st.alignSelf) st.alignSelf = cs.textAlign === "center" ? "center" : cs.textAlign === "right" ? "flex-end" : "flex-start";
@@ -310,6 +314,11 @@
   // screen). Overlays (splash, achievement popup, module picker sheet) are
   // later siblings — pass "#root > :nth-child(2)" etc.
   window.__jfExtract = (sel = "#root > *") => {
+    // The preview pane throttles rendering while it is not being looked at, so a
+    // CSS entrance animation (dotPop scale(0), fadeSlideUp) can still be sitting
+    // at its first frame when the DOM is read -> dots/icons captured at 0px.
+    // Jump every finite animation to its end state first (infinite ones throw).
+    document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) { /* infinite */ } });
     const root = document.querySelector(sel);
     if (!root) return "NOT FOUND";
     return serialize(root, 0);

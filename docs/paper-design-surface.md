@@ -92,6 +92,14 @@ fidelity. The extractor is `tools/paper/extract.js`; the capture sink is
    Vite serves the file from the repo root. **Editing `extract.js` while the
    dev server runs triggers a full page reload** (the app restarts at the
    splash), so finish extractor changes before a capture run.
+   `tools/paper/drive.js` bundles the clicking helpers for a capture run
+   (`jf.boot()` sets the 393×852 insets and installs the extractor,
+   `jf.seed(patch)` writes a clean unlocked profile, `jf.start()` goes
+   splash → card → practice, `jf.skill(label)` opens a "Practise only …" row,
+   `jf.solveMul()`, `jf.tap/click`); install it the same way:
+   `(0,eval)(await (await fetch("/tools/paper/drive.js?"+Date.now(),{cache:"no-store"})).text())`
+   (the cache-buster matters: the pane caches the file). **Do not edit
+   anything under `tools/paper/` mid-run — Vite reloads the page.**
 4. Drive the app to the state you want, then either
    - `window.__jfExtract()` → returns Paper-ready HTML (pass a selector for an
      overlay, e.g. `'#root > :last-child'` when `#root` has two children), or
@@ -210,6 +218,58 @@ skill rows on a fully unlocked seed profile (`purchases` holding the three
 states for the new answerTypes, and the Pictorial/Abstract modes of the
 non-Multiply modules.
 
+**Full retake (9 Nov 2026):** all 60 artboards were re-captured with the
+then-current extractor from a clean seeded profile (`jf.seed()`: Jack, empty
+mastery, every module unlocked) and rewritten. Everything is `jf.*` driven,
+see `tools/paper/drive.js`. States worth knowing:
+
+- `Parent Zone · Modules (store)` (393) is captured from an *unpurchased*
+  profile (buy buttons, $9.99 bundle card); the `(320)` variant from the
+  fully unlocked one ("✓ Unlocked").
+- Pictorial / Abstract / Division come from `settings.lockedMode` /
+  `lockedOperation` in the seed; the Multiply Progress view and the home
+  "after a session" banner come right after the three-correct achievement run
+  (`achievements: []`).
+- In this build the word-problem screens (W1–W3) show their bar models
+  straight away (no "pick" step), and W3 shows both steps at once.
+- The wrong-answer dialog opened on the **first** miss in both Multiply and
+  Add in this run; give the derivation line ~2.5 s.
+- The Progress view (109 KB) is written in four parts: part 0 is the whole
+  root minus three big sections, parts 1–3 are `insert-children` into the
+  container five levels down (root → child 1 → first child ×3). Do it with
+  one writer agent; a single 109 KB `write_html` is too much.
+
+Rules the retake added (all in `extract.js` / `prep.mjs`):
+
+- **Finish CSS animations before reading.** The preview pane throttles
+  rendering while it is not on screen, so `dotPop` (`scale(0)` → 1, 0.25 s)
+  and `fadeSlideUp` were still on frame 0 when the DOM was read: dots,
+  Concrete/Pictorial pictures and the Onboarding 3 icons were captured 0 px
+  wide (the scale-baking rule turned `scale(0)` into 0 px). `__jfExtract` now
+  calls `animation.finish()` on every finite animation first. The achievement
+  popup scales in too, so wait ~0.7 s after "ACHIEVEMENT" appears.
+- **Splash: freeze the wordmark.** The two "a" slots cycle through objects
+  (infinite animation, opacity from a stylesheet), so a snapshot is an
+  arbitrary frame with the letter shrunken. Before saving, inject
+  `.jf-occ{animation:none!important}.jf-occ[data-occ=obj]{opacity:0!important}.jf-occ[data-occ=letter]{opacity:1!important;transform:translate(-50%,-50%)!important}`
+  and remove the `[data-occ=obj]` nodes (the extractor reads opacity from
+  inline style only).
+- **`inline-block` with block children stacks.** The Fact Family chip's label
+  sat beside its equations; the `inline-*` shrink-to-fit rule now adds
+  `flex-direction:column` for an `inline-block` that has non-inline children.
+- **Header drawer (prep).** The practice header's session/streak panel hangs
+  off the sticky header with a dim scrim between header and content; Paper
+  paints in DOM order, so content covered both. `prep.mjs` moves the scrim
+  (starting below the header) and then the panel to the end of the root and
+  adds the header's padding to the panel's offsets.
+
+Look-alike findings from the retake that are the app's own rendering, not
+Paper bugs: the Parent Zone "How it Works" tab and the Terms of Service
+heading wrap to two lines at 393 px (measured in the browser: tab 50 px
+high, heading 75 px); the achievement confetti sits at one point because the
+app animates it with `transform` (ignored by Paper); Create profile · 2's
+title sits under the status bar (the safe-area gap below).
+
 ### Driving the app to a screen
 
 The dev build has no deep links; the capture helpers live in page JS.
@@ -231,8 +291,8 @@ leave no hover residue. The things that are not obvious:
 - React inputs need the native setter:
   `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set.call(el, v); el.dispatchEvent(new Event("input",{bubbles:true}))`.
 - Wrong-answer reveal: the takeover dialog (`aria-label="How to solve it"`)
-  opens on the **second** miss of an item in Multiply and Add (the first
-  shows the inline hint); the derivation line animates in afterwards, so
+  opens on the **second** miss of an item in Multiply and Add in older
+  builds (the first showed the inline hint; the 9 Nov 2026 build opened it on the first); the derivation line animates in afterwards, so
   wait ~2 s after the dialog appears before `__jfSave`.
 - Achievement popup: `achievements: []` on the profile, `lockedOperation:
   "multiply"`, answer three items correctly with the pad buttons and
