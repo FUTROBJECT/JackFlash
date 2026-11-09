@@ -33,6 +33,14 @@ export function prep(html, name) {
     h = h.replace(/<\/div>\s*$/, `${bar}</div>`);
   }
   h = h.replace(/;z-index:\d+/g, "");
+  // SVG text with dominant-baseline="central": Paper ignores it, so move the
+  // baseline down ~0.35em instead (captures taken before extract.js did this).
+  h = h.replace(/<(text|tspan) ([^>]*)dominant-baseline="(?:central|middle)"\s*([^>]*)>/g, (m, tag, a, b) => {
+    const attrs = a + b;
+    const fs = parseFloat((attrs.match(/font-size="([^"]+)"/) || [])[1]) || 16;
+    const fixed = attrs.replace(/\by="(-?[\d.]+)"/, (_, y) => `y="${+(parseFloat(y) + fs * 0.35).toFixed(2)}"`);
+    return `<${tag} ${fixed.trim()}>`;
+  });
   // Computed-font double quotes end the style attribute early.
   h = h.replace(/font-family:"([^"]+)"/g, "font-family:'$1'");
   h = h.replace(/url\("([^"]+)"\)/g, "url('$1')");

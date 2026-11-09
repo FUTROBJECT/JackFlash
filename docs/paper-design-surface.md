@@ -317,6 +317,10 @@ leave no hover residue. The things that are not obvious:
 - Grid children whose own width is a percentage ("fill the track", the
   place-value discs) take the track share instead, so five discs stay on
   one row.
+- SVG `<text dominant-baseline="central">` (bar-model pills, place-value
+  disc values) is ignored by Paper, so the numbers sat high. The extractor
+  (and prep, for older captures) drops the attribute and moves `y` down by
+  0.35 × font-size instead.
 - After every write set the artboard to `height: fit-content`
   (`update_styles`) and screenshot it; fit-content is what makes the long
   Parent Zone and Progress artboards readable.

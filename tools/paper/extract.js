@@ -112,6 +112,16 @@
       const c = el.cloneNode(true);
       c.querySelectorAll("animate,animateTransform,animateMotion").forEach((n) => n.remove());
       c.querySelectorAll("[class]").forEach((n) => n.removeAttribute("class"));
+      // Paper ignores dominant-baseline="central" (bar-model / disc numbers
+      // sat high): move the baseline down by ~0.35em and drop the attribute.
+      c.querySelectorAll("text[dominant-baseline], tspan[dominant-baseline]").forEach((t) => {
+        if (/^(central|middle)$/.test(t.getAttribute("dominant-baseline"))) {
+          const fs = parseFloat(t.getAttribute("font-size") || getComputedStyle(t).fontSize) || 16;
+          const y = parseFloat(t.getAttribute("y") || "0");
+          t.setAttribute("y", +(y + fs * 0.35).toFixed(2));
+        }
+        t.removeAttribute("dominant-baseline");
+      });
       const r = el.getBoundingClientRect();
       const w = Math.round(r.width), h = Math.round(r.height);
       const op = el.style.opacity && el.style.opacity !== "1" ? `opacity:${el.style.opacity};` : "";
