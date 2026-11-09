@@ -435,20 +435,21 @@ retaken, so Paper and the app agree again.
   `Add · Comparison bar (W2)`; code is the comparison branch of `BarModel`
   in `src/shared/barComponents.jsx`.
 
-## Paper-only edits (Adam, 2026-11-09 — not in the app yet)
+## Paper-only edits (Adam, 2026-11-09) — both now shipped in code
 
-Both are edits made directly on the artboards after the full retake; a
-re-write from the capture files reverts them, so re-apply or ship the code
-first.
+Two edits were first made directly on the artboards; both are now fixed in the
+app and the artboards recaptured, so a recapture no longer reverts anything.
 
-- **`Parent gate`:** the question ("What is 42 × 3?") is one line — 28px and
-  `white-space: nowrap` (the app's 32px wraps at 393px: 294px of text in a
-  287px card). Node: the question text in the white card.
-- **`Place Value · Number patterns (C3)`:** the two rows of place-value cards
-  are centred in the card (their wrappers got `align-items: center`). In the
-  app the 300px-max wrapper (`width:100%; maxWidth:300`) is left-aligned in a
-  331px column, 15px off-centre (measured at 393px); the same pattern is in
-  `src/modules/fractions.jsx` ~:127. Fix in code with `margin: "0 auto"`.
+- **`Parent gate`:** the question is two fixed lines — "What is" and, below
+  it, the equation (`src/ParentZone.jsx`, equation line `nowrap`). Adam's
+  call: a long problem can never force a return mid-equation. The earlier
+  one-line 28px version was dropped.
+- **`Place Value · Number patterns (C3)`:** the place-value disc charts
+  (`PlaceValueDiscChart` and `PlaceValueArithChart` in
+  `src/shared/barComponents.jsx`) now carry `margin: "0 auto"` so the 300px-max
+  wrapper is centred (16px each side at 393px; it was 15px off-centre). Same
+  pattern still sits in `NumberLineScaffold`, `src/modules/fractions.jsx`
+  ~:127 (not changed: shipped Fractions, no reported problem).
 
 ## Findings from the first capture pass (app bugs, not design decisions)
 

@@ -139,7 +139,10 @@ export function ParentGate({ onPass, onCancel }) {
             fontFamily: "'Space Mono', monospace",
             color: COLORS.black,
           }}>
-            What is {problem.first} × {problem.second}?
+            {/* Two fixed lines: the equation never shares a row with "What is",
+                so a long problem can't force an awkward wrap mid-equation. */}
+            <div>What is</div>
+            <div style={{ whiteSpace: "nowrap" }}>{problem.first} × {problem.second}?</div>
           </div>
 
           <input

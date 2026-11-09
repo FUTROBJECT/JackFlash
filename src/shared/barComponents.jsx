@@ -1073,7 +1073,7 @@ function PlaceValueDiscChart({
   });
 
   return (
-    <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: compact ? 300 : 360 }}>
+    <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: compact ? 300 : 360, margin: "0 auto" }}>
       <div style={{ display: "flex", gap: compact ? 4 : 6, width: "100%" }}>
         {phrases
           ? phraseBoxes.map((pb, i) => {
@@ -1314,7 +1314,7 @@ function PlaceValueArithChart({
   const primary = layers ? layers[0] : counts;
   const second = layers ? layers[1] : null;
   return (
-    <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: compact ? 300 : 360 }}>
+    <div style={{ opacity, transition: "opacity 0.6s ease", width: "100%", maxWidth: compact ? 300 : 360, margin: "0 auto" }}>
       <div style={{ display: "flex", gap: compact ? 3 : 4, width: "100%" }}>
         {places.map((place, idx) => {
           const count = primary?.[idx] || 0;
