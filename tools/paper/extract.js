@@ -60,6 +60,14 @@
     // Offsets without a position (the position came from a stylesheet or an
     // animation keyframe) would become flow content in Paper; keep them pinned.
     if ((out.left || out.top || out.right || out.bottom) && !out.position && /^(absolute|fixed)$/.test(cs.position)) out.position = "absolute";
+    if (SCALE !== 1) {
+      for (const k of Object.keys(out)) out[k] = String(out[k]).replace(/(-?\d*\.?\d+)px/g, (_, n) => `${+(parseFloat(n) * SCALE).toFixed(2)}px`);
+      if (/scale\(/.test(out.transform || "")) delete out.transform;
+      delete out.transformOrigin;
+      // the scaled element's own percentage width can't shrink with the factor:
+      // pin it to the box it actually paints (the rect is post-transform).
+      if (el === SCALE_ROOT && /%$/.test(out.width || "")) out.width = `${+el.getBoundingClientRect().width.toFixed(2)}px`;
+    }
     return out;
   }
 
@@ -72,12 +80,25 @@
   const esc = (s) => s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
   const hash = (s) => { let x = 5381; for (let i = 0; i < s.length; i++) x = ((x << 5) + x + s.charCodeAt(i)) | 0; return (x >>> 0).toString(36); };
 
+  // Paper ignores transform: scale(); a scaled subtree (the wrong-answer
+  // reveal's PictureSlot) is emitted with every px length multiplied by the
+  // cumulative factor instead, so it takes the space it takes on the phone.
+  let SCALE = 1, SCALE_ROOT = null;
   function serialize(el, depth) {
     if (el.nodeType === 3) return esc(el.textContent);
     if (el.nodeType !== 1) return "";
     const tag = el.tagName.toLowerCase();
     if (/^(script|style|noscript|template)$/.test(tag)) return "";
     const cs = getComputedStyle(el);
+    const sm = cs.transform.match(/^matrix\(([^,]+),/);
+    const sf = sm ? parseFloat(sm[1]) : 1;
+    if (Math.abs(sf - 1) > 0.001) {
+      const prev = SCALE, prevRoot = SCALE_ROOT; SCALE *= sf; SCALE_ROOT = el;
+      try { return serialize1(el, depth, tag, cs); } finally { SCALE = prev; SCALE_ROOT = prevRoot; }
+    }
+    return serialize1(el, depth, tag, cs);
+  }
+  function serialize1(el, depth, tag, cs) {
     if (cs.display === "none") return "";
     // visibility:hidden still takes up space (DerivationToken's blank chip
     // sizes itself by a hidden copy of its content) -> keep an empty box of
@@ -154,14 +175,15 @@
       // A single-track grid is a stack of full-width rows, so its children
       // always get the share — Paper would otherwise hug each row to its
       // content and a centred line would sit at the left.
-      if (tracks.length <= 1 || ![...el.children].some((c) => c.style.width)) st.__cols = tracks.length || 2;
+      if (tracks.length <= 1 || ![...el.children].some((c) => c.style.width && !/%$/.test(c.style.width))) st.__cols = tracks.length || 2;
       ["gridTemplateColumns", "gridTemplateRows", "gridColumn", "gridRow", "gridAutoFlow", "gridAutoRows", "justifyItems", "alignItems"].forEach((k) => { if (k === "alignItems" && st.alignItems !== "stretch") return; delete st[k]; });
     }
     const m = { t: st.marginTop, r: st.marginRight, b: st.marginBottom, l: st.marginLeft };
     if (st.margin) { const parts = st.margin.split(" "); m.t = parts[0]; m.r = parts[1] ?? parts[0]; m.b = parts[2] ?? parts[0]; m.l = parts[3] ?? m.r; }
     ["margin", "marginTop", "marginRight", "marginBottom", "marginLeft"].forEach((k) => delete st[k]);
     const nz = (v) => v && v !== "0" && v !== "0px" && v !== "auto";
-    const hasMargin = Object.values(m).some(nz);
+    // `margin: 0 auto` has no non-zero side, but it centres the block.
+    const hasMargin = Object.values(m).some(nz) || (m.l === "auto" && m.r === "auto");
     const cols = st.__cols; delete st.__cols;
     // Paper drops bare text that sits beside an absolutely positioned sibling
     // (the "5" next to the "×"); wrap the text nodes in that one case only —
@@ -224,6 +246,8 @@
         const m = k.match(/grid-column(?:-start)?:span (\d+)/);
         const n = m ? Number(m[1]) : 1;
         k = k.replace(/;?grid-column(?:-start|-end)?:[^;"]*/g, "");
+        // a child's own percentage width meant "fill the track" — the share replaces it
+        k = k.replace(/^(<div style="[^"]*?);?width:\d+(?:\.\d+)?%/, "$1");
         return k.replace("<div style=\"", `<div style="width:${n === 1 ? `calc((100% - ${gap * (cols - 1)}px) / ${cols})` : share(n)};flex-shrink:0;`);
       });
     }

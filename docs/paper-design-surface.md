@@ -307,6 +307,16 @@ leave no hover residue. The things that are not obvious:
   row in Paper whose children hug their content, so a centred line sat at
   the left. The extractor now gives every child of a single-track grid the
   full width (a child's own width still wins).
+- `transform: scale()` is ignored by Paper. The extractor now bakes the
+  factor into every px length of the scaled subtree (the reveal's
+  PictureSlot) and pins the scaled element to the width it paints, so the
+  picture takes exactly the space it takes on the phone instead of being
+  clipped by its fixed-height slot.
+- `margin: 0 auto` on a fixed-width block (the column-method digits) now
+  centres it; before, no side was non-zero so the fold never ran.
+- Grid children whose own width is a percentage ("fill the track", the
+  place-value discs) take the track share instead, so five discs stay on
+  one row.
 - After every write set the artboard to `height: fit-content`
   (`update_styles`) and screenshot it; fit-content is what makes the long
   Parent Zone and Progress artboards readable.
