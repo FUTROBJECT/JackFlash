@@ -303,6 +303,10 @@ leave no hover residue. The things that are not obvious:
   in that font, `width: 100%` (Paper hugs a flex child, so a short row
   would sit at the left) and justified like the text was; adjacent text
   runs with no space between them stay one word.
+- A single-column CSS grid (the wrong-answer card's rows) becomes a flex
+  row in Paper whose children hug their content, so a centred line sat at
+  the left. The extractor now gives every child of a single-track grid the
+  full width (a child's own width still wins).
 - After every write set the artboard to `height: fit-content`
   (`update_styles`) and screenshot it; fit-content is what makes the long
   Parent Zone and Progress artboards readable.

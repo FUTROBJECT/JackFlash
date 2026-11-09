@@ -150,7 +150,11 @@
       st.display = "flex"; st.flexWrap = "wrap";
       if (!st.width) st.width = Math.round(el.getBoundingClientRect().width) + "px";
       // children without an explicit width get an equal share of the row
-      if (![...el.children].some((c) => c.style.width)) st.__cols = tracks.length || 2;
+      // (a child's own width still wins: it comes later in the attribute).
+      // A single-track grid is a stack of full-width rows, so its children
+      // always get the share — Paper would otherwise hug each row to its
+      // content and a centred line would sit at the left.
+      if (tracks.length <= 1 || ![...el.children].some((c) => c.style.width)) st.__cols = tracks.length || 2;
       ["gridTemplateColumns", "gridTemplateRows", "gridColumn", "gridRow", "gridAutoFlow", "gridAutoRows", "justifyItems", "alignItems"].forEach((k) => { if (k === "alignItems" && st.alignItems !== "stretch") return; delete st[k]; });
     }
     const m = { t: st.marginTop, r: st.marginRight, b: st.marginBottom, l: st.marginLeft };
