@@ -292,6 +292,12 @@ leave no hover residue. The things that are not obvious:
   reveal's blank answer chip sizes itself by a hidden copy of the answer).
   The extractor emits an empty box of the measured size for them, so the
   chip keeps its height instead of collapsing to a line.
+- Paper drops `inline-block` / `inline-flex` boxes that sit in a line of
+  text, and a block box there starts its own line (the wrong-answer chip
+  landed under "shaded →"). The extractor re-flows such a line as a
+  wrapping flex row: one item per word, `column-gap` = the width of a space
+  in that font, justified like the text was; adjacent text runs with no
+  space between them stay one word.
 - After every write set the artboard to `height: fit-content`
   (`update_styles`) and screenshot it; fit-content is what makes the long
   Parent Zone and Progress artboards readable.

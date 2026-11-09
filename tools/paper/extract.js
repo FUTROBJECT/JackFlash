@@ -166,6 +166,47 @@
     const absSibling = [...el.children].some((c) => /^(absolute|fixed)$/.test(getComputedStyle(c).position));
     const mixed = absSibling && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
     let kids = [...el.childNodes].map((n) => (mixed && n.nodeType === 3 && n.textContent.trim()) ? `<div>${esc(n.textContent)}</div>` : serialize(n, depth + 1));
+    // Paper drops inline-block / inline-flex boxes that sit in a line of text
+    // (the wrong-answer reveal's blank answer chip after "shaded →"), and a
+    // block box there would start its own line. Re-flow such a line as a
+    // wrapping flex row: one item per word, a column-gap the width of a
+    // space in this font, justified like the text was. Plain inline spans
+    // (a bold word) are left alone — Paper keeps those in the text flow.
+    const isInlineTextEl = (n) => n.nodeType === 1 && /^(strong|b|em|i|u|span|small|sup|sub|mark)$/.test(n.tagName.toLowerCase()) && n.children.length === 0 && getComputedStyle(n).display === "inline";
+    const hasText = [...el.childNodes].some((n) => (n.nodeType === 3 && n.textContent.trim()) || isInlineTextEl(n));
+    const inlineBox = (c) => /^inline-(block|flex|grid)$/.test(getComputedStyle(c).display);
+    if (hasText && !absSibling && [...el.children].some(inlineBox) && [...el.children].every((c) => /^(inline|none)/.test(getComputedStyle(c).display))) {
+      // One flex item per word. Adjacent text runs with no whitespace between
+      // them ("2 twos" + ": 2,") stay one word; a run with its own style (a
+      // coloured span) becomes a <span> inside that word.
+      const tokens = []; let glue = false;
+      const pushRun = (text, style) => {
+        text.split(/(\s+)/).forEach((part) => {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { glue = false; return; }
+          if (glue && tokens.length && Array.isArray(tokens[tokens.length - 1])) tokens[tokens.length - 1].push({ w: part, s: style });
+          else tokens.push([{ w: part, s: style }]);
+          glue = true;
+        });
+        glue = !/\s$/.test(text);
+      };
+      [...el.childNodes].forEach((n) => {
+        if (n.nodeType === 3) pushRun(n.textContent, "");
+        else if (isInlineTextEl(n)) pushRun(n.textContent, styleAttr(styles(n, getComputedStyle(n))));
+        else { tokens.push(serialize(n, depth + 1)); glue = false; }
+      });
+      kids = tokens.map((t) => {
+        if (!Array.isArray(t)) return t;
+        if (t.length === 1) return t[0].s ? `<div style="${t[0].s}">${esc(t[0].w)}</div>` : `<div>${esc(t[0].w)}</div>`;
+        return `<div>${t.map((p) => p.s ? `<span style="${p.s}">${esc(p.w)}</span>` : esc(p.w)).join("")}</div>`;
+      });
+      const ctx = (serialize._ctx ||= document.createElement("canvas").getContext("2d"));
+      ctx.font = cs.font || `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      st.display = "flex"; st.flexWrap = "wrap"; st.alignItems = "center";
+      st.justifyContent = cs.textAlign === "center" ? "center" : cs.textAlign === "right" ? "flex-end" : "flex-start";
+      st.columnGap = `${+ctx.measureText(" ").width.toFixed(2)}px`;
+      delete st.flexDirection;
+    }
     if (cols) {
       // grid → flex: each child gets an equal share of the row; a child that
       // spanned N columns (number-pad Backspace / Check) gets N shares plus
