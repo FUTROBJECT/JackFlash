@@ -335,6 +335,20 @@ style objects and `constants.js` tokens the codebase uses (never read values
 off a screenshot). Then recapture the built screen and replace the proposal
 artboard so UI stays as-built.
 
+## Design decisions made in Paper, not yet in code
+
+Paper is the design surface, so these artboards deliberately differ from
+the app until the code catches up. A re-write from the capture files would
+revert them — re-apply (or ship the code change) after any re-write.
+
+- **Bar-model connector (Adam, 2026-11-09):** the whole/parts diagram joins
+  the whole to its two parts with a bracket — a stem from the whole's
+  bottom centre, a horizontal bar halfway down the gap, and a drop onto the
+  **midpoint** of each part — instead of the app's single stem onto a
+  full-width line. Done on `Add · Bar model (W1)` and both steps of
+  `Add · Two-step bars (W3)`. In code the lines live in
+  `src/shared/barComponents.jsx` (the `BarModel` part-whole branch).
+
 ## Findings from the first capture pass (app bugs, not design decisions)
 
 - Onboarding module cards, avatar tiles, profile cards and the bottom-nav
