@@ -166,6 +166,7 @@
       if (!st.display) st.display = "flex";
       if (!textOnly && !st.flexDirection && !el.style.display) st.flexDirection = "column";
       if (!st.alignItems) st.alignItems = textOnly ? "center" : "stretch";
+      if (textOnly && !st.textAlign) st.textAlign = "center";   // a wrapped label centres its lines like the browser
       if (!st.justifyContent && textOnly) st.justifyContent = "center";
       // Paper breaks words anywhere when a flex item is narrow; Chrome never
       // splits a one-word button label, so pin single-word labels.

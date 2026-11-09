@@ -33,6 +33,8 @@ export function prep(html, name) {
     h = h.replace(/<\/div>\s*$/, `${bar}</div>`);
   }
   h = h.replace(/;z-index:\d+/g, "");
+  // Text-only buttons centre each line of a wrapped label in the browser.
+  h = h.replace(/<div style="((?:(?!text-align)[^"])*)" layer-name="Button">([^<]+)<\/div>/g, '<div style="$1;text-align:center" layer-name="Button">$2</div>');
   // SVG text with dominant-baseline="central": Paper ignores it, so move the
   // baseline down ~0.35em instead (captures taken before extract.js did this).
   h = h.replace(/<(text|tspan) ([^>]*)dominant-baseline="(?:central|middle)"\s*([^>]*)>/g, (m, tag, a, b) => {
