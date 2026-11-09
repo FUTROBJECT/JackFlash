@@ -321,6 +321,16 @@ leave no hover residue. The things that are not obvious:
   disc values) is ignored by Paper, so the numbers sat high. The extractor
   (and prep, for older captures) drops the attribute and moves `y` down by
   0.35 × font-size instead.
+- Paper wraps text anywhere, even inside a word, when a flex item is narrow
+  (the 320px tab strip set "How it Works" one letter per line). The extractor
+  keeps the browser's line breaks: text that fit on one line gets
+  `white-space: nowrap`, text that wrapped gets `min-width` = the width it
+  wrapped at.
+- `transform: translate()` is ignored too (the toggle knob). It becomes a
+  relative offset (`position: relative; left/top`).
+- Buttons centre their label only when they are text-only; a button with
+  element children (the toggle) keeps the browser's flex-start, otherwise a
+  translated child ends up centred *and* shifted.
 - After every write set the artboard to `height: fit-content`
   (`update_styles`) and screenshot it; fit-content is what makes the long
   Parent Zone and Progress artboards readable.

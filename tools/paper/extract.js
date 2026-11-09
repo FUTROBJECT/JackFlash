@@ -56,6 +56,15 @@
     if (pd.every((k) => out[k] !== undefined)) { out.padding = `${out.paddingTop} ${out.paddingRight} ${out.paddingBottom} ${out.paddingLeft}`; pd.forEach((k) => delete out[k]); }
     if (out.rowGap !== undefined && out.rowGap === out.columnGap) { out.gap = out.rowGap; delete out.rowGap; delete out.columnGap; }
     if (out.transform === "translate(0px, 0px)" || out.transform === "none") delete out.transform;
+    // Paper ignores transforms: a px translate (the toggle knob) becomes a
+    // relative offset instead.
+    const tr = (out.transform || "").match(/^translate(X|Y)?\((-?[\d.]+)px(?:,\s*(-?[\d.]+)px)?\)$/);
+    if (tr) {
+      const dx = tr[1] === "Y" ? 0 : parseFloat(tr[2]), dy = tr[1] === "Y" ? parseFloat(tr[2]) : parseFloat(tr[3] || 0);
+      if (!/^(absolute|fixed)$/.test(cs.position)) { out.position = "relative"; if (dx) out.left = `${dx}px`; if (dy) out.top = `${dy}px`; }
+      else { if (dx) out.left = `${parseFloat(out.left || cs.left || 0) + dx}px`; if (dy) out.top = `${parseFloat(out.top || cs.top || 0) + dy}px`; }
+      delete out.transform;
+    }
     if (out.opacity === "1") delete out.opacity;
     // Offsets without a position (the position came from a stylesheet or an
     // animation keyframe) would become flow content in Paper; keep them pinned.
@@ -157,7 +166,7 @@
       if (!st.display) st.display = "flex";
       if (!textOnly && !st.flexDirection && !el.style.display) st.flexDirection = "column";
       if (!st.alignItems) st.alignItems = textOnly ? "center" : "stretch";
-      if (!st.justifyContent) st.justifyContent = "center";
+      if (!st.justifyContent && textOnly) st.justifyContent = "center";
       // Paper breaks words anywhere when a flex item is narrow; Chrome never
       // splits a one-word button label, so pin single-word labels.
       if (textOnly && !/\s/.test(el.textContent.trim()) && !st.whiteSpace) st.whiteSpace = "nowrap";
@@ -165,6 +174,15 @@
       if (tag === "a") st.textDecoration = st.textDecoration || "none";
     }
     if (depth === 0) { st.width = W + "px"; if (!st.minHeight && !st.height) st.minHeight = H + "px"; }
+    // Keep the browser's line breaks. Paper wraps text anywhere (even inside
+    // a word) when a flex item is narrow, so a label that fit on one line
+    // stays on one line, and one that wrapped can't get narrower than it was.
+    if (el.children.length === 0 && el.textContent.trim() && depth > 0) {
+      const rect = el.getBoundingClientRect();
+      const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.3;
+      if (rect.height < lh * 1.6) { if (!st.whiteSpace) st.whiteSpace = "nowrap"; }
+      else if (!st.minWidth && !st.width) st.minWidth = `${+rect.width.toFixed(2)}px`;
+    }
     if (/^inline/.test(st.display || "")) {
       // inline-flex / inline-block shrink to their content in the browser; as
       // a Paper flex child they would stretch (the stacked fraction's vinculum
