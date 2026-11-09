@@ -202,7 +202,9 @@
       });
       const ctx = (serialize._ctx ||= document.createElement("canvas").getContext("2d"));
       ctx.font = cs.font || `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-      st.display = "flex"; st.flexWrap = "wrap"; st.alignItems = "center";
+      // Paper hugs a flex child to its content, so a short row would sit at
+      // the left of its column parent; fill the line so justify-content works.
+      st.display = "flex"; st.flexWrap = "wrap"; st.alignItems = "center"; if (!st.width) st.width = "100%";
       st.justifyContent = cs.textAlign === "center" ? "center" : cs.textAlign === "right" ? "flex-end" : "flex-start";
       st.columnGap = `${+ctx.measureText(" ").width.toFixed(2)}px`;
       delete st.flexDirection;
