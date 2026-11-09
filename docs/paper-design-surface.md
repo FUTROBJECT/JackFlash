@@ -230,6 +230,10 @@ leave no hover residue. The things that are not obvious:
   through the native value setter and dispatch `input`, then Submit.
 - React inputs need the native setter:
   `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set.call(el, v); el.dispatchEvent(new Event("input",{bubbles:true}))`.
+- Wrong-answer reveal: the takeover dialog (`aria-label="How to solve it"`)
+  opens on the **second** miss of an item in Multiply and Add (the first
+  shows the inline hint); the derivation line animates in afterwards, so
+  wait ~2 s after the dialog appears before `__jfSave`.
 - Achievement popup: `achievements: []` on the profile, `lockedOperation:
   "multiply"`, answer three items correctly with the pad buttons and
   `__jfSave` within ~2 s (it auto-dismisses after 3 s).
