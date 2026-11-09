@@ -432,6 +432,21 @@ retaken, so Paper and the app agree again.
   `Add · Comparison bar (W2)`; code is the comparison branch of `BarModel`
   in `src/shared/barComponents.jsx`.
 
+## Paper-only edits (Adam, 2026-11-09 — not in the app yet)
+
+Both are edits made directly on the artboards after the full retake; a
+re-write from the capture files reverts them, so re-apply or ship the code
+first.
+
+- **`Parent gate`:** the question ("What is 42 × 3?") is one line — 28px and
+  `white-space: nowrap` (the app's 32px wraps at 393px: 294px of text in a
+  287px card). Node: the question text in the white card.
+- **`Place Value · Number patterns (C3)`:** the two rows of place-value cards
+  are centred in the card (their wrappers got `align-items: center`). In the
+  app the 300px-max wrapper (`width:100%; maxWidth:300`) is left-aligned in a
+  331px column, 15px off-centre (measured at 393px); the same pattern is in
+  `src/modules/fractions.jsx` ~:127. Fix in code with `margin: "0 auto"`.
+
 ## Findings from the first capture pass (app bugs, not design decisions)
 
 - Onboarding module cards, avatar tiles, profile cards and the bottom-nav
