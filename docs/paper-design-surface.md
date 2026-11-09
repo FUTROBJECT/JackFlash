@@ -300,8 +300,9 @@ leave no hover residue. The things that are not obvious:
   text, and a block box there starts its own line (the wrong-answer chip
   landed under "shaded →"). The extractor re-flows such a line as a
   wrapping flex row: one item per word, `column-gap` = the width of a space
-  in that font, justified like the text was; adjacent text runs with no
-  space between them stay one word.
+  in that font, `width: 100%` (Paper hugs a flex child, so a short row
+  would sit at the left) and justified like the text was; adjacent text
+  runs with no space between them stay one word.
 - After every write set the artboard to `height: fit-content`
   (`update_styles`) and screenshot it; fit-content is what makes the long
   Parent Zone and Progress artboards readable.
