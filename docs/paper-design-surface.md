@@ -349,6 +349,16 @@ revert them — re-apply (or ship the code change) after any re-write.
   `Add · Two-step bars (W3)`. In code the lines live in
   `src/shared/barComponents.jsx` (the `BarModel` part-whole branch).
 
+- **Comparison bar (Adam, 2026-11-09):** the longer bar is one solid bar;
+  a vertical divider inside it at the shorter bar's length marks where the
+  shorter quantity ends, the difference segment carries a dashed midline,
+  and the difference pill sits directly under that segment (same x-span),
+  joined by a short stem from the bar's bottom to the pill's top centre.
+  The bar's own total stays centred in the whole bar. Replaces the app's two
+  bracket lines dropping from the dashed span to the pill. Done on
+  `Add · Comparison bar (W2)`; code is the comparison branch of `BarModel`
+  in `src/shared/barComponents.jsx`.
+
 ## Findings from the first capture pass (app bugs, not design decisions)
 
 - Onboarding module cards, avatar tiles, profile cards and the bottom-nav
