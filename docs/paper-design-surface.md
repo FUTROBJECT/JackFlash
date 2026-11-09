@@ -391,3 +391,12 @@ retaken, so Paper and the app agree again.
 - The Add Player module step (CreateProfile step 3) prints "Grades Grades
   2–4": the row label "Grades" is followed by a description that already
   starts with "Grades".
+
+- (2026-11-09, verified against the live preview) These looked like Paper
+  bugs but are the app's own rendering: the Parent-gate question
+  ("What is 38 × 7?") wraps onto two lines at 393px (15 chars of 32px Space
+  Mono is 294px, the card's inner width is 287px); at 320px the Parent Zone
+  tab strip wraps "How it Works" onto three lines and stretches every tab to
+  that height; in Place Value C3 the comma after each Shrikhand number sits
+  ~6px from its ink because of Shrikhand's trailing side bearing plus Space
+  Mono's comma advance (the markup gap is 2px).
